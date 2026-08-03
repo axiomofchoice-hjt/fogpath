@@ -4,6 +4,7 @@ import { GameProvider, useGame } from "./state/gameContext";
 import { LanguageProvider, useLang } from "./i18n/LanguageContext";
 import SidePanel from "./components/layout/SidePanel";
 import RoomView from "./components/room/RoomView";
+import BattleView from "./components/battle/BattleView";
 import StartPanel from "./components/start/StartPanel";
 import CharacterPanel from "./components/panels/CharacterPanel";
 import EquipmentPanel from "./components/panels/EquipmentPanel";
@@ -44,7 +45,8 @@ function AppInner() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
-  if (state.screen === "start") return <StartPanel />;
+  const center = state.battle ? <BattleView /> : <RoomView />;
+  if (state.screen === "start" && !state.battle) return <StartPanel />;
 
   return (
     <div className="h-screen flex flex-col">
@@ -56,7 +58,7 @@ function AppInner() {
             <EquipmentPanel />
           </div>
         </aside>
-        <RoomView />
+        {center}
         <SidePanel activeTab={activeTab} onTabChange={setActiveTab} />
       </div>
     </div>

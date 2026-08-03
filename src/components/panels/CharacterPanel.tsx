@@ -5,14 +5,22 @@ function CharacterPanel() {
   const { state } = useGame();
   const { t } = useLang();
   const { player } = state;
+  const battle = state.battle;
+
+  const hp = battle ? battle.playerHp : player.hp;
+  const maxHp = battle ? battle.playerMaxHp : player.maxHp;
+  const mp = battle ? battle.playerMp : player.mp;
+  const maxMp = battle ? battle.playerMaxMp : player.maxMp;
+  const atk = battle ? battle.playerAtk : player.atk;
+  const def = battle ? battle.playerDef : player.def;
 
   const expNeeded = player.lv * 100;
-  const hpPct = Math.max(0, (player.hp / player.maxHp) * 100);
-  const mpPct = Math.max(0, (player.mp / player.maxMp) * 100);
+  const hpPct = Math.max(0, (hp / maxHp) * 100);
+  const mpPct = Math.max(0, (mp / maxMp) * 100);
 
   const stats = [
-    { label: t("stat.atk"), value: `${player.atk}`, color: "text-game-red" },
-    { label: t("stat.def"), value: `${player.def}`, color: "text-game-blue" },
+    { label: t("stat.atk"), value: `${atk}`, color: "text-game-red" },
+    { label: t("stat.def"), value: `${def}`, color: "text-game-blue" },
     { label: t("stat.spd"), value: `${player.spd}`, color: "text-game-green" },
     { label: t("stat.lv"), value: `${player.lv}`, color: "text-game-purple" },
     { label: t("stat.exp"), value: `${player.exp} / ${expNeeded}`, color: "text-game-dim" },
@@ -29,7 +37,7 @@ function CharacterPanel() {
         <div className="flex justify-between items-center text-[11px] font-mono">
           <span className="text-game-red">{t("stat.hp")}</span>
           <span className="text-game-text">
-            {player.hp}/{player.maxHp}
+            {hp}/{maxHp}
           </span>
         </div>
         <div className="h-3 bg-game-bg rounded-full overflow-hidden border border-game-border">
@@ -42,7 +50,7 @@ function CharacterPanel() {
         <div className="flex justify-between items-center text-[11px] font-mono mt-2">
           <span className="text-game-blue">{t("stat.mp")}</span>
           <span className="text-game-text">
-            {player.mp}/{player.maxMp}
+            {mp}/{maxMp}
           </span>
         </div>
         <div className="h-3 bg-game-bg rounded-full overflow-hidden border border-game-border">

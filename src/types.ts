@@ -79,7 +79,68 @@ export interface Player {
 /** 战斗状态占位：战斗系统实现时填充（下一阶段） */
 export interface BattleState {
   scenarioId: string;
+  turn: number;
+  playerHp: number;
+  playerMaxHp: number;
+  playerMp: number;
+  playerMaxMp: number;
+  playerAtk: number;
+  playerDef: number;
+  enemies: BattleEnemy[];
+  log: L[];
+  result: BattleResult;
 }
+
+export type BattleResult = "ongoing" | "victory" | "defeat";
+
+// --- 技能 ---
+
+export type SkillType = "physical" | "magic";
+
+export interface SkillDef {
+  id: string;
+  name: L;
+  icon: string;
+  type: SkillType;
+  mpCost: number;
+  /** 基础攻击：攻/防取玩家当前 atk/def */
+  isBasic?: boolean;
+  atk?: number;
+  def?: number;
+}
+
+// --- 敌人 ---
+
+export interface EnemyDef {
+  id: string;
+  name: L;
+  icon: string;
+  maxHp: number;
+  maxMp: number;
+  atk: number;
+  def: number;
+  isBoss?: boolean;
+  /** AI 策略（实现时定） */
+  ai: string;
+}
+
+export interface BattleEnemy {
+  defId: string;
+  hp: number;
+  maxHp: number;
+  mp: number;
+  maxMp: number;
+  atk: number;
+  def: number;
+  isBoss: boolean;
+}
+
+// --- 玩家战斗动作 ---
+
+export type PlayerBattleAction =
+  | { kind: "attack"; skillId: string; targetIndex: number }
+  | { kind: "guard" }
+  | { kind: "regen" };
 
 export interface GameState {
   screen: Screen;
@@ -105,6 +166,9 @@ export interface TestScenarioGroup {
 
 export type GameAction =
   | { type: "START_GAME" }
+  | { type: "START_TEST_BATTLE"; scenarioId: string }
+  | { type: "BATTLE_ACT"; action: PlayerBattleAction }
+  | { type: "EXIT_BATTLE" }
   | { type: "PICKUP_ITEM"; itemId: string }
   | { type: "DISCARD_ITEM"; itemId: string }
   | { type: "EQUIP"; itemId: string }

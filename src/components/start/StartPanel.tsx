@@ -2,6 +2,7 @@ import { useGame } from "../../state/gameContext";
 import { useLang } from "../../i18n/LanguageContext";
 import { loc } from "../../i18n/translations";
 import { testScenarioGroups } from "../../data/testScenarios";
+import { testBattleConfigs } from "../../data/battleTestConfigs";
 
 function StartPanel() {
   const { dispatch } = useGame();
@@ -49,20 +50,33 @@ function StartPanel() {
                 {loc(group.name, lang)}
               </div>
               <div className="grid grid-cols-1 gap-1.5">
-                {group.scenarios.map((scenario) => (
-                  <div
-                    key={scenario.id}
-                    className="flex items-center gap-2 px-3 py-2 bg-game-card border border-game-border rounded opacity-60 cursor-not-allowed"
-                    title={loc(scenario.description, lang)}
-                  >
-                    <span className="text-game-text text-xs font-mono flex-1">
-                      {loc(scenario.name, lang)}
-                    </span>
-                    <span className="text-game-dim text-[9px] font-mono border border-game-border rounded px-1.5 py-0.5">
-                      {t("start.placeholder")}
-                    </span>
-                  </div>
-                ))}
+                {group.scenarios.map((scenario) => {
+                  const enabled = !!testBattleConfigs[scenario.id];
+                  return (
+                    <button
+                      key={scenario.id}
+                      onClick={() =>
+                        dispatch({ type: "START_TEST_BATTLE", scenarioId: scenario.id })
+                      }
+                      disabled={!enabled}
+                      className={`flex items-center gap-2 px-3 py-2 rounded text-left transition-colors ${
+                        enabled
+                          ? "bg-game-card border border-game-red/40 text-game-text hover:bg-game-red/15 cursor-pointer"
+                          : "bg-game-card border border-game-border opacity-60 cursor-not-allowed"
+                      }`}
+                      title={loc(scenario.description, lang)}
+                    >
+                      <span className="text-xs font-mono flex-1">
+                        {loc(scenario.name, lang)}
+                      </span>
+                      {!enabled && (
+                        <span className="text-game-dim text-[9px] font-mono border border-game-border rounded px-1.5 py-0.5">
+                          {t("start.placeholder")}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           ))}

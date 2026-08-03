@@ -57,6 +57,19 @@ const zh = {
   "start.enterVillage": "进入村庄",
   "start.testBattles": "测试战斗",
   "start.placeholder": "规划中",
+
+  "battle.title": "战斗",
+  "battle.turn": "回合 {{n}}",
+  "battle.attack": "攻击",
+  "battle.guard": "防御",
+  "battle.regen": "回蓝",
+  "battle.skillStats": "攻 {{a}} / 防 {{d}}",
+  "battle.mpCost": "MP {{n}}",
+  "battle.selectTarget": "选择目标",
+  "battle.cancel": "返回",
+  "battle.victory": "胜利！",
+  "battle.defeat": "败北…",
+  "battle.exit": "返回开始面板",
 } as const;
 
 export type TKey = keyof typeof zh;
@@ -108,6 +121,19 @@ const en: Record<TKey, string> = {
   "start.enterVillage": "Enter Village",
   "start.testBattles": "Test Battles",
   "start.placeholder": "Planned",
+
+  "battle.title": "Battle",
+  "battle.turn": "Turn {{n}}",
+  "battle.attack": "Attack",
+  "battle.guard": "Guard",
+  "battle.regen": "Regen MP",
+  "battle.skillStats": "ATK {{a}} / DEF {{d}}",
+  "battle.mpCost": "MP {{n}}",
+  "battle.selectTarget": "Choose Target",
+  "battle.cancel": "Back",
+  "battle.victory": "Victory!",
+  "battle.defeat": "Defeat...",
+  "battle.exit": "Back to Start",
 };
 
 export const translations: Record<Language, Record<TKey, string>> = { zh, en };

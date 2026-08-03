@@ -1,5 +1,7 @@
 import type { GameState, GameAction, InventoryEntry } from "../types";
 import { items as itemDefs } from "../data/items";
+import { testBattleConfigs } from "../data/battleTestConfigs";
+import { initBattle, resolveTurn } from "./battleEngine";
 
 function addToInventory(
   inventory: InventoryEntry[],
@@ -90,6 +92,23 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case "START_GAME": {
       if (state.screen === "game") return state;
       return { ...state, screen: "game" };
+    }
+
+    case "START_TEST_BATTLE": {
+      if (state.battle) return state;
+      const config = testBattleConfigs[action.scenarioId];
+      if (!config) return state;
+      return { ...state, battle: initBattle(action.scenarioId, state.player) };
+    }
+
+    case "BATTLE_ACT": {
+      if (!state.battle) return state;
+      return { ...state, battle: resolveTurn(state.battle, action.action) };
+    }
+
+    case "EXIT_BATTLE": {
+      if (!state.battle) return state;
+      return { ...state, battle: null };
     }
     case "PICKUP_ITEM": {
       const item = itemDefs[action.itemId];
