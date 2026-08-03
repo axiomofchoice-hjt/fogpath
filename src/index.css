@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Sarasa Mono SC", "JetBrains Mono", ui-monospace, Consolas, monospace;
+  background: #0d0d12;
+  color: #c4c0cc;
+  overflow: hidden;
+  height: 100vh;
+}
+
+#root {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1520;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2e2a38;
+  border-radius: 3px;
+}

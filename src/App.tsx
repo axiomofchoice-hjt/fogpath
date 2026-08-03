@@ -1,0 +1,72 @@
+import { useState, useCallback, useEffect } from "react";
+import type { PanelTab } from "./types";
+import { GameProvider } from "./state/gameContext";
+import { LanguageProvider, useLang } from "./i18n/LanguageContext";
+import SidePanel from "./components/layout/SidePanel";
+import RoomView from "./components/room/RoomView";
+import CharacterPanel from "./components/panels/CharacterPanel";
+import EquipmentPanel from "./components/panels/EquipmentPanel";
+
+function Header() {
+  const { lang, toggleLang } = useLang();
+  return (
+    <header className="h-10 bg-game-panel border-b border-game-border flex items-center px-4 flex-shrink-0 select-none">
+      <span className="text-game-gold font-bold tracking-wider">Text RPG</span>
+      <button
+        onClick={toggleLang}
+        className="ml-auto text-[9px] font-mono px-2 py-0.5 rounded border border-game-border text-game-dim hover:text-game-gold hover:border-game-gold/40 transition-colors"
+        title={lang === "zh" ? "Switch to English" : "切换到中文"}
+      >
+        {lang === "zh" ? "中" : "EN"}
+      </button>
+    </header>
+  );
+}
+
+function AppInner() {
+  const [activeTab, setActiveTab] = useState<PanelTab>("map");
+
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    switch (e.key.toLowerCase()) {
+      case "m":
+        setActiveTab("map");
+        break;
+      case "t":
+        setActiveTab("inventory");
+        break;
+    }
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleKeyDown]);
+
+  return (
+    <div className="h-screen flex flex-col">
+      <Header />
+      <div className="flex-1 flex overflow-hidden">
+        <aside className="w-64 bg-game-panel/50 border-r border-game-border flex-shrink-0 overflow-y-auto p-3">
+          <CharacterPanel />
+          <div className="mt-4">
+            <EquipmentPanel />
+          </div>
+        </aside>
+        <RoomView />
+        <SidePanel activeTab={activeTab} onTabChange={setActiveTab} />
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <LanguageProvider>
+      <GameProvider>
+        <AppInner />
+      </GameProvider>
+    </LanguageProvider>
+  );
+}
+
+export default App;
