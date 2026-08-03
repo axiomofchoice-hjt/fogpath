@@ -53,6 +53,10 @@ const zh = {
   "room.restFull": "休息（HP MP 已满，无需休息）",
   "room.pickup": "拾取",
   "room.notFound": "错误：房间不存在（{{id}}）",
+
+  "start.enterVillage": "进入村庄",
+  "start.testBattles": "测试战斗",
+  "start.placeholder": "规划中",
 } as const;
 
 export type TKey = keyof typeof zh;
@@ -100,6 +104,10 @@ const en: Record<TKey, string> = {
   "room.restFull": "Rest (HP/MP already full)",
   "room.pickup": "Pick up",
   "room.notFound": "Error: Room not found ({{id}})",
+
+  "start.enterVillage": "Enter Village",
+  "start.testBattles": "Test Battles",
+  "start.placeholder": "Planned",
 };
 
 export const translations: Record<Language, Record<TKey, string>> = { zh, en };

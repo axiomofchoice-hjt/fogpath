@@ -79,12 +79,18 @@ export function initialPlayer(): GameState["player"] {
 
 export function initialGameState(): GameState {
   return {
+    screen: "start",
     player: initialPlayer(),
+    battle: null,
   };
 }
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
+    case "START_GAME": {
+      if (state.screen === "game") return state;
+      return { ...state, screen: "game" };
+    }
     case "PICKUP_ITEM": {
       const item = itemDefs[action.itemId];
       if (!item) return state;

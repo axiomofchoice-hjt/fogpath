@@ -1,9 +1,10 @@
 import { useState, useCallback, useEffect } from "react";
 import type { PanelTab } from "./types";
-import { GameProvider } from "./state/gameContext";
+import { GameProvider, useGame } from "./state/gameContext";
 import { LanguageProvider, useLang } from "./i18n/LanguageContext";
 import SidePanel from "./components/layout/SidePanel";
 import RoomView from "./components/room/RoomView";
+import StartPanel from "./components/start/StartPanel";
 import CharacterPanel from "./components/panels/CharacterPanel";
 import EquipmentPanel from "./components/panels/EquipmentPanel";
 
@@ -24,6 +25,7 @@ function Header() {
 }
 
 function AppInner() {
+  const { state } = useGame();
   const [activeTab, setActiveTab] = useState<PanelTab>("map");
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -41,6 +43,8 @@ function AppInner() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
+
+  if (state.screen === "start") return <StartPanel />;
 
   return (
     <div className="h-screen flex flex-col">

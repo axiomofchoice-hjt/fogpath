@@ -1,5 +1,8 @@
 export type PanelTab = "map" | "inventory";
 
+/** 游戏屏幕：开始面板 / 主游戏（村庄与地牢） */
+export type Screen = "start" | "game";
+
 /** 双语文本：中文 + 英文 */
 export interface L {
   zh: string;
@@ -73,13 +76,35 @@ export interface Player {
 
 // --- Game State ---
 
+/** 战斗状态占位：战斗系统实现时填充（下一阶段） */
+export interface BattleState {
+  scenarioId: string;
+}
+
 export interface GameState {
+  screen: Screen;
   player: Player;
+  battle: BattleState | null;
+}
+
+// --- 测试场景 ---
+
+export interface TestScenarioDef {
+  id: string;
+  name: L;
+  description: L;
+}
+
+export interface TestScenarioGroup {
+  id: string;
+  name: L;
+  scenarios: TestScenarioDef[];
 }
 
 // --- Actions ---
 
 export type GameAction =
+  | { type: "START_GAME" }
   | { type: "PICKUP_ITEM"; itemId: string }
   | { type: "DISCARD_ITEM"; itemId: string }
   | { type: "EQUIP"; itemId: string }
