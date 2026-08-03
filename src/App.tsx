@@ -11,7 +11,7 @@ function Header() {
   const { lang, toggleLang } = useLang();
   return (
     <header className="h-10 bg-game-panel border-b border-game-border flex items-center px-4 flex-shrink-0 select-none">
-      <span className="text-game-gold font-bold tracking-wider">Text RPG</span>
+      <span className="text-game-gold font-bold tracking-wider">雾之径</span>
       <button
         onClick={toggleLang}
         className="ml-auto text-[9px] font-mono px-2 py-0.5 rounded border border-game-border text-game-dim hover:text-game-gold hover:border-game-gold/40 transition-colors"
