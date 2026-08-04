@@ -5,6 +5,7 @@ import { loc } from "../../i18n/translations";
 import { skills as skillDefs } from "../../data/skills";
 import { enemyDefs } from "../../data/enemies";
 import { items as itemDefs } from "../../data/items";
+import { GUARD_MP } from "../../state/battleEngine";
 
 type Mode = "idle" | "target";
 
@@ -284,10 +285,16 @@ function BattleView() {
                   (id) => id && (itemDefs[id]?.def ?? 0) > 0
                 );
                 const shield = shieldId ? itemDefs[shieldId] : null;
+                const noMp = battle.playerMp < GUARD_MP;
                 return (
                   <button
                     onClick={doGuard}
-                    className="w-full text-left px-3 py-2 rounded text-xs font-mono border border-game-blue/40 bg-game-blue/10 text-game-text hover:bg-game-blue/20 transition-colors"
+                    disabled={noMp}
+                    className={`w-full text-left px-3 py-2 rounded text-xs font-mono border transition-colors ${
+                      noMp
+                        ? "bg-game-card border-game-border text-game-dim cursor-not-allowed"
+                        : "border-game-blue/40 bg-game-blue/10 text-game-text hover:bg-game-blue/20"
+                    }`}
                   >
                     <span className="mr-2">{"\uD83D\uDEE1\uFE0F"}</span>
                     <span className="font-bold">{t("battle.guard")}</span>
@@ -297,7 +304,7 @@ function BattleView() {
                       </span>
                     )}
                     <span className="text-game-blue ml-3">
-                      {t("battle.mpCost", { n: 0 })}
+                      {t("battle.mpCost", { n: GUARD_MP })}
                     </span>
                     <span className="text-game-gold ml-3">
                       {t("battle.effect")}：{t("battle.guardEffect")}

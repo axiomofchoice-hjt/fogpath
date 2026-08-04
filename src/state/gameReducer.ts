@@ -58,10 +58,10 @@ function recalcStats(player: GameState["player"]): GameState["player"] {
 
 export function initialPlayer(): GameState["player"] {
   return recalcStats({
-    hp: 60,
-    maxHp: 60,
-    mp: 30,
-    maxMp: 30,
+    hp: 100,
+    maxHp: 100,
+    mp: 100,
+    maxMp: 100,
     atk: 10,
     def: 5,
     spd: 8,

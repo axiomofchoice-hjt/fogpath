@@ -6,7 +6,7 @@ export const skills: Record<string, SkillDef> = {
     name: { zh: "普通攻击", en: "Basic Attack" },
     icon: "\u2694\uFE0F",
     type: "physical",
-    mpCost: 0,
+    mpCost: 10,
     isBasic: true,
   },
 };

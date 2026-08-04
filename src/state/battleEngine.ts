@@ -14,6 +14,9 @@ import { testBattleConfigs } from "../data/battleTestConfigs";
 
 const REST_MP = 50;
 
+/** 防御动作的法力消耗 */
+export const GUARD_MP = 10;
+
 function enemyName(e: BattleEnemy, lang: "zh" | "en"): string {
   const def = enemyDefs[e.defId];
   return def ? def.name[lang] : e.defId;
@@ -106,7 +109,7 @@ export function initBattle(
  * - 攻击 vs 攻击：动量较大的一方生效，造成「自己的伤害 − 对面的动量」；动量相等双方无效
  * - 攻击 vs 防御：普通攻击被防住（无伤）
  * - 攻击 vs 休息：攻击全额命中
- * - 多怪（2.4.6）：玩家攻击整体判定（动量须大于所有怪的攻击的动量）
+ * - 多怪（2.4.7）：玩家攻击整体判定（动量须大于所有怪的攻击的动量）
  */
 export function resolveTurn(
   state: BattleState,
@@ -149,6 +152,7 @@ export function resolveTurn(
       `你使用了${skillDef?.name.zh ?? "普通攻击"}。`,
       `You use ${skillDef?.name.en ?? "Basic Attack"}.`
     );
+    next.playerMp = Math.max(0, next.playerMp - (skillDefs[action.skillId]?.mpCost ?? 0));
     playerSkillMomentum = skill.momentum;
     maxEnemyMomentum = Math.max(
       ...aliveIndices.map((i) => next.enemies[i].momentum)
@@ -196,6 +200,7 @@ export function resolveTurn(
     }
   } else if (action.kind === "guard") {
     next.shieldActive = true;
+    next.playerMp = Math.max(0, next.playerMp - GUARD_MP);
     const reduction = next.guardReduction;
     next.playerSummary = msg(
       reduction > 0
