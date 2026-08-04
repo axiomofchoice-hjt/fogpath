@@ -7,26 +7,26 @@ export const testScenarioGroups: TestScenarioGroup[] = [
     scenarios: [
       {
         id: "test_atk_vs_atk",
-        name: { zh: "攻 vs 攻（防大者生效）", en: "ATK vs ATK (higher DEF wins)" },
+        name: { zh: "攻击 vs 攻击（动量大者生效）", en: "Attack vs Attack (higher Momentum wins)" },
         description: {
-          zh: "攻击对撞：防属性较大的一方生效，防相等双方无效。",
-          en: "Attack vs attack: the side with higher DEF takes effect; equal DEF cancels both.",
+          zh: "攻击对撞：动量较大的一方生效，动量相等双方无效。",
+          en: "Attack vs attack: the side with higher Momentum takes effect; equal Momentum cancels both.",
         },
       },
       {
         id: "test_atk_vs_guard",
-        name: { zh: "攻 vs 防御", en: "ATK vs Guard" },
+        name: { zh: "攻击 vs 防御", en: "Attack vs Guard" },
         description: {
-          zh: "普通攻击被防住（无伤），但特殊效果仍命中。",
-          en: "Normal attacks are blocked, but special effects still land.",
+          zh: "防御举盾减伤 50%，效果持续到下一次攻击前。",
+          en: "Guard raises the shield: 50% damage reduction until your next attack.",
         },
       },
       {
-        id: "test_atk_vs_regen",
-        name: { zh: "攻 vs 回蓝", en: "ATK vs Regen" },
+        id: "test_atk_vs_rest",
+        name: { zh: "攻击 vs 休息", en: "Attack vs Rest" },
         description: {
-          zh: "回蓝方无防御，攻击全额命中。",
-          en: "Regen provides no defense; attacks deal full damage.",
+          zh: "休息方无防御，攻击全额命中。",
+          en: "Rest provides no defense; attacks deal full damage.",
         },
       },
     ],
@@ -99,8 +99,8 @@ export const testScenarioGroups: TestScenarioGroup[] = [
         id: "test_goblins_x3",
         name: { zh: "哥布林 ×3", en: "Goblins ×3" },
         description: {
-          zh: "整体判定：玩家的防须大于所有怪的攻击的防。",
-          en: "Group check: player DEF must exceed all enemies' ATK DEF.",
+          zh: "整体判定：玩家攻击的动量须大于所有怪的攻击动量。",
+          en: "Group check: player attack Momentum must exceed all enemies' attack Momentum.",
         },
       },
     ],

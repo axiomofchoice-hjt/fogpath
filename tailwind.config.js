@@ -15,6 +15,8 @@ export default {
         "game-blue": "#4a8fe7",
         "game-green": "#27ae60",
         "game-purple": "#8e44ad",
+        "game-orange": "#e67e22",
+        "game-deepgreen": "#1f7a3d",
       },
       fontFamily: {
         mono: [

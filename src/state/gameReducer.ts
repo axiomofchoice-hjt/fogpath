@@ -57,7 +57,7 @@ function recalcStats(player: GameState["player"]): GameState["player"] {
 }
 
 export function initialPlayer(): GameState["player"] {
-  return {
+  return recalcStats({
     hp: 60,
     maxHp: 60,
     mp: 30,
@@ -69,14 +69,11 @@ export function initialPlayer(): GameState["player"] {
     exp: 0,
     gold: 20,
     currentRoomId: "village_square",
-    inventory: [
-      { itemId: "health_potion", quantity: 2 },
-      { itemId: "cloth_vest", quantity: 1 },
-    ],
-    equipment: Array(6).fill(null),
+    inventory: [{ itemId: "health_potion", quantity: 2 }],
+    equipment: ["rusty_sword", "rusty_shield", null, null, null, null],
     learnedSkillIds: [],
-    pickedItemIds: [],
-  };
+    pickedItemIds: ["rusty_sword"],
+  });
 }
 
 export function initialGameState(): GameState {

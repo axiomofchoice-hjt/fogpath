@@ -28,6 +28,9 @@ export interface ItemDef {
   hpRestore?: number;
   mpRestore?: number;
   skillId?: string;
+  /** 武器赋予攻击的伤害/动量（玩家本身无属性，攻击属性全部来自武器） */
+  damage?: number;
+  momentum?: number;
 }
 
 export interface InventoryEntry {
@@ -84,8 +87,21 @@ export interface BattleState {
   playerMaxHp: number;
   playerMp: number;
   playerMaxMp: number;
-  playerAtk: number;
   playerDef: number;
+  /** 玩家本回合动作摘要（双语） */
+  playerSummary: L;
+  /** 伤害资源：对撞后减少，归零时攻击无效 */
+  playerDamage: number;
+  playerMaxDamage: number;
+  /** 动量资源：对撞后减少，归零时伤害变灰（攻击无法命中） */
+  playerMomentum: number;
+  playerMaxMomentum: number;
+  /** 本回合动作是否带攻击属性（防御/休息/未出手时为 false，显示 0/0） */
+  playerHasAttack: boolean;
+  /** 防御减伤比例（由装备防具决定，生锈的盾 0.5；无防具为 0） */
+  guardReduction: number;
+  /** 盾牌减伤是否生效（防御后持续到下一次攻击前） */
+  shieldActive: boolean;
   enemies: BattleEnemy[];
   log: L[];
   result: BattleResult;
@@ -103,10 +119,12 @@ export interface SkillDef {
   icon: string;
   type: SkillType;
   mpCost: number;
-  /** 基础攻击：攻/防取玩家当前 atk/def */
+  /** 基础攻击：伤害/动量取玩家当前 atk/def */
   isBasic?: boolean;
-  atk?: number;
-  def?: number;
+  /** 伤害：命中时造成的伤害能力 */
+  damage?: number;
+  /** 动量：对撞决胜能力 */
+  momentum?: number;
 }
 
 // --- 敌人 ---
@@ -117,8 +135,8 @@ export interface EnemyDef {
   icon: string;
   maxHp: number;
   maxMp: number;
-  atk: number;
-  def: number;
+  damage: number;
+  momentum: number;
   isBoss?: boolean;
   /** AI 策略（实现时定） */
   ai: string;
@@ -130,9 +148,16 @@ export interface BattleEnemy {
   maxHp: number;
   mp: number;
   maxMp: number;
-  atk: number;
-  def: number;
+  damage: number;
+  maxDamage: number;
+  momentum: number;
+  maxMomentum: number;
+  /** 本回合动作是否带攻击属性（未出手时为 false，显示 0/0） */
+  hasAttack: boolean;
   isBoss: boolean;
+  action: EnemyBattleAction;
+  /** 上一回合动作的结果摘要（双语） */
+  summary: L;
 }
 
 // --- 玩家战斗动作 ---
@@ -140,7 +165,13 @@ export interface BattleEnemy {
 export type PlayerBattleAction =
   | { kind: "attack"; skillId: string; targetIndex: number }
   | { kind: "guard" }
-  | { kind: "regen" };
+  | { kind: "rest" };
+
+/** 敌人本回合动作（AI 决策结果） */
+export type EnemyBattleAction =
+  | { kind: "attack"; skillId: string }
+  | { kind: "guard" }
+  | { kind: "rest" };
 
 export interface GameState {
   screen: Screen;

@@ -9,6 +9,8 @@ export const items: Record<string, ItemDef> = {
     description: { zh: "一把磨损但尚能一战的剑。", en: "A worn but serviceable blade." },
     rarity: 1,
     atk: 3,
+    damage: 10,
+    momentum: 5,
   },
   iron_sword: {
     id: "iron_sword",
@@ -28,12 +30,12 @@ export const items: Record<string, ItemDef> = {
     rarity: 1,
     def: 2,
   },
-  cloth_vest: {
-    id: "cloth_vest",
-    name: { zh: "布甲", en: "Cloth Vest" },
-    icon: "\uD83E\uDDE5",
+  rusty_shield: {
+    id: "rusty_shield",
+    name: { zh: "生锈的盾", en: "Rusty Shield" },
+    icon: "\uD83D\uDEE1\uFE0F",
     type: "equipment",
-    description: { zh: "一件轻便的布制上衣。", en: "A light cloth vest." },
+    description: { zh: "一面生锈但坚固的圆盾。", en: "A rusty but sturdy round shield." },
     rarity: 1,
     def: 1,
   },
