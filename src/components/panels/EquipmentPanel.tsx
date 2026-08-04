@@ -61,6 +61,8 @@ function EquipmentPanel() {
   const { t, lang } = useLang();
   const { player } = state;
   const inBattle = state.battle != null;
+  // 战斗中显示战斗内生效的装备（测试场景可覆盖），动作与所见装备一一对应
+  const equipment = state.battle ? state.battle.equipment : player.equipment;
   const [tooltip, setTooltip] = useState<{ x: number; y: number; itemId: string } | null>(
     null
   );
@@ -72,7 +74,7 @@ function EquipmentPanel() {
       </h3>
       <div className="space-y-2">
         {Array.from({ length: EQUIP_SLOT_COUNT }, (_, i) => {
-          const itemId = player.equipment[i];
+          const itemId = equipment[i];
           const item = itemId ? itemDefs[itemId] : null;
 
           return (

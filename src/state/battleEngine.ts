@@ -71,8 +71,8 @@ export function initBattle(
   player: Player
 ): BattleState {
   const config = testBattleConfigs[scenarioId];
-  // 玩家本身无属性：攻击动作全部来自玩家当前真实装备
-  const equipment = player.equipment;
+  // 玩家本身无属性：攻击动作全部来自装备（测试场景可直接覆盖装备）
+  const equipment = config?.equipment ?? player.equipment;
   const playerActions = equipment.flatMap((id) => {
     const def = id ? itemDefs[id] : undefined;
     return def?.actions ?? [];

@@ -40,6 +40,20 @@ export const testScenarioGroups: TestScenarioGroup[] = [
     ],
   },
   {
+    id: "magic",
+    name: { zh: "魔法动作", en: "Magic Actions" },
+    scenarios: [
+      {
+        id: "test_magic_trio",
+        name: { zh: "魔法三连（学徒木杖）", en: "Magic Trio (Apprentice's Staff)" },
+        description: {
+          zh: "测试内直接装备学徒木杖：战斗中出现火球术/闪电术/岩石飞弹三个魔法动作，按钮标注来源装备。",
+          en: "The scenario equips the Apprentice's Staff directly: Fireball, Lightning and Rock Bolt appear, labeled with their source.",
+        },
+      },
+    ],
+  },
+  {
     id: "multi",
     name: { zh: "多怪判定", en: "Multi-Enemy" },
     scenarios: [
