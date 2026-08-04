@@ -23,19 +23,23 @@ function ItemTooltip({ itemId }: { itemId: string }) {
           {t("stat.atk")} +{item.atk}
         </div>
       )}
-      {item.damage != null && (
-        <div className="text-[10px] font-mono mt-0.5 leading-relaxed">
-          <span className="text-game-text">{loc(skillDefs.basic_attack.name, lang)}</span>
-          <span className="text-game-dim"> {t("battle.active")}，</span>
-          <span className="text-game-orange">
-            {t("battle.damage", { n: item.damage ?? 0 })}
-          </span>
-          <span className="text-game-dim">，</span>
-          <span className="text-game-lightgreen">
-            {t("battle.momentum", { n: item.momentum ?? 0 })}
-          </span>
-        </div>
-      )}
+      {item.actions?.map((act) => {
+        const skill = skillDefs[act.skillId];
+        if (!skill) return null;
+        return (
+          <div key={act.skillId} className="text-[10px] font-mono mt-0.5 leading-relaxed">
+            <span className="text-game-text">{loc(skill.name, lang)}</span>
+            <span className="text-game-dim"> {t("battle.active")}，</span>
+            <span className="text-game-orange">
+              {t("battle.damage", { n: act.damage })}
+            </span>
+            <span className="text-game-dim">，</span>
+            <span className="text-game-lightgreen">
+              {t("battle.momentum", { n: act.momentum })}
+            </span>
+          </div>
+        );
+      })}
       {item.isShield && (
         <div className="text-[10px] font-mono mt-0.5 leading-relaxed">
           <span className="text-game-text">{t("battle.guard")}</span>

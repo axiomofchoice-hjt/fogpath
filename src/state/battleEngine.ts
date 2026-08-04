@@ -26,15 +26,14 @@ function msg(zh: string, en: string): L {
   return { zh, en };
 }
 
-/** 技能的实际伤害/动量：基础攻击取玩家当前的资源值 */
-function skillStats(
-  skillId: string,
-  playerDamage: number,
-  playerMomentum: number
+/** 技能的实际伤害/动量：由装备提供的动作决定（技能定义本身不携带数值） */
+function actionStats(
+  playerActions: BattleState["playerActions"],
+  skillId: string
 ): { damage: number; momentum: number } {
-  const def = skillDefs[skillId];
-  if (!def || def.isBasic) return { damage: playerDamage, momentum: playerMomentum };
-  return { damage: def.damage ?? playerDamage, momentum: def.momentum ?? playerMomentum };
+  return (
+    playerActions.find((a) => a.skillId === skillId) ?? { damage: 0, momentum: 0 }
+  );
 }
 
 /** 敌人 AI：根据策略选择本回合动作 */
@@ -72,10 +71,12 @@ export function initBattle(
   player: Player
 ): BattleState {
   const config = testBattleConfigs[scenarioId];
-  // 玩家本身无属性：攻击的伤害/动量全部来自装备武器
-  const weaponId = player.equipment.find((id) => id && itemDefs[id]?.damage != null);
-  const weaponDamage = weaponId ? (itemDefs[weaponId]?.damage ?? 0) : 0;
-  const weaponMomentum = weaponId ? (itemDefs[weaponId]?.momentum ?? 0) : 0;
+  // 玩家本身无属性：攻击动作全部来自玩家当前真实装备
+  const equipment = player.equipment;
+  const playerActions = equipment.flatMap((id) => {
+    const def = id ? itemDefs[id] : undefined;
+    return def?.actions ?? [];
+  });
   const enemies: BattleEnemy[] = (config?.enemies ?? []).map((id) => {
     const def = enemyDefs[id] as EnemyDef;
     return {
@@ -103,11 +104,13 @@ export function initBattle(
     playerMaxMp: player.maxMp,
     playerDef: player.def,
     playerDamage: 0,
-    playerMaxDamage: weaponDamage,
+    playerMaxDamage: 0,
     playerMomentum: 0,
-    playerMaxMomentum: weaponMomentum,
+    playerMaxMomentum: 0,
     playerHasAttack: false,
-    guardReduction: player.equipment.some((id) => id && itemDefs[id]?.isShield)
+    playerActions,
+    equipment,
+    guardReduction: equipment.some((id) => id && itemDefs[id]?.isShield)
       ? 0.5
       : 0,
     shieldActive: false,
@@ -135,14 +138,23 @@ export function resolveTurn(
   action: PlayerBattleAction
 ): BattleState {
   if (state.result !== "ongoing") return state;
+  // 动作必须由装备提供：未装备的技能不可使用（返回原状态，不消耗回合与 MP）
+  if (action.kind === "attack" && !state.playerActions.some((a) => a.skillId === action.skillId)) {
+    return state;
+  }
+
+  // 本回合攻击动作的属性：由装备提供的动作决定；防御/休息无攻击属性
+  const stats = action.kind === "attack" ? actionStats(state.playerActions, action.skillId) : { damage: 0, momentum: 0 };
 
   const next: BattleState = {
     ...state,
     turn: state.turn + 1,
     playerHp: state.playerHp,
     playerMp: state.playerMp,
-    playerDamage: state.playerMaxDamage,
-    playerMomentum: state.playerMaxMomentum,
+    playerDamage: stats.damage,
+    playerMaxDamage: stats.damage,
+    playerMomentum: stats.momentum,
+    playerMaxMomentum: stats.momentum,
     shieldActive: state.shieldActive,
     enemies: state.enemies.map((e) => ({
       ...e,
@@ -165,20 +177,19 @@ export function resolveTurn(
   if (action.kind === "attack") {
     // 出手即破盾：减伤效果到下一次攻击前为止
     next.shieldActive = false;
-    const skill = skillStats(action.skillId, next.playerDamage, next.playerMomentum);
     const skillDef = skillDefs[action.skillId];
     next.playerSummary = msg(
       `你使用了${skillDef?.name.zh ?? "普通攻击"}。`,
       `You use ${skillDef?.name.en ?? "Basic Attack"}.`
     );
     next.playerMp = Math.max(0, next.playerMp - (skillDefs[action.skillId]?.mpCost ?? 0));
-    playerSkillMomentum = skill.momentum;
+    playerSkillMomentum = stats.momentum;
     maxEnemyMomentum = Math.max(
       ...aliveIndices.map((i) => next.enemies[i].momentum)
     );
-    clashWon = skill.momentum > 0 && skill.momentum > maxEnemyMomentum;
+    clashWon = stats.momentum > 0 && stats.momentum > maxEnemyMomentum;
     if (clashWon) {
-      const dmg = Math.max(0, skill.damage - maxEnemyMomentum);
+      const dmg = Math.max(0, stats.damage - maxEnemyMomentum);
       const target = next.enemies[action.targetIndex];
       if (target && target.hp > 0) {
         target.hp = Math.max(0, target.hp - dmg);

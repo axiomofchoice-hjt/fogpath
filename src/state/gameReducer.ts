@@ -69,7 +69,10 @@ export function initialPlayer(): GameState["player"] {
     exp: 0,
     gold: 20,
     currentRoomId: "village_square",
-    inventory: [{ itemId: "health_potion", quantity: 2 }],
+    inventory: [
+      { itemId: "health_potion", quantity: 2 },
+      { itemId: "apprentice_staff", quantity: 1 },
+    ],
     equipment: ["rusty_sword", "rusty_shield", null, null, null, null],
     pickedItemIds: ["rusty_sword"],
   });
@@ -88,6 +91,11 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case "START_GAME": {
       if (state.screen === "game") return state;
       return { ...state, screen: "game" };
+    }
+
+    case "BACK_TO_START": {
+      if (state.screen === "start" || state.battle) return state;
+      return { ...state, screen: "start" };
     }
 
     case "START_TEST_BATTLE": {

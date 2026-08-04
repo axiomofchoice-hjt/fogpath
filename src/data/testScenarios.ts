@@ -15,18 +15,40 @@ export const testScenarioGroups: TestScenarioGroup[] = [
       },
       {
         id: "test_atk_vs_guard",
-        name: { zh: "攻击 vs 防御", en: "Attack vs Guard" },
+        name: { zh: "攻击 vs 防御（举盾减伤）", en: "Attack vs Guard (50% reduction)" },
         description: {
-          zh: "防御举盾减伤 50%，效果持续到下一次攻击前。",
-          en: "Guard raises the shield: 50% damage reduction until your next attack.",
+          zh: "装备盾牌时防御：敌方攻击减伤 50%，效果持续到下一次攻击前。",
+          en: "Guard with a shield: enemy attacks deal 50% less damage until your next attack.",
         },
       },
       {
         id: "test_atk_vs_rest",
-        name: { zh: "攻击 vs 休息", en: "Attack vs Rest" },
+        name: { zh: "攻击 vs 休息（全额命中）", en: "Attack vs Rest (full damage)" },
         description: {
-          zh: "休息方无防御，攻击全额命中。",
-          en: "Rest provides no defense; attacks deal full damage.",
+          zh: "休息方无防御，攻击全额命中，同时恢复 MP。",
+          en: "Rest provides no defense; attacks deal full damage while you recover MP.",
+        },
+      },
+      {
+        id: "test_clash_loss",
+        name: { zh: "动量压制（攻击被格挡）", en: "Momentum Suppression (deflected)" },
+        description: {
+          zh: "敌方动量高于玩家时攻击被格挡，敌方反击命中。",
+          en: "When the enemy's Momentum exceeds yours, your attack is deflected and they counter.",
+        },
+      },
+    ],
+  },
+  {
+    id: "multi",
+    name: { zh: "多怪判定", en: "Multi-Enemy" },
+    scenarios: [
+      {
+        id: "test_goblins_x3",
+        name: { zh: "哥布林 ×3", en: "Goblins ×3" },
+        description: {
+          zh: "整体判定：玩家攻击的动量须大于所有怪的攻击动量；防御/休息时全体怪同时攻击。",
+          en: "Group check: player attack Momentum must exceed all enemies' Momentum; all enemies strike when you guard or rest.",
         },
       },
     ],
@@ -87,20 +109,6 @@ export const testScenarioGroups: TestScenarioGroup[] = [
         description: {
           zh: "无视防御直接造成伤害，亦无视反甲。",
           en: "Ignores defense and thorns entirely.",
-        },
-      },
-    ],
-  },
-  {
-    id: "multi",
-    name: { zh: "多怪判定", en: "Multi-Enemy" },
-    scenarios: [
-      {
-        id: "test_goblins_x3",
-        name: { zh: "哥布林 ×3", en: "Goblins ×3" },
-        description: {
-          zh: "整体判定：玩家攻击的动量须大于所有怪的攻击动量。",
-          en: "Group check: player attack Momentum must exceed all enemies' attack Momentum.",
         },
       },
     ],

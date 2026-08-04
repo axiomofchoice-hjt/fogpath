@@ -8,9 +8,23 @@ export const items: Record<string, ItemDef> = {
     type: "equipment",
     description: { zh: "一把磨损但尚能一战的剑。", en: "A worn but serviceable blade." },
     rarity: 1,
-    atk: 3,
-    damage: 10,
-    momentum: 5,
+    actions: [{ skillId: "basic_attack", damage: 10, momentum: 5 }],
+  },
+  apprentice_staff: {
+    id: "apprentice_staff",
+    name: { zh: "学徒木杖", en: "Apprentice's Staff" },
+    icon: "\uD83E\uDE84",
+    type: "equipment",
+    description: {
+      zh: "学徒练习用的木杖，蕴含微弱的魔力。",
+      en: "A staff used by apprentices, faintly imbued with magic.",
+    },
+    rarity: 2,
+    actions: [
+      { skillId: "fireball", damage: 11, momentum: 5 },
+      { skillId: "lightning", damage: 9, momentum: 6 },
+      { skillId: "rock_bolt", damage: 8, momentum: 7 },
+    ],
   },
   iron_sword: {
     id: "iron_sword",

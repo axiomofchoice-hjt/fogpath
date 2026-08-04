@@ -190,11 +190,7 @@ function BattleView() {
   const aliveEnemies = battle.enemies
     .map((e, i) => ({ e, i }))
     .filter(({ e }) => e.hp > 0);
-  const weaponId = state.player.equipment.find(
-    (id) => id && itemDefs[id]?.damage != null
-  );
-  const weapon = weaponId ? itemDefs[weaponId] : null;
-  const shieldId = state.player.equipment.find((id) => id && itemDefs[id]?.isShield);
+  const shieldId = battle.equipment.find((id) => id && itemDefs[id]?.isShield);
   const shield = shieldId ? itemDefs[shieldId] : null;
 
   const doAttack = (skillId: string) => {
@@ -286,34 +282,32 @@ function BattleView() {
         <div className="mb-4">
           {mode === "idle" && (
             <div className="space-y-1.5">
-              {weapon &&
-                Object.values(skillDefs).map((skill) => {
-                  return (
-                    <ActionRow
-                      key={skill.id}
-                      icon={skill.icon}
-                      title={loc(skill.name, lang)}
-                      sub={
-                        skill.isBasic ? `【${loc(weapon.name, lang)}】` : undefined
-                      }
+              {battle.playerActions.map((act) => {
+                const skill = skillDefs[act.skillId];
+                if (!skill) return null;
+                const disabled = battle.playerMp < skill.mpCost;
+                const sourceId = battle.equipment.find(
+                  (id) =>
+                    id && itemDefs[id]?.actions?.some((a) => a.skillId === act.skillId)
+                );
+                const source = sourceId ? itemDefs[sourceId] : null;
+                return (
+                  <ActionRow
+                    key={act.skillId}
+                    icon={skill.icon}
+                    title={loc(skill.name, lang)}
+                    sub={source ? `【${loc(source.name, lang)}】` : undefined}
                     meta={[
                       { text: t("battle.mpCost", { n: skill.mpCost }), className: "text-game-blue" },
+                      { text: t("battle.damage", { n: act.damage }), className: "text-game-orange" },
                       {
-                        text: t("battle.damage", {
-                          n: skill.isBasic ? battle.playerMaxDamage : (skill.damage ?? 0),
-                        }),
-                        className: "text-game-orange",
-                      },
-                      {
-                        text: t("battle.momentum", {
-                          n: skill.isBasic ? battle.playerMaxMomentum : (skill.momentum ?? 0),
-                        }),
+                        text: t("battle.momentum", { n: act.momentum }),
                         className: "text-game-lightgreen",
                       },
                     ]}
                     className="border-game-red/40 bg-game-red/10 text-game-text hover:bg-game-red/20"
-                    disabled={battle.playerMp < skill.mpCost}
-                    onClick={() => doAttack(skill.id)}
+                    disabled={disabled}
+                    onClick={() => doAttack(act.skillId)}
                   />
                 );
               })}

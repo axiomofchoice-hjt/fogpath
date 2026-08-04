@@ -15,6 +15,13 @@ export type ItemType = "equipment" | "consumable";
 
 export const EQUIP_SLOT_COUNT = 6;
 
+/** 装备提供的攻击动作：引用技能，自带伤害/动量（玩家本身无属性） */
+export interface ItemAction {
+  skillId: string;
+  damage: number;
+  momentum: number;
+}
+
 export interface ItemDef {
   id: string;
   name: L;
@@ -29,9 +36,8 @@ export interface ItemDef {
   mpRestore?: number;
   /** 盾牌：赋予防御动作（举盾减伤） */
   isShield?: boolean;
-  /** 武器赋予攻击的伤害/动量（玩家本身无属性，攻击属性全部来自武器） */
-  damage?: number;
-  momentum?: number;
+  /** 武器/魔法书/法杖提供的攻击动作（一件可多个） */
+  actions?: ItemAction[];
 }
 
 export interface InventoryEntry {
@@ -91,13 +97,20 @@ export interface BattleState {
   /** 玩家本回合动作摘要（双语） */
   playerSummary: L;
   /** 伤害资源：对撞后减少，归零时攻击无效 */
+  /** 伤害资源：对撞后减少，归零时攻击无效 */
   playerDamage: number;
+  /** 本回合攻击动作的伤害满值（由所选动作决定；防御/休息回合为 0） */
   playerMaxDamage: number;
   /** 动量资源：对撞后减少，归零时伤害变灰（攻击无法命中） */
   playerMomentum: number;
+  /** 本回合攻击动作的动量满值（由所选动作决定；防御/休息回合为 0） */
   playerMaxMomentum: number;
   /** 本回合动作是否带攻击属性（防御/休息/未出手时为 false，显示 0/0） */
   playerHasAttack: boolean;
+  /** 装备提供的攻击动作快照（技能 + 伤害/动量） */
+  playerActions: ItemAction[];
+  /** 进战斗时的装备快照（供 UI 显示来源；测试场景可覆盖） */
+  equipment: (string | null)[];
   /** 防御减伤比例（由装备防具决定，生锈的盾 0.5；无防具为 0） */
   guardReduction: number;
   /** 盾牌减伤是否生效（防御后持续到下一次攻击前） */
@@ -119,12 +132,6 @@ export interface SkillDef {
   icon: string;
   type: SkillType;
   mpCost: number;
-  /** 基础攻击：伤害/动量取玩家当前 atk/def */
-  isBasic?: boolean;
-  /** 伤害：命中时造成的伤害能力 */
-  damage?: number;
-  /** 动量：对撞决胜能力 */
-  momentum?: number;
 }
 
 // --- 敌人 ---
@@ -197,6 +204,7 @@ export interface TestScenarioGroup {
 
 export type GameAction =
   | { type: "START_GAME" }
+  | { type: "BACK_TO_START" }
   | { type: "START_TEST_BATTLE"; scenarioId: string }
   | { type: "BATTLE_ACT"; action: PlayerBattleAction }
   | { type: "EXIT_BATTLE" }
