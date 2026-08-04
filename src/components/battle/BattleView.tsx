@@ -191,12 +191,10 @@ function BattleView() {
     .map((e, i) => ({ e, i }))
     .filter(({ e }) => e.hp > 0);
   const weaponId = state.player.equipment.find(
-    (id) => id && (itemDefs[id]?.atk ?? 0) > 0
+    (id) => id && itemDefs[id]?.damage != null
   );
   const weapon = weaponId ? itemDefs[weaponId] : null;
-  const shieldId = state.player.equipment.find(
-    (id) => id && (itemDefs[id]?.def ?? 0) > 0
-  );
+  const shieldId = state.player.equipment.find((id) => id && itemDefs[id]?.isShield);
   const shield = shieldId ? itemDefs[shieldId] : null;
 
   const doAttack = (skillId: string) => {
@@ -288,17 +286,16 @@ function BattleView() {
         <div className="mb-4">
           {mode === "idle" && (
             <div className="space-y-1.5">
-              {Object.values(skillDefs).map((skill) => {
-                return (
-                  <ActionRow
-                    key={skill.id}
-                    icon={skill.icon}
-                    title={loc(skill.name, lang)}
-                    sub={
-                      skill.isBasic && weapon
-                        ? `【${loc(weapon.name, lang)}】`
-                        : undefined
-                    }
+              {weapon &&
+                Object.values(skillDefs).map((skill) => {
+                  return (
+                    <ActionRow
+                      key={skill.id}
+                      icon={skill.icon}
+                      title={loc(skill.name, lang)}
+                      sub={
+                        skill.isBasic ? `【${loc(weapon.name, lang)}】` : undefined
+                      }
                     meta={[
                       { text: t("battle.mpCost", { n: skill.mpCost }), className: "text-game-blue" },
                       {
@@ -320,21 +317,23 @@ function BattleView() {
                   />
                 );
               })}
-              <ActionRow
-                icon={"\uD83D\uDEE1\uFE0F"}
-                title={t("battle.guard")}
-                sub={shield ? `【${loc(shield.name, lang)}】` : undefined}
-                meta={[
-                  { text: t("battle.mpCost", { n: GUARD_MP }), className: "text-game-blue" },
-                  {
-                    text: `${t("battle.effect")}：${t("battle.guardEffect")}`,
-                    className: "text-game-gold",
-                  },
-                ]}
-                className="border-game-blue/40 bg-game-blue/10 text-game-text hover:bg-game-blue/20"
-                disabled={battle.playerMp < GUARD_MP}
-                onClick={doGuard}
-              />
+              {shield && (
+                <ActionRow
+                  icon={"\uD83D\uDEE1\uFE0F"}
+                  title={t("battle.guard")}
+                  sub={`【${loc(shield.name, lang)}】`}
+                  meta={[
+                    { text: t("battle.mpCost", { n: GUARD_MP }), className: "text-game-blue" },
+                    {
+                      text: `${t("battle.effect")}：${t("battle.guardEffect")}`,
+                      className: "text-game-gold",
+                    },
+                  ]}
+                  className="border-game-blue/40 bg-game-blue/10 text-game-text hover:bg-game-blue/20"
+                  disabled={battle.playerMp < GUARD_MP}
+                  onClick={doGuard}
+                />
+              )}
               <ActionRow
                 icon={"\uD83D\uDECC"}
                 title={t("battle.rest")}

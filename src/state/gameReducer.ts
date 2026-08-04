@@ -71,7 +71,6 @@ export function initialPlayer(): GameState["player"] {
     currentRoomId: "village_square",
     inventory: [{ itemId: "health_potion", quantity: 2 }],
     equipment: ["rusty_sword", "rusty_shield", null, null, null, null],
-    learnedSkillIds: [],
     pickedItemIds: ["rusty_sword"],
   });
 }
@@ -132,6 +131,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case "EQUIP": {
+      if (state.battle) return state;
       const item = itemDefs[action.itemId];
       if (!item || item.type !== "equipment") return state;
       if (state.player.equipment.includes(action.itemId)) return state;
@@ -171,20 +171,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         return { ...state, player: newPlayer };
       }
       return state;
-    }
-
-    case "LEARN_SKILL": {
-      const item = itemDefs[action.itemId];
-      if (!item || item.type !== "skill" || !item.skillId) return state;
-      if (state.player.learnedSkillIds.includes(item.skillId)) return state;
-      return {
-        ...state,
-        player: {
-          ...state.player,
-          inventory: removeFromInventory(state.player.inventory, action.itemId, 1),
-          learnedSkillIds: [...state.player.learnedSkillIds, item.skillId],
-        },
-      };
     }
 
     case "REST": {

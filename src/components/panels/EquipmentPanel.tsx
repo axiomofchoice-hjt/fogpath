@@ -19,6 +19,11 @@ function ItemTooltip({ itemId }: { itemId: string }) {
         {loc(item.description, lang)}
       </div>
       {item.atk != null && (
+        <div className="text-game-orange text-[10px] font-mono mt-0.5">
+          {t("stat.atk")} +{item.atk}
+        </div>
+      )}
+      {item.damage != null && (
         <div className="text-[10px] font-mono mt-0.5 leading-relaxed">
           <span className="text-game-text">{loc(skillDefs.basic_attack.name, lang)}</span>
           <span className="text-game-dim"> {t("battle.active")}，</span>
@@ -31,7 +36,7 @@ function ItemTooltip({ itemId }: { itemId: string }) {
           </span>
         </div>
       )}
-      {item.def != null && (
+      {item.isShield && (
         <div className="text-[10px] font-mono mt-0.5 leading-relaxed">
           <span className="text-game-text">{t("battle.guard")}</span>
           <span className="text-game-dim"> {t("battle.active")}，</span>

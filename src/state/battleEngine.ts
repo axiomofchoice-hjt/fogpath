@@ -107,9 +107,7 @@ export function initBattle(
     playerMomentum: 0,
     playerMaxMomentum: weaponMomentum,
     playerHasAttack: false,
-    guardReduction: player.equipment.some(
-      (id) => id && (itemDefs[id]?.def ?? 0) > 0
-    )
+    guardReduction: player.equipment.some((id) => id && itemDefs[id]?.isShield)
       ? 0.5
       : 0,
     shieldActive: false,

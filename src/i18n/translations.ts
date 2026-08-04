@@ -28,7 +28,6 @@ const zh = {
 
   "itemtype.equipment": "装备",
   "itemtype.consumable": "消耗品",
-  "itemtype.skill": "技能卷轴",
 
   "inventory.title": "背包",
   "inventory.sort.type": "类型",
@@ -37,7 +36,6 @@ const zh = {
   "inventory.types": "共 {{count}} 种",
   "inventory.equip": "装备",
   "inventory.use": "使用",
-  "inventory.learn": "学习",
   "inventory.discard": "丢弃",
 
   "equipment.title": "装备",
@@ -99,7 +97,6 @@ const en: Record<TKey, string> = {
 
   "itemtype.equipment": "Equipment",
   "itemtype.consumable": "Consumable",
-  "itemtype.skill": "Skill",
 
   "inventory.title": "Inventory",
   "inventory.sort.type": "Type",
@@ -108,7 +105,6 @@ const en: Record<TKey, string> = {
   "inventory.types": "{{count}} types",
   "inventory.equip": "Equip",
   "inventory.use": "Use",
-  "inventory.learn": "Learn",
   "inventory.discard": "Discard",
 
   "equipment.title": "Equipment",

@@ -96,15 +96,6 @@ function InventoryPanel() {
                 U
               </button>
             )}
-            {item.type === "skill" && (
-              <button
-                onClick={() => dispatch({ type: "LEARN_SKILL", itemId: item.id })}
-                className="text-game-purple text-[9px] opacity-0 group-hover:opacity-100 transition-opacity ml-1"
-                title={t("inventory.learn")}
-              >
-                L
-              </button>
-            )}
             <button
               onClick={() => dispatch({ type: "DISCARD_ITEM", itemId: item.id })}
               className="text-game-red text-[9px] opacity-0 group-hover:opacity-100 transition-opacity ml-1"

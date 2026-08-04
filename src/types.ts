@@ -11,7 +11,7 @@ export interface L {
 
 // --- Items ---
 
-export type ItemType = "equipment" | "consumable" | "skill";
+export type ItemType = "equipment" | "consumable";
 
 export const EQUIP_SLOT_COUNT = 6;
 
@@ -27,7 +27,8 @@ export interface ItemDef {
   spd?: number;
   hpRestore?: number;
   mpRestore?: number;
-  skillId?: string;
+  /** 盾牌：赋予防御动作（举盾减伤） */
+  isShield?: boolean;
   /** 武器赋予攻击的伤害/动量（玩家本身无属性，攻击属性全部来自武器） */
   damage?: number;
   momentum?: number;
@@ -73,7 +74,6 @@ export interface Player {
   inventory: InventoryEntry[];
   /** 6 个通用装备格，值为物品 ID 或 null */
   equipment: (string | null)[];
-  learnedSkillIds: string[];
   pickedItemIds: string[];
 }
 
@@ -205,5 +205,4 @@ export type GameAction =
   | { type: "EQUIP"; itemId: string }
   | { type: "UNEQUIP"; slotIndex: number }
   | { type: "USE_ITEM"; itemId: string }
-  | { type: "LEARN_SKILL"; itemId: string }
   | { type: "REST" };

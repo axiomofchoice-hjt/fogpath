@@ -38,6 +38,7 @@ export const items: Record<string, ItemDef> = {
     description: { zh: "一面生锈但坚固的圆盾。", en: "A rusty but sturdy round shield." },
     rarity: 1,
     def: 1,
+    isShield: true,
   },
   leather_gloves: {
     id: "leather_gloves",
@@ -95,24 +96,5 @@ export const items: Record<string, ItemDef> = {
     description: { zh: "恢复 15 点 HP。", en: "Restores 15 HP." },
     rarity: 1,
     hpRestore: 15,
-  },
-
-  fireball_scroll: {
-    id: "fireball_scroll",
-    name: { zh: "火球术卷轴", en: "Fireball Scroll" },
-    icon: "\uD83D\uDCDC",
-    type: "skill",
-    description: { zh: "习得火球术。", en: "Learn Fireball." },
-    rarity: 2,
-    skillId: "fireball",
-  },
-  heal_scroll: {
-    id: "heal_scroll",
-    name: { zh: "治疗术卷轴", en: "Heal Scroll" },
-    icon: "\uD83D\uDCDC",
-    type: "skill",
-    description: { zh: "习得治疗术。", en: "Learn Heal." },
-    rarity: 2,
-    skillId: "heal",
   },
 };
