@@ -85,28 +85,33 @@ export interface Player {
 
 // --- Game State ---
 
+/** 战斗单位的属性槽（玩家与敌人同形；伤害/动量每回合重置） */
+export interface CombatStats {
+  hp: number;
+  maxHp: number;
+  mp: number;
+  maxMp: number;
+  /** 伤害资源：对撞后减少，归零时攻击无效 */
+  damage: number;
+  /** 本回合攻击动作的伤害满值（由所选动作决定；防御/休息回合为 0） */
+  maxDamage: number;
+  /** 动量资源：对撞后减少，归零时伤害变灰（攻击无法命中） */
+  momentum: number;
+  /** 本回合攻击动作的动量满值（由所选动作决定；防御/休息回合为 0） */
+  maxMomentum: number;
+  /** 本回合动作是否带攻击属性（防御/休息/未出手时为 false，显示 0/0） */
+  hasAttack: boolean;
+}
+
 /** 战斗状态占位：战斗系统实现时填充（下一阶段） */
 export interface BattleState {
   scenarioId: string;
   turn: number;
-  playerHp: number;
-  playerMaxHp: number;
-  playerMp: number;
-  playerMaxMp: number;
+  /** 玩家属性槽（HP/MP/伤害/动量） */
+  playerStats: CombatStats;
   playerDef: number;
   /** 玩家本回合动作摘要（双语） */
   playerSummary: L;
-  /** 伤害资源：对撞后减少，归零时攻击无效 */
-  /** 伤害资源：对撞后减少，归零时攻击无效 */
-  playerDamage: number;
-  /** 本回合攻击动作的伤害满值（由所选动作决定；防御/休息回合为 0） */
-  playerMaxDamage: number;
-  /** 动量资源：对撞后减少，归零时伤害变灰（攻击无法命中） */
-  playerMomentum: number;
-  /** 本回合攻击动作的动量满值（由所选动作决定；防御/休息回合为 0） */
-  playerMaxMomentum: number;
-  /** 本回合动作是否带攻击属性（防御/休息/未出手时为 false，显示 0/0） */
-  playerHasAttack: boolean;
   /** 装备提供的攻击动作快照（技能 + 伤害/动量） */
   playerActions: ItemAction[];
   /** 进战斗时的装备快照（供 UI 显示来源；测试场景可覆盖） */

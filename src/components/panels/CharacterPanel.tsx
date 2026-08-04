@@ -7,10 +7,10 @@ function CharacterPanel() {
   const { player } = state;
   const battle = state.battle;
 
-  const hp = battle ? battle.playerHp : player.hp;
-  const maxHp = battle ? battle.playerMaxHp : player.maxHp;
-  const mp = battle ? battle.playerMp : player.mp;
-  const maxMp = battle ? battle.playerMaxMp : player.maxMp;
+  const hp = battle ? battle.playerStats.hp : player.hp;
+  const maxHp = battle ? battle.playerStats.maxHp : player.maxHp;
+  const mp = battle ? battle.playerStats.mp : player.mp;
+  const maxMp = battle ? battle.playerStats.maxMp : player.maxMp;
 
   const expNeeded = player.lv * 100;
   const hpPct = Math.max(0, (hp / maxHp) * 100);

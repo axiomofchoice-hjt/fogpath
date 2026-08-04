@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { L, StatusId } from "../../types";
+import type { CombatStats, L, StatusId } from "../../types";
 import { useGame } from "../../state/gameContext";
 import { useLang } from "../../i18n/LanguageContext";
 import { loc, type TKey } from "../../i18n/translations";
@@ -52,15 +52,7 @@ type CombatantCardProps = {
   badge?: React.ReactNode;
   borderClass: string;
   dimmed?: boolean;
-  hp: number;
-  maxHp: number;
-  mp: number;
-  maxMp: number;
-  damage: number;
-  maxDamage: number;
-  momentum: number;
-  maxMomentum: number;
-  hasAttack: boolean;
+  stats: CombatStats;
   /** 当前状态（可多个，横排显示在摘要上方） */
   statuses: StatusId[];
   summary: string;
@@ -72,15 +64,7 @@ function CombatantCard({
   badge,
   borderClass,
   dimmed = false,
-  hp,
-  maxHp,
-  mp,
-  maxMp,
-  damage,
-  maxDamage,
-  momentum,
-  maxMomentum,
-  hasAttack,
+  stats: { hp, maxHp, mp, maxMp, damage, maxDamage, momentum, maxMomentum, hasAttack },
   statuses,
   summary,
 }: CombatantCardProps) {
@@ -236,6 +220,58 @@ function BattleView() {
     setMode("idle");
   };
 
+  // 动作按钮：装备提供的技能 + 防御（有盾时）+ 休息，统一渲染
+  const actionRows: ActionRowProps[] = [
+    ...battle.playerActions.flatMap((act) => {
+      const skill = skillDefs[act.skillId];
+      if (!skill) return [];
+      const sourceId = battle.equipment.find(
+        (id) => id && itemDefs[id]?.actions?.some((a) => a.skillId === act.skillId)
+      );
+      const source = sourceId ? itemDefs[sourceId] : null;
+      return [
+        {
+          icon: skill.icon,
+          title: loc(skill.name, lang),
+          sub: source ? `【${loc(source.name, lang)}】` : undefined,
+          meta: [
+            { text: t("battle.mpCost", { n: skill.mpCost }), className: "text-game-blue" },
+            { text: t("battle.damage", { n: act.damage }), className: "text-game-orange" },
+            { text: t("battle.momentum", { n: act.momentum }), className: "text-game-lightgreen" },
+          ],
+          className: "border-game-red/40 bg-game-red/10 text-game-text hover:bg-game-red/20",
+          disabled: battle.playerStats.mp < skill.mpCost,
+          onClick: () => doAttack(act.skillId),
+        },
+      ];
+    }),
+    ...(shield
+      ? [
+          {
+            icon: "\uD83D\uDEE1\uFE0F",
+            title: t("battle.guard"),
+            sub: `【${loc(shield.name, lang)}】`,
+            meta: [
+              { text: t("battle.mpCost", { n: GUARD_MP }), className: "text-game-blue" },
+              { text: `${t("battle.effect")}：${t("battle.guardEffect")}`, className: "text-game-gold" },
+            ],
+            className: "border-game-blue/40 bg-game-blue/10 text-game-text hover:bg-game-blue/20",
+            disabled: battle.playerStats.mp < GUARD_MP,
+            onClick: doGuard,
+          },
+        ]
+      : []),
+    {
+      icon: "\uD83D\uDECC",
+      title: t("battle.rest"),
+      meta: [
+        { text: `${t("battle.effect")}：${t("battle.restEffect", { n: 50 })}`, className: "text-game-gold" },
+      ],
+      className: "border-game-green/40 bg-game-green/10 text-game-text hover:bg-game-green/20",
+      onClick: doRest,
+    },
+  ];
+
   const logClass = (entry: L) =>
     entry.zh.startsWith("—")
       ? "text-game-dim my-1"
@@ -255,15 +291,7 @@ function BattleView() {
           icon={"\uD83E\uDD38"}
           name={t("stat.adventurer")}
           borderClass="border-game-green/40"
-          hp={battle.playerHp}
-          maxHp={battle.playerMaxHp}
-          mp={battle.playerMp}
-          maxMp={battle.playerMaxMp}
-          damage={battle.playerDamage}
-          maxDamage={battle.playerMaxDamage}
-          momentum={battle.playerMomentum}
-          maxMomentum={battle.playerMaxMomentum}
-          hasAttack={battle.playerHasAttack}
+          stats={battle.playerStats}
           statuses={battle.shieldActive ? ["guard"] : []}
           summary={loc(battle.playerSummary, lang)}
         />
@@ -284,15 +312,7 @@ function BattleView() {
               }
               borderClass={alive ? "border-game-red/40" : "border-game-border"}
               dimmed={!alive}
-              hp={enemy.hp}
-              maxHp={enemy.maxHp}
-              mp={enemy.mp}
-              maxMp={enemy.maxMp}
-              damage={enemy.damage}
-              maxDamage={enemy.maxDamage}
-              momentum={enemy.momentum}
-              maxMomentum={enemy.maxMomentum}
-              hasAttack={enemy.hasAttack}
+              stats={enemy}
               statuses={[]}
               summary={loc(enemy.summary, lang)}
             />
@@ -304,64 +324,9 @@ function BattleView() {
         <div className="mb-4">
           {mode === "idle" && (
             <div className="space-y-1.5">
-              {battle.playerActions.map((act) => {
-                const skill = skillDefs[act.skillId];
-                if (!skill) return null;
-                const disabled = battle.playerMp < skill.mpCost;
-                const sourceId = battle.equipment.find(
-                  (id) =>
-                    id && itemDefs[id]?.actions?.some((a) => a.skillId === act.skillId)
-                );
-                const source = sourceId ? itemDefs[sourceId] : null;
-                return (
-                  <ActionRow
-                    key={act.skillId}
-                    icon={skill.icon}
-                    title={loc(skill.name, lang)}
-                    sub={source ? `【${loc(source.name, lang)}】` : undefined}
-                    meta={[
-                      { text: t("battle.mpCost", { n: skill.mpCost }), className: "text-game-blue" },
-                      { text: t("battle.damage", { n: act.damage }), className: "text-game-orange" },
-                      {
-                        text: t("battle.momentum", { n: act.momentum }),
-                        className: "text-game-lightgreen",
-                      },
-                    ]}
-                    className="border-game-red/40 bg-game-red/10 text-game-text hover:bg-game-red/20"
-                    disabled={disabled}
-                    onClick={() => doAttack(act.skillId)}
-                  />
-                );
-              })}
-              {shield && (
-                <ActionRow
-                  icon={"\uD83D\uDEE1\uFE0F"}
-                  title={t("battle.guard")}
-                  sub={`【${loc(shield.name, lang)}】`}
-                  meta={[
-                    { text: t("battle.mpCost", { n: GUARD_MP }), className: "text-game-blue" },
-                    {
-                      text: `${t("battle.effect")}：${t("battle.guardEffect")}`,
-                      className: "text-game-gold",
-                    },
-                  ]}
-                  className="border-game-blue/40 bg-game-blue/10 text-game-text hover:bg-game-blue/20"
-                  disabled={battle.playerMp < GUARD_MP}
-                  onClick={doGuard}
-                />
-              )}
-              <ActionRow
-                icon={"\uD83D\uDECC"}
-                title={t("battle.rest")}
-                meta={[
-                  {
-                    text: `${t("battle.effect")}：${t("battle.restEffect", { n: 50 })}`,
-                    className: "text-game-gold",
-                  },
-                ]}
-                className="border-game-green/40 bg-game-green/10 text-game-text hover:bg-game-green/20"
-                onClick={doRest}
-              />
+              {actionRows.map((row, i) => (
+                <ActionRow key={i} {...row} />
+              ))}
             </div>
           )}
 

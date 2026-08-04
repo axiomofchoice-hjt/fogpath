@@ -36,13 +36,9 @@ function actionStats(
   );
 }
 
-/** 敌人 AI：根据策略选择本回合动作 */
-function enemyAi(def: EnemyDef): EnemyBattleAction {
-  switch (def.ai) {
-    case "attack":
-    default:
-      return { kind: "attack", skillId: "basic_attack" };
-  }
+/** 敌人 AI：当前仅攻击策略，动作由敌人定义展开（预留扩展） */
+function enemyAi(): EnemyBattleAction {
+  return { kind: "attack", skillId: "basic_attack" };
 }
 
 /** 全体存活敌人攻击玩家：按减伤比例计算伤害并写入日志、更新摘要 */
@@ -55,7 +51,7 @@ function enemiesHitPlayer(
     const e = next.enemies[i];
     const dmg =
       reduction > 0 ? Math.max(0, Math.floor(e.damage * (1 - reduction))) : e.damage;
-    next.playerHp = Math.max(0, next.playerHp - dmg);
+    next.playerStats.hp = Math.max(0, next.playerStats.hp - dmg);
     next.log.push(
       msg(
         `${enemyName(e, "zh")}攻击了你，造成 ${dmg} 点伤害。`,
@@ -91,30 +87,32 @@ export function initBattle(
       maxMomentum: def.momentum,
       hasAttack: false,
       isBoss: !!def.isBoss,
-      action: enemyAi(def),
+      action: enemyAi(),
       summary: msg("蓄势待发。", "Getting ready..."),
     };
   });
   return {
     scenarioId,
     turn: 0,
-    playerHp: player.hp,
-    playerMaxHp: player.maxHp,
-    playerMp: player.mp,
-    playerMaxMp: player.maxMp,
+    playerStats: {
+      hp: player.hp,
+      maxHp: player.maxHp,
+      mp: player.mp,
+      maxMp: player.maxMp,
+      damage: 0,
+      maxDamage: 0,
+      momentum: 0,
+      maxMomentum: 0,
+      hasAttack: false,
+    },
     playerDef: player.def,
-    playerDamage: 0,
-    playerMaxDamage: 0,
-    playerMomentum: 0,
-    playerMaxMomentum: 0,
-    playerHasAttack: false,
+    playerSummary: msg("蓄势待发。", "Getting ready..."),
     playerActions,
     equipment,
     guardReduction: equipment.some((id) => id && itemDefs[id]?.isShield)
       ? 0.5
       : 0,
     shieldActive: false,
-    playerSummary: msg("蓄势待发。", "Getting ready..."),
     enemies,
     log: [
       msg(
@@ -149,12 +147,13 @@ export function resolveTurn(
   const next: BattleState = {
     ...state,
     turn: state.turn + 1,
-    playerHp: state.playerHp,
-    playerMp: state.playerMp,
-    playerDamage: stats.damage,
-    playerMaxDamage: stats.damage,
-    playerMomentum: stats.momentum,
-    playerMaxMomentum: stats.momentum,
+    playerStats: {
+      ...state.playerStats,
+      damage: stats.damage,
+      maxDamage: stats.damage,
+      momentum: stats.momentum,
+      maxMomentum: stats.momentum,
+    },
     shieldActive: state.shieldActive,
     enemies: state.enemies.map((e) => ({
       ...e,
@@ -172,7 +171,7 @@ export function resolveTurn(
 
   let clashWon = false;
   let maxEnemyMomentum = 0;
-  let playerSkillMomentum = next.playerMomentum;
+  let playerSkillMomentum = next.playerStats.momentum;
 
   if (action.kind === "attack") {
     // 出手即破盾：减伤效果到下一次攻击前为止
@@ -182,7 +181,7 @@ export function resolveTurn(
       `你使用了${skillDef?.name.zh ?? "普通攻击"}。`,
       `You use ${skillDef?.name.en ?? "Basic Attack"}.`
     );
-    next.playerMp = Math.max(0, next.playerMp - (skillDefs[action.skillId]?.mpCost ?? 0));
+    next.playerStats.mp = Math.max(0, next.playerStats.mp - (skillDefs[action.skillId]?.mpCost ?? 0));
     playerSkillMomentum = stats.momentum;
     maxEnemyMomentum = Math.max(
       ...aliveIndices.map((i) => next.enemies[i].momentum)
@@ -211,7 +210,7 @@ export function resolveTurn(
         const e = next.enemies[i];
         if (e.momentum > 0 && e.momentum > state.playerDef) {
           const dmg = Math.max(0, e.damage - state.playerDef);
-          next.playerHp = Math.max(0, next.playerHp - dmg);
+          next.playerStats.hp = Math.max(0, next.playerStats.hp - dmg);
           next.log.push(
             msg(
               `${enemyName(e, "zh")}攻击了你，造成 ${dmg} 点伤害。`,
@@ -226,9 +225,9 @@ export function resolveTurn(
     }
   } else if (action.kind === "guard") {
     next.shieldActive = true;
-    next.playerMp = Math.max(0, next.playerMp - GUARD_MP);
+    next.playerStats.mp = Math.max(0, next.playerStats.mp - GUARD_MP);
     const reduction = next.guardReduction;
-    next.playerSummary = msg(
+    const guardMsg = msg(
       reduction > 0
         ? "你举起了盾，减伤 50% 直到下一次攻击前。"
         : "你选择了防御，但没有装备盾牌。",
@@ -236,23 +235,15 @@ export function resolveTurn(
         ? "You raise your shield, reducing damage by 50% until your next attack."
         : "You guard, but have no shield."
     );
-    next.log.push(
-      msg(
-        reduction > 0
-          ? "你举起了盾，减伤 50% 直到下一次攻击前。"
-          : "你举起了盾，但没有装备盾牌。",
-        reduction > 0
-          ? "You raise your shield, reducing damage by 50% until your next attack."
-          : "You raise your shield, but have no shield."
-      )
-    );
+    next.playerSummary = guardMsg;
+    next.log.push(guardMsg);
     enemiesHitPlayer(next, aliveIndices, reduction);
   } else {
     next.playerSummary = msg(
       `你选择了休息，恢复了 ${REST_MP} 点 MP。`,
       `You rest, recovering ${REST_MP} MP.`
     );
-    next.playerMp = Math.min(state.playerMaxMp, state.playerMp + REST_MP);
+    next.playerStats.mp = Math.min(state.playerStats.maxMp, state.playerStats.mp + REST_MP);
     next.log.push(
       msg(
         `你休息了片刻，恢复了 ${REST_MP} 点 MP。`,
@@ -276,9 +267,9 @@ export function resolveTurn(
       (sum, i) => sum + next.enemies[i].momentum,
       0
     );
-    const playerMomChange = Math.min(next.playerMomentum, totalEnemyMomentum);
-    next.playerMomentum = next.playerMomentum - playerMomChange;
-    next.playerDamage = Math.max(0, next.playerDamage - playerMomChange);
+    const playerMomChange = Math.min(next.playerStats.momentum, totalEnemyMomentum);
+    next.playerStats.momentum = next.playerStats.momentum - playerMomChange;
+    next.playerStats.damage = Math.max(0, next.playerStats.damage - playerMomChange);
     for (const i of aliveIndices) {
       const e = next.enemies[i];
       const momChange = Math.min(e.momentum, playerSkillMomentum);
@@ -286,12 +277,12 @@ export function resolveTurn(
       e.damage = Math.max(0, e.damage - momChange);
     }
   } else {
-    next.playerDamage = 0;
-    next.playerMomentum = 0;
+    next.playerStats.damage = 0;
+    next.playerStats.momentum = 0;
   }
 
   // 攻击属性标记：玩家攻击 → 有效；防御/休息 → 无效（显示 0/0）
-  next.playerHasAttack = action.kind === "attack";
+  next.playerStats.hasAttack = action.kind === "attack";
   for (const i of aliveIndices) {
     next.enemies[i].hasAttack = true;
   }
@@ -300,12 +291,12 @@ export function resolveTurn(
   if (remaining === 0) {
     next.result = "victory";
     next.log.push(msg("战斗胜利！", "Victory!"));
-  } else if (next.playerHp <= 0) {
+  } else if (next.playerStats.hp <= 0) {
     next.result = "defeat";
     next.log.push(msg("你被击败了…", "You have been defeated..."));
   } else {
     next.enemies = next.enemies.map((e) =>
-      e.hp > 0 ? { ...e, action: enemyAi(enemyDefs[e.defId]) } : e
+      e.hp > 0 ? { ...e, action: enemyAi() } : e
     );
   }
 
