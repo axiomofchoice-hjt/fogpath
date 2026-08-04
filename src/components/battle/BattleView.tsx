@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import type { L } from "../../types";
 import { useGame } from "../../state/gameContext";
 import { useLang } from "../../i18n/LanguageContext";
 import { loc } from "../../i18n/translations";
@@ -15,26 +16,17 @@ type StatRowProps = {
   max: number;
   fillClass: string;
   labelClass: string;
-  trackClass?: string;
   gray?: boolean;
 };
 
-function StatRow({
-  label,
-  value,
-  max,
-  fillClass,
-  labelClass,
-  trackClass = "bg-game-bg",
-  gray = false,
-}: StatRowProps) {
+function StatRow({ label, value, max, fillClass, labelClass, gray = false }: StatRowProps) {
   const pct = Math.max(0, (value / Math.max(1, max)) * 100);
   return (
     <div className="flex items-center gap-1.5">
       <span className={`text-[11px] font-mono ${gray ? "text-game-dim" : labelClass}`}>
         {label}
       </span>
-      <div className={`h-1.5 flex-1 ${trackClass} rounded-full overflow-hidden border border-game-border`}>
+      <div className="h-1.5 flex-1 bg-black rounded-full overflow-hidden border border-game-border">
         <div
           className={`h-full rounded-full transition-all duration-300 ${
             gray ? "bg-game-dim" : fillClass
@@ -46,6 +38,129 @@ function StatRow({
         {value}/{max}
       </span>
     </div>
+  );
+}
+
+type CombatantCardProps = {
+  icon: string;
+  name: string;
+  badge?: React.ReactNode;
+  borderClass: string;
+  dimmed?: boolean;
+  hp: number;
+  maxHp: number;
+  mp: number;
+  maxMp: number;
+  damage: number;
+  maxDamage: number;
+  momentum: number;
+  maxMomentum: number;
+  hasAttack: boolean;
+  summary: string;
+};
+
+function CombatantCard({
+  icon,
+  name,
+  badge,
+  borderClass,
+  dimmed = false,
+  hp,
+  maxHp,
+  mp,
+  maxMp,
+  damage,
+  maxDamage,
+  momentum,
+  maxMomentum,
+  hasAttack,
+  summary,
+}: CombatantCardProps) {
+  const { t } = useLang();
+  const attackGray = !hasAttack || momentum <= 0;
+  return (
+    <div className={`bg-game-card border ${dimmed ? "opacity-50" : ""} rounded p-3 ${borderClass}`}>
+      <div className="flex items-center gap-4">
+        <div className="flex flex-col items-center gap-1 w-14 flex-shrink-0">
+          <span className="text-2xl">{icon}</span>
+          <span className="text-game-text text-xs font-mono text-center leading-tight">
+            {name}
+          </span>
+          {badge}
+        </div>
+        <div className="w-36 flex-shrink-0 space-y-1.5">
+          <StatRow
+            label={t("stat.hp")}
+            value={hp}
+            max={maxHp}
+            fillClass="bg-game-red"
+            labelClass="text-game-red"
+          />
+          <StatRow
+            label={t("stat.mp")}
+            value={mp}
+            max={maxMp}
+            fillClass="bg-game-blue"
+            labelClass="text-game-blue"
+          />
+        </div>
+        <div className="w-36 flex-shrink-0 space-y-1.5">
+          <StatRow
+            label={t("stat.damage")}
+            value={damage}
+            max={hasAttack ? maxDamage : 0}
+            fillClass="bg-game-orange"
+            labelClass="text-game-orange"
+            gray={attackGray}
+          />
+          <StatRow
+            label={t("stat.momentum")}
+            value={momentum}
+            max={hasAttack ? maxMomentum : 0}
+            fillClass="bg-game-lightgreen"
+            labelClass="text-game-lightgreen"
+            gray={attackGray}
+          />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-game-dim text-[9px] font-mono mb-1">{t("battle.action")}</div>
+          <div className="text-game-text text-[11px] font-mono leading-relaxed">{summary}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type ActionRowProps = {
+  icon: string;
+  title: string;
+  sub?: string;
+  meta: { text: string; className?: string }[];
+  className: string;
+  disabled?: boolean;
+  onClick: () => void;
+};
+
+function ActionRow({ icon, title, sub, meta, className, disabled = false, onClick }: ActionRowProps) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`w-full text-left px-3 py-2 rounded text-xs font-mono border transition-colors ${
+        disabled
+          ? "bg-game-card border-game-border text-game-dim cursor-not-allowed"
+          : className
+      }`}
+    >
+      <span className="mr-2">{icon}</span>
+      <span className="font-bold">{title}</span>
+      {sub && <span className="text-game-dim ml-2">{sub}</span>}
+      {meta.map((m, i) => (
+        <span key={i} className={`ml-3 ${m.className ?? ""}`}>
+          {m.text}
+        </span>
+      ))}
+    </button>
   );
 }
 
@@ -75,7 +190,14 @@ function BattleView() {
   const aliveEnemies = battle.enemies
     .map((e, i) => ({ e, i }))
     .filter(({ e }) => e.hp > 0);
-  const activeSkills = Object.values(skillDefs);
+  const weaponId = state.player.equipment.find(
+    (id) => id && (itemDefs[id]?.atk ?? 0) > 0
+  );
+  const weapon = weaponId ? itemDefs[weaponId] : null;
+  const shieldId = state.player.equipment.find(
+    (id) => id && (itemDefs[id]?.def ?? 0) > 0
+  );
+  const shield = shieldId ? itemDefs[shieldId] : null;
 
   const doAttack = (skillId: string) => {
     if (aliveEnemies.length === 1) {
@@ -100,140 +222,64 @@ function BattleView() {
     setMode("idle");
   };
 
+  const logClass = (entry: L) =>
+    entry.zh.startsWith("—")
+      ? "text-game-dim my-1"
+      : entry.zh.includes("胜利") || entry.zh.includes("击败")
+        ? "text-game-red"
+        : "text-game-text";
+
   return (
     <main className="flex-1 overflow-y-auto p-6">
       <div className="flex items-center gap-3 mb-4">
-        <h2 className="text-game-gold text-lg font-bold font-mono">
-          {t("battle.title")}
-        </h2>
-        <span className="text-game-dim text-xs font-mono">
-          {t("battle.turn", { n: battle.turn })}
-        </span>
+        <h2 className="text-game-gold text-lg font-bold font-mono">{t("battle.title")}</h2>
+        <span className="text-game-dim text-xs font-mono">{t("battle.turn", { n: battle.turn })}</span>
       </div>
 
       <div className="space-y-2 mb-4">
-        <div className="bg-game-card border border-game-green/40 rounded p-3">
-          <div className="flex items-center gap-4">
-            <div className="flex flex-col items-center gap-1 w-14 flex-shrink-0">
-              <span className="text-2xl">{"\uD83E\uDD38"}</span>
-              <span className="text-game-text text-xs font-mono text-center leading-tight">
-                {t("stat.adventurer")}
-              </span>
-            </div>
-            <div className="w-36 flex-shrink-0 space-y-1.5">
-              <StatRow
-                label={t("stat.hp")}
-                value={battle.playerHp}
-                max={battle.playerMaxHp}
-                fillClass="bg-game-red"
-                labelClass="text-game-red"
-              />
-              <StatRow
-                label={t("stat.mp")}
-                value={battle.playerMp}
-                max={battle.playerMaxMp}
-                fillClass="bg-game-blue"
-                labelClass="text-game-blue"
-              />
-            </div>
-            <div className="w-36 flex-shrink-0 space-y-1.5">
-              <StatRow
-                label={t("stat.damage")}
-                value={battle.playerDamage}
-                max={battle.playerHasAttack ? battle.playerMaxDamage : 0}
-                fillClass="bg-game-orange"
-                labelClass="text-game-orange"
-                trackClass="bg-black"
-                gray={!battle.playerHasAttack || battle.playerMomentum <= 0}
-              />
-              <StatRow
-                label={t("stat.momentum")}
-                value={battle.playerMomentum}
-                max={battle.playerHasAttack ? battle.playerMaxMomentum : 0}
-                fillClass="bg-game-deepgreen"
-                labelClass="text-game-deepgreen"
-                trackClass="bg-black"
-                gray={!battle.playerHasAttack || battle.playerMomentum <= 0}
-              />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-game-dim text-[9px] font-mono mb-1">
-                {t("battle.action")}
-              </div>
-              <div className="text-game-text text-[11px] font-mono leading-relaxed">
-                {loc(battle.playerSummary, lang)}
-              </div>
-            </div>
-          </div>
-        </div>
-
+        <CombatantCard
+          icon={"\uD83E\uDD38"}
+          name={t("stat.adventurer")}
+          borderClass="border-game-green/40"
+          hp={battle.playerHp}
+          maxHp={battle.playerMaxHp}
+          mp={battle.playerMp}
+          maxMp={battle.playerMaxMp}
+          damage={battle.playerDamage}
+          maxDamage={battle.playerMaxDamage}
+          momentum={battle.playerMomentum}
+          maxMomentum={battle.playerMaxMomentum}
+          hasAttack={battle.playerHasAttack}
+          summary={loc(battle.playerSummary, lang)}
+        />
         {battle.enemies.map((enemy) => {
           const def = enemyDefs[enemy.defId];
+          const alive = enemy.hp > 0;
           return (
-            <div
+            <CombatantCard
               key={enemy.defId}
-              className={`bg-game-card border rounded p-3 ${
-                enemy.hp > 0 ? "border-game-red/40" : "border-game-border opacity-50"
-              }`}
-            >
-              <div className="flex items-center gap-4">
-                <div className="flex flex-col items-center gap-1 w-14 flex-shrink-0">
-                  <span className="text-2xl">{def.icon}</span>
-                  <span className="text-game-text text-xs font-mono text-center leading-tight">
-                    {loc(def.name, lang)}
+              icon={def.icon}
+              name={loc(def.name, lang)}
+              badge={
+                enemy.isBoss && (
+                  <span className="text-game-red text-[9px] font-mono border border-game-red/40 rounded px-1">
+                    BOSS
                   </span>
-                  {enemy.isBoss && (
-                    <span className="text-game-red text-[9px] font-mono border border-game-red/40 rounded px-1">
-                      BOSS
-                    </span>
-                  )}
-                </div>
-                <div className="w-36 flex-shrink-0 space-y-1.5">
-                  <StatRow
-                    label={t("stat.hp")}
-                    value={enemy.hp}
-                    max={enemy.maxHp}
-                    fillClass="bg-game-red"
-                    labelClass="text-game-red"
-                  />
-                  <StatRow
-                    label={t("stat.mp")}
-                    value={enemy.mp}
-                    max={enemy.maxMp}
-                    fillClass="bg-game-blue"
-                    labelClass="text-game-blue"
-                  />
-                </div>
-                <div className="w-36 flex-shrink-0 space-y-1.5">
-                  <StatRow
-                    label={t("stat.damage")}
-                    value={enemy.damage}
-                    max={enemy.hasAttack ? enemy.maxDamage : 0}
-                    fillClass="bg-game-orange"
-                    labelClass="text-game-orange"
-                    trackClass="bg-black"
-                    gray={!enemy.hasAttack || enemy.momentum <= 0}
-                  />
-                  <StatRow
-                    label={t("stat.momentum")}
-                    value={enemy.momentum}
-                    max={enemy.hasAttack ? enemy.maxMomentum : 0}
-                    fillClass="bg-game-deepgreen"
-                    labelClass="text-game-deepgreen"
-                    trackClass="bg-black"
-                    gray={!enemy.hasAttack || enemy.momentum <= 0}
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-game-dim text-[9px] font-mono mb-1">
-                    {t("battle.action")}
-                  </div>
-                  <div className="text-game-text text-[11px] font-mono leading-relaxed">
-                    {loc(enemy.summary, lang)}
-                  </div>
-                </div>
-              </div>
-            </div>
+                )
+              }
+              borderClass={alive ? "border-game-red/40" : "border-game-border"}
+              dimmed={!alive}
+              hp={enemy.hp}
+              maxHp={enemy.maxHp}
+              mp={enemy.mp}
+              maxMp={enemy.maxMp}
+              damage={enemy.damage}
+              maxDamage={enemy.maxDamage}
+              momentum={enemy.momentum}
+              maxMomentum={enemy.maxMomentum}
+              hasAttack={enemy.hasAttack}
+              summary={loc(enemy.summary, lang)}
+            />
           );
         })}
       </div>
@@ -242,86 +288,65 @@ function BattleView() {
         <div className="mb-4">
           {mode === "idle" && (
             <div className="space-y-1.5">
-              {activeSkills.map((skill) => {
-                const damage = skill.isBasic ? battle.playerMaxDamage : (skill.damage ?? 0);
-                const momentum = skill.isBasic ? battle.playerMaxMomentum : (skill.momentum ?? 0);
-                const disabled = battle.playerMp < skill.mpCost;
-                const weaponId = state.player.equipment.find(
-                  (id) => id && (itemDefs[id]?.atk ?? 0) > 0
-                );
-                const weapon = weaponId ? itemDefs[weaponId] : null;
+              {Object.values(skillDefs).map((skill) => {
                 return (
-                  <button
+                  <ActionRow
                     key={skill.id}
+                    icon={skill.icon}
+                    title={loc(skill.name, lang)}
+                    sub={
+                      skill.isBasic && weapon
+                        ? `【${loc(weapon.name, lang)}】`
+                        : undefined
+                    }
+                    meta={[
+                      { text: t("battle.mpCost", { n: skill.mpCost }), className: "text-game-blue" },
+                      {
+                        text: t("battle.damage", {
+                          n: skill.isBasic ? battle.playerMaxDamage : (skill.damage ?? 0),
+                        }),
+                        className: "text-game-orange",
+                      },
+                      {
+                        text: t("battle.momentum", {
+                          n: skill.isBasic ? battle.playerMaxMomentum : (skill.momentum ?? 0),
+                        }),
+                        className: "text-game-lightgreen",
+                      },
+                    ]}
+                    className="border-game-red/40 bg-game-red/10 text-game-text hover:bg-game-red/20"
+                    disabled={battle.playerMp < skill.mpCost}
                     onClick={() => doAttack(skill.id)}
-                    disabled={disabled}
-                    className={`w-full text-left px-3 py-2 rounded text-xs font-mono border transition-colors ${
-                      disabled
-                        ? "bg-game-card border-game-border text-game-dim cursor-not-allowed"
-                        : "border-game-red/40 bg-game-red/10 text-game-text hover:bg-game-red/20"
-                    }`}
-                  >
-                    <span className="mr-2">{skill.icon}</span>
-                    <span className="font-bold">{loc(skill.name, lang)}</span>
-                    {skill.isBasic && weapon && (
-                      <span className="text-game-dim ml-2">
-                        【{loc(weapon.name, lang)}】
-                      </span>
-                    )}
-                    <span className="text-game-blue ml-3">
-                      {t("battle.mpCost", { n: skill.mpCost })}
-                    </span>
-                    <span className="text-game-orange ml-3">
-                      {t("battle.damage", { n: damage })}
-                    </span>
-                    <span className="text-game-deepgreen ml-3">
-                      {t("battle.momentum", { n: momentum })}
-                    </span>
-                  </button>
+                  />
                 );
               })}
-              {(() => {
-                const shieldId = state.player.equipment.find(
-                  (id) => id && (itemDefs[id]?.def ?? 0) > 0
-                );
-                const shield = shieldId ? itemDefs[shieldId] : null;
-                const noMp = battle.playerMp < GUARD_MP;
-                return (
-                  <button
-                    onClick={doGuard}
-                    disabled={noMp}
-                    className={`w-full text-left px-3 py-2 rounded text-xs font-mono border transition-colors ${
-                      noMp
-                        ? "bg-game-card border-game-border text-game-dim cursor-not-allowed"
-                        : "border-game-blue/40 bg-game-blue/10 text-game-text hover:bg-game-blue/20"
-                    }`}
-                  >
-                    <span className="mr-2">{"\uD83D\uDEE1\uFE0F"}</span>
-                    <span className="font-bold">{t("battle.guard")}</span>
-                    {shield && (
-                      <span className="text-game-dim ml-2">
-                        【{loc(shield.name, lang)}】
-                      </span>
-                    )}
-                    <span className="text-game-blue ml-3">
-                      {t("battle.mpCost", { n: GUARD_MP })}
-                    </span>
-                    <span className="text-game-gold ml-3">
-                      {t("battle.effect")}：{t("battle.guardEffect")}
-                    </span>
-                  </button>
-                );
-              })()}
-              <button
+              <ActionRow
+                icon={"\uD83D\uDEE1\uFE0F"}
+                title={t("battle.guard")}
+                sub={shield ? `【${loc(shield.name, lang)}】` : undefined}
+                meta={[
+                  { text: t("battle.mpCost", { n: GUARD_MP }), className: "text-game-blue" },
+                  {
+                    text: `${t("battle.effect")}：${t("battle.guardEffect")}`,
+                    className: "text-game-gold",
+                  },
+                ]}
+                className="border-game-blue/40 bg-game-blue/10 text-game-text hover:bg-game-blue/20"
+                disabled={battle.playerMp < GUARD_MP}
+                onClick={doGuard}
+              />
+              <ActionRow
+                icon={"\uD83D\uDECC"}
+                title={t("battle.rest")}
+                meta={[
+                  {
+                    text: `${t("battle.effect")}：${t("battle.restEffect", { n: 50 })}`,
+                    className: "text-game-gold",
+                  },
+                ]}
+                className="border-game-green/40 bg-game-green/10 text-game-text hover:bg-game-green/20"
                 onClick={doRest}
-                className="w-full text-left px-3 py-2 rounded text-xs font-mono border border-game-green/40 bg-game-green/10 text-game-text hover:bg-game-green/20 transition-colors"
-              >
-                <span className="mr-2">{"\uD83D\uDECC"}</span>
-                <span className="font-bold">{t("battle.rest")}</span>
-                <span className="text-game-gold ml-3">
-                  {t("battle.effect")}：{t("battle.restEffect", { n: 50 })}
-                </span>
-              </button>
+              />
             </div>
           )}
 
@@ -373,16 +398,7 @@ function BattleView() {
         className="bg-game-panel/60 border border-game-border rounded p-3 h-48 overflow-y-auto"
       >
         {battle.log.map((entry, i) => (
-          <div
-            key={i}
-            className={`text-[11px] font-mono leading-relaxed ${
-              entry.zh.startsWith("—")
-                ? "text-game-dim my-1"
-                : entry.zh.includes("胜利") || entry.zh.includes("击败")
-                  ? "text-game-red"
-                  : "text-game-text"
-            }`}
-          >
+          <div key={i} className={`text-[11px] font-mono leading-relaxed ${logClass(entry)}`}>
             {loc(entry, lang)}
           </div>
         ))}

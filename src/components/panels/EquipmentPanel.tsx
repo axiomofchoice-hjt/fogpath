@@ -6,6 +6,47 @@ import { useLang } from "../../i18n/LanguageContext";
 import { loc } from "../../i18n/translations";
 import { EQUIP_SLOT_COUNT } from "../../types";
 
+function ItemTooltip({ itemId }: { itemId: string }) {
+  const { t, lang } = useLang();
+  const item = itemDefs[itemId];
+  if (!item) return null;
+  return (
+    <div className="fixed z-50 pointer-events-none bg-game-panel border border-game-border rounded p-3 min-w-44 shadow-lg">
+      <div className="text-game-gold text-[11px] font-mono font-bold mb-1">
+        {item.icon} {loc(item.name, lang)}
+      </div>
+      <div className="text-game-dim text-[10px] font-mono leading-relaxed mb-1.5">
+        {loc(item.description, lang)}
+      </div>
+      {item.atk != null && (
+        <div className="text-[10px] font-mono mt-0.5 leading-relaxed">
+          <span className="text-game-text">{loc(skillDefs.basic_attack.name, lang)}</span>
+          <span className="text-game-dim"> {t("battle.active")}，</span>
+          <span className="text-game-orange">
+            {t("battle.damage", { n: item.damage ?? 0 })}
+          </span>
+          <span className="text-game-dim">，</span>
+          <span className="text-game-lightgreen">
+            {t("battle.momentum", { n: item.momentum ?? 0 })}
+          </span>
+        </div>
+      )}
+      {item.def != null && (
+        <div className="text-[10px] font-mono mt-0.5 leading-relaxed">
+          <span className="text-game-text">{t("battle.guard")}</span>
+          <span className="text-game-dim"> {t("battle.active")}，</span>
+          <span className="text-game-gold">{t("battle.guardEffect")}</span>
+        </div>
+      )}
+      {item.spd != null && (
+        <div className="text-game-green text-[10px] font-mono">
+          {t("stat.spd")} +{item.spd}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function EquipmentPanel() {
   const { state, dispatch } = useGame();
   const { t, lang } = useLang();
@@ -56,52 +97,14 @@ function EquipmentPanel() {
         })}
       </div>
 
-      {tooltip &&
-        (() => {
-          const item = itemDefs[tooltip.itemId];
-          if (!item) return null;
-          return (
-            <div
-              className="fixed z-50 pointer-events-none bg-game-panel border border-game-border rounded p-3 min-w-44 shadow-lg"
-              style={{ left: tooltip.x + 12, top: tooltip.y + 12 }}
-            >
-              <div className="text-game-gold text-[11px] font-mono font-bold mb-1">
-                {item.icon} {loc(item.name, lang)}
-              </div>
-              <div className="text-game-dim text-[10px] font-mono leading-relaxed mb-1.5">
-                {loc(item.description, lang)}
-              </div>
-              {item.atk != null && (() => {
-                const skill = skillDefs.basic_attack;
-                return (
-                  <div className="text-[10px] font-mono mt-0.5 leading-relaxed">
-                    <span className="text-game-text">{loc(skill.name, lang)}</span>
-                    <span className="text-game-dim"> {t("battle.active")}，</span>
-                    <span className="text-game-orange">
-                      {t("battle.damage", { n: item.damage ?? 0 })}
-                    </span>
-                    <span className="text-game-dim">，</span>
-                    <span className="text-game-deepgreen">
-                      {t("battle.momentum", { n: item.momentum ?? 0 })}
-                    </span>
-                  </div>
-                );
-              })()}
-              {item.def != null && (
-                <div className="text-[10px] font-mono mt-0.5 leading-relaxed">
-                  <span className="text-game-text">{t("battle.guard")}</span>
-                  <span className="text-game-dim"> {t("battle.active")}，</span>
-                  <span className="text-game-gold">{t("battle.guardEffect")}</span>
-                </div>
-              )}
-              {item.spd != null && (
-                <div className="text-game-green text-[10px] font-mono">
-                  {t("stat.spd")} +{item.spd}
-                </div>
-              )}
-            </div>
-          );
-        })()}
+      {tooltip && (
+        <div
+          className="fixed z-50 pointer-events-none"
+          style={{ left: tooltip.x + 12, top: tooltip.y + 12 }}
+        >
+          <ItemTooltip itemId={tooltip.itemId} />
+        </div>
+      )}
     </div>
   );
 }

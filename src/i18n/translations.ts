@@ -40,7 +40,6 @@ const zh = {
   "inventory.learn": "学习",
   "inventory.discard": "丢弃",
 
-
   "equipment.title": "装备",
   "equipment.empty": "空",
   "equipment.unequip": "卸下",
@@ -111,7 +110,6 @@ const en: Record<TKey, string> = {
   "inventory.use": "Use",
   "inventory.learn": "Learn",
   "inventory.discard": "Discard",
-
 
   "equipment.title": "Equipment",
   "equipment.empty": "Empty",

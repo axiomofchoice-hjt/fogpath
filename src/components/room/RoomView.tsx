@@ -64,7 +64,6 @@ function RoomView() {
               name={loc(item.name, lang)}
               sub={loc(item.description, lang)}
               actionLabel={t("room.pickup")}
-              accentColor="game-dim"
               onClick={() => dispatch({ type: "PICKUP_ITEM", itemId: item.id })}
             />
           </div>

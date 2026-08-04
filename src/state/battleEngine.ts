@@ -46,6 +46,27 @@ function enemyAi(def: EnemyDef): EnemyBattleAction {
   }
 }
 
+/** 全体存活敌人攻击玩家：按减伤比例计算伤害并写入日志、更新摘要 */
+function enemiesHitPlayer(
+  next: BattleState,
+  aliveIndices: number[],
+  reduction: number
+): void {
+  for (const i of aliveIndices) {
+    const e = next.enemies[i];
+    const dmg =
+      reduction > 0 ? Math.max(0, Math.floor(e.damage * (1 - reduction))) : e.damage;
+    next.playerHp = Math.max(0, next.playerHp - dmg);
+    next.log.push(
+      msg(
+        `${enemyName(e, "zh")}攻击了你，造成 ${dmg} 点伤害。`,
+        `${enemyName(e, "en")} attacks you for ${dmg} damage.`
+      )
+    );
+    e.summary = enemySummary(e);
+  }
+}
+
 export function initBattle(
   scenarioId: string,
   player: Player
@@ -170,10 +191,6 @@ export function resolveTurn(
           )
         );
       }
-      for (const i of aliveIndices) {
-        const e = next.enemies[i];
-        e.summary = enemySummary(e);
-      }
     } else {
       next.log.push(
         msg(
@@ -192,11 +209,11 @@ export function resolveTurn(
               `${enemyName(e, "en")} attacks you for ${dmg} damage.`
             )
           );
-          e.summary = enemySummary(e);
-        } else {
-          e.summary = enemySummary(e);
         }
       }
+    }
+    for (const i of aliveIndices) {
+      next.enemies[i].summary = enemySummary(next.enemies[i]);
     }
   } else if (action.kind === "guard") {
     next.shieldActive = true;
@@ -220,19 +237,7 @@ export function resolveTurn(
           : "You raise your shield, but have no shield."
       )
     );
-    for (const i of aliveIndices) {
-      const e = next.enemies[i];
-      const dmg =
-        reduction > 0 ? Math.max(0, Math.floor(e.damage * (1 - reduction))) : e.damage;
-      next.playerHp = Math.max(0, next.playerHp - dmg);
-      next.log.push(
-        msg(
-          `${enemyName(e, "zh")}攻击了你，造成 ${dmg} 点伤害。`,
-          `${enemyName(e, "en")} attacks you for ${dmg} damage.`
-        )
-      );
-      e.summary = enemySummary(e);
-    }
+    enemiesHitPlayer(next, aliveIndices, reduction);
   } else {
     next.playerSummary = msg(
       `你选择了休息，恢复了 ${REST_MP} 点 MP。`,
@@ -245,21 +250,11 @@ export function resolveTurn(
         `You rest for a moment, restoring ${REST_MP} MP.`
       )
     );
-    for (const i of aliveIndices) {
-      const e = next.enemies[i];
-      const dmg =
-        next.shieldActive && next.guardReduction > 0
-          ? Math.max(0, Math.floor(e.damage * (1 - next.guardReduction)))
-          : e.damage;
-      next.playerHp = Math.max(0, next.playerHp - dmg);
-      next.log.push(
-        msg(
-          `${enemyName(e, "zh")}攻击了你，造成 ${dmg} 点伤害。`,
-          `${enemyName(e, "en")} attacks you for ${dmg} damage.`
-        )
-      );
-      e.summary = enemySummary(e);
-    }
+    enemiesHitPlayer(
+      next,
+      aliveIndices,
+      next.shieldActive && next.guardReduction > 0 ? next.guardReduction : 0
+    );
   }
 
   // 对撞后的属性显示：动作属性每回合重置，不累计。
