@@ -59,7 +59,6 @@ const zh = {
 
   "battle.title": "战斗",
   "battle.turn": "回合 {{n}}",
-  "battle.action": "动作",
   "battle.attack": "攻击",
   "battle.guard": "防御",
   "battle.rest": "休息",
@@ -75,6 +74,8 @@ const zh = {
   "battle.victory": "胜利！",
   "battle.defeat": "败北…",
   "battle.exit": "返回开始面板",
+  "battle.status.guard.name": "举盾",
+  "battle.status.guard.desc": "减伤 50%，直到下一次攻击前",
 } as const;
 
 export type TKey = keyof typeof zh;
@@ -128,7 +129,6 @@ const en: Record<TKey, string> = {
 
   "battle.title": "Battle",
   "battle.turn": "Turn {{n}}",
-  "battle.action": "Move",
   "battle.attack": "Attack",
   "battle.guard": "Guard",
   "battle.rest": "Rest",
@@ -144,6 +144,8 @@ const en: Record<TKey, string> = {
   "battle.victory": "Victory!",
   "battle.defeat": "Defeat...",
   "battle.exit": "Back to Start",
+  "battle.status.guard.name": "Guard",
+  "battle.status.guard.desc": "Reduce damage by 50% until your next attack",
 };
 
 export const translations: Record<Language, Record<TKey, string>> = { zh, en };

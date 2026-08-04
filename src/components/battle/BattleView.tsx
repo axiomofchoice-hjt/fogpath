@@ -1,14 +1,19 @@
 import { useEffect, useRef, useState } from "react";
-import type { L } from "../../types";
+import type { L, StatusId } from "../../types";
 import { useGame } from "../../state/gameContext";
 import { useLang } from "../../i18n/LanguageContext";
-import { loc } from "../../i18n/translations";
+import { loc, type TKey } from "../../i18n/translations";
 import { skills as skillDefs } from "../../data/skills";
 import { enemyDefs } from "../../data/enemies";
 import { items as itemDefs } from "../../data/items";
 import { GUARD_MP } from "../../state/battleEngine";
 
 type Mode = "idle" | "target";
+
+/** 状态文字与效果描述（双语键） */
+const STATUS_INFO: Record<StatusId, { nameKey: TKey; descKey: TKey }> = {
+  guard: { nameKey: "battle.status.guard.name", descKey: "battle.status.guard.desc" },
+};
 
 type StatRowProps = {
   label: string;
@@ -56,6 +61,8 @@ type CombatantCardProps = {
   momentum: number;
   maxMomentum: number;
   hasAttack: boolean;
+  /** 当前状态（可多个，横排显示在摘要上方） */
+  statuses: StatusId[];
   summary: string;
 };
 
@@ -74,6 +81,7 @@ function CombatantCard({
   momentum,
   maxMomentum,
   hasAttack,
+  statuses,
   summary,
 }: CombatantCardProps) {
   const { t } = useLang();
@@ -123,7 +131,19 @@ function CombatantCard({
           />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-game-dim text-[9px] font-mono mb-1">{t("battle.action")}</div>
+          {statuses.length > 0 && (
+            <div className="flex flex-wrap gap-1 mb-1">
+              {statuses.map((s) => (
+                <span
+                  key={s}
+                  title={t(STATUS_INFO[s].descKey)}
+                  className="text-[9px] font-mono border border-game-gold/40 text-game-gold rounded px-1.5 py-0.5 bg-game-gold/10"
+                >
+                  {t(STATUS_INFO[s].nameKey)}
+                </span>
+              ))}
+            </div>
+          )}
           <div className="text-game-text text-[11px] font-mono leading-relaxed">{summary}</div>
         </div>
       </div>
@@ -244,6 +264,7 @@ function BattleView() {
           momentum={battle.playerMomentum}
           maxMomentum={battle.playerMaxMomentum}
           hasAttack={battle.playerHasAttack}
+          statuses={battle.shieldActive ? ["guard"] : []}
           summary={loc(battle.playerSummary, lang)}
         />
         {battle.enemies.map((enemy) => {
@@ -272,6 +293,7 @@ function BattleView() {
               momentum={enemy.momentum}
               maxMomentum={enemy.maxMomentum}
               hasAttack={enemy.hasAttack}
+              statuses={[]}
               summary={loc(enemy.summary, lang)}
             />
           );
