@@ -12,7 +12,7 @@ import { items as itemDefs } from "../data/items";
 import { testBattleConfigs } from "../data/battleTestConfigs";
 
 /** 休息动作的 MP 回复量 */
-export const REST_MP = 50;
+export const REST_MP = 10;
 
 /** 防御动作的法力消耗 */
 export const GUARD_MP = 10;
