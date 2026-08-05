@@ -1,18 +1,27 @@
 import { useEffect, useRef, useState } from "react";
 import type { CombatStats, L, StatusId } from "../../types";
-import { useGame } from "../../state/gameContext";
-import { useLang } from "../../i18n/LanguageContext";
-import { loc, type TKey } from "../../i18n/translations";
+import { useGame } from "../../state/useGame";
+import { useLang } from "../../i18n/useLang";
+import { loc, type TKey, type Params } from "../../i18n/translations";
 import { skills as skillDefs } from "../../data/skills";
 import { enemyDefs } from "../../data/enemies";
 import { items as itemDefs } from "../../data/items";
-import { GUARD_MP } from "../../state/battleEngine";
+import { GUARD_MP, REST_MP, SHIELD_REDUCTION } from "../../state/battleEngine";
 
 type Mode = "idle" | "target";
 
+const SHIELD_PCT = Math.round(SHIELD_REDUCTION * 100);
+
 /** 状态文字与效果描述（双语键） */
-const STATUS_INFO: Record<StatusId, { nameKey: TKey; descKey: TKey }> = {
-  guard: { nameKey: "battle.status.guard.name", descKey: "battle.status.guard.desc" },
+const STATUS_INFO: Record<
+  StatusId,
+  { nameKey: TKey; descKey: TKey; params?: Params }
+> = {
+  guard: {
+    nameKey: "battle.status.guard.name",
+    descKey: "battle.status.guard.desc",
+    params: { pct: SHIELD_PCT },
+  },
 };
 
 type StatRowProps = {
@@ -120,7 +129,7 @@ function CombatantCard({
               {statuses.map((s) => (
                 <span
                   key={s}
-                  title={t(STATUS_INFO[s].descKey)}
+                  title={t(STATUS_INFO[s].descKey, STATUS_INFO[s].params)}
                   className="text-[9px] font-mono border border-game-gold/40 text-game-gold rounded px-1.5 py-0.5 bg-game-gold/10"
                 >
                   {t(STATUS_INFO[s].nameKey)}
@@ -253,7 +262,7 @@ function BattleView() {
             sub: `【${loc(shield.name, lang)}】`,
             meta: [
               { text: t("battle.mpCost", { n: GUARD_MP }), className: "text-game-blue" },
-              { text: `${t("battle.effect")}：${t("battle.guardEffect")}`, className: "text-game-gold" },
+              { text: `${t("battle.effect")}：${t("battle.guardEffect", { pct: SHIELD_PCT })}`, className: "text-game-gold" },
             ],
             className: "border-game-blue/40 bg-game-blue/10 text-game-text hover:bg-game-blue/20",
             disabled: battle.playerStats.mp < GUARD_MP,
@@ -265,7 +274,7 @@ function BattleView() {
       icon: "\uD83D\uDECC",
       title: t("battle.rest"),
       meta: [
-        { text: `${t("battle.effect")}：${t("battle.restEffect", { n: 50 })}`, className: "text-game-gold" },
+        { text: `${t("battle.effect")}：${t("battle.restEffect", { n: REST_MP })}`, className: "text-game-gold" },
       ],
       className: "border-game-green/40 bg-game-green/10 text-game-text hover:bg-game-green/20",
       onClick: doRest,
@@ -295,12 +304,12 @@ function BattleView() {
           statuses={battle.shieldActive ? ["guard"] : []}
           summary={loc(battle.playerSummary, lang)}
         />
-        {battle.enemies.map((enemy) => {
+        {battle.enemies.map((enemy, i) => {
           const def = enemyDefs[enemy.defId];
           const alive = enemy.hp > 0;
           return (
             <CombatantCard
-              key={enemy.defId}
+              key={`${enemy.defId}-${i}`}
               icon={def.icon}
               name={loc(def.name, lang)}
               badge={

@@ -95,7 +95,13 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case "BACK_TO_START": {
       if (state.screen === "start" || state.battle) return state;
+      // 保留玩家状态：测试战斗的 HP/MP 损耗在此延续
       return { ...state, screen: "start" };
+    }
+
+    case "RESET_GAME": {
+      if (state.battle) return state;
+      return initialGameState();
     }
 
     case "START_TEST_BATTLE": {
@@ -112,9 +118,19 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case "EXIT_BATTLE": {
       if (!state.battle) return state;
-      return { ...state, battle: null };
+      // 战斗结果回写玩家：HP/MP 损耗在退出战斗时生效
+      return {
+        ...state,
+        player: {
+          ...state.player,
+          hp: state.battle.playerStats.hp,
+          mp: state.battle.playerStats.mp,
+        },
+        battle: null,
+      };
     }
     case "PICKUP_ITEM": {
+      if (state.battle) return state;
       const item = itemDefs[action.itemId];
       if (!item) return state;
       if (state.player.pickedItemIds.includes(action.itemId)) return state;
@@ -129,6 +145,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case "DISCARD_ITEM": {
+      if (state.battle) return state;
       return {
         ...state,
         player: {
@@ -156,6 +173,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case "UNEQUIP": {
+      if (state.battle) return state;
       const itemId = state.player.equipment[action.slotIndex];
       if (!itemId) return state;
       const equipment = [...state.player.equipment];
@@ -169,6 +187,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case "USE_ITEM": {
+      if (state.battle) return state;
       const item = itemDefs[action.itemId];
       if (!item) return state;
       if (item.type === "consumable") {

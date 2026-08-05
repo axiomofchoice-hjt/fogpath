@@ -1,5 +1,5 @@
-import { useGame } from "../../state/gameContext";
-import { useLang } from "../../i18n/LanguageContext";
+import { useGame } from "../../state/useGame";
+import { useLang } from "../../i18n/useLang";
 import { loc } from "../../i18n/translations";
 import { testScenarioGroups } from "../../data/testScenarios";
 import { testBattleConfigs } from "../../data/battleTestConfigs";
@@ -26,6 +26,16 @@ function StartPanel() {
             className="w-full px-6 py-3 text-sm font-mono rounded border border-game-green/50 bg-game-green/15 text-game-green hover:bg-game-green/25 transition-colors"
           >
             {t("start.enterVillage")}
+          </button>
+          <button
+            onClick={() => {
+              if (window.confirm(t("start.restartConfirm"))) {
+                dispatch({ type: "RESET_GAME" });
+              }
+            }}
+            className="w-full px-6 py-2 text-xs font-mono rounded border border-game-border text-game-dim hover:text-game-red hover:border-game-red/40 transition-colors"
+          >
+            {t("start.restart")}
           </button>
           <button
             onClick={toggleLang}

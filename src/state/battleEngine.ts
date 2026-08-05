@@ -2,7 +2,6 @@ import type {
   BattleEnemy,
   BattleState,
   EnemyBattleAction,
-  EnemyDef,
   L,
   Player,
   PlayerBattleAction,
@@ -12,10 +11,14 @@ import { skills as skillDefs } from "../data/skills";
 import { items as itemDefs } from "../data/items";
 import { testBattleConfigs } from "../data/battleTestConfigs";
 
-const REST_MP = 50;
+/** 休息动作的 MP 回复量 */
+export const REST_MP = 50;
 
 /** 防御动作的法力消耗 */
 export const GUARD_MP = 10;
+
+/** 举盾减伤比例（盾牌防御动作） */
+export const SHIELD_REDUCTION = 0.5;
 
 function enemyName(e: BattleEnemy, lang: "zh" | "en"): string {
   const def = enemyDefs[e.defId];
@@ -73,9 +76,10 @@ export function initBattle(
     const def = id ? itemDefs[id] : undefined;
     return def?.actions ?? [];
   });
-  const enemies: BattleEnemy[] = (config?.enemies ?? []).map((id) => {
-    const def = enemyDefs[id] as EnemyDef;
-    return {
+  const enemies: BattleEnemy[] = (config?.enemies ?? []).flatMap((id) => {
+    const def = enemyDefs[id];
+    if (!def) return [];
+    return [{
       defId: id,
       hp: def.maxHp,
       maxHp: def.maxHp,
@@ -89,7 +93,7 @@ export function initBattle(
       isBoss: !!def.isBoss,
       action: enemyAi(),
       summary: msg("蓄势待发。", "Getting ready..."),
-    };
+    }];
   });
   return {
     scenarioId,
@@ -110,7 +114,7 @@ export function initBattle(
     playerActions,
     equipment,
     guardReduction: equipment.some((id) => id && itemDefs[id]?.isShield)
-      ? 0.5
+      ? SHIELD_REDUCTION
       : 0,
     shieldActive: false,
     enemies,
@@ -140,6 +144,13 @@ export function resolveTurn(
   if (action.kind === "attack" && !state.playerActions.some((a) => a.skillId === action.skillId)) {
     return state;
   }
+  // 引擎兜底校验 MP：不足时动作无效（不消耗回合；UI 按钮已禁用，此处防绕过）
+  const mpCost = action.kind === "attack"
+    ? (skillDefs[action.skillId]?.mpCost ?? 0)
+    : action.kind === "guard"
+      ? GUARD_MP
+      : 0;
+  if (mpCost > 0 && state.playerStats.mp < mpCost) return state;
 
   // 本回合攻击动作的属性：由装备提供的动作决定；防御/休息无攻击属性
   const stats = action.kind === "attack" ? actionStats(state.playerActions, action.skillId) : { damage: 0, momentum: 0 };
@@ -198,6 +209,8 @@ export function resolveTurn(
             `You hit ${enemyName(target, "en")}, dealing ${dmg} damage.`
           )
         );
+      } else {
+        next.log.push(msg("你的攻击落空了。", "Your attack misses."));
       }
     } else {
       next.log.push(
@@ -227,12 +240,13 @@ export function resolveTurn(
     next.shieldActive = true;
     next.playerStats.mp = Math.max(0, next.playerStats.mp - GUARD_MP);
     const reduction = next.guardReduction;
+    const pct = Math.round(SHIELD_REDUCTION * 100);
     const guardMsg = msg(
       reduction > 0
-        ? "你举起了盾，减伤 50% 直到下一次攻击前。"
+        ? `你举起了盾，减伤 ${pct}% 直到下一次攻击前。`
         : "你选择了防御，但没有装备盾牌。",
       reduction > 0
-        ? "You raise your shield, reducing damage by 50% until your next attack."
+        ? `You raise your shield, reducing damage by ${pct}% until your next attack.`
         : "You guard, but have no shield."
     );
     next.playerSummary = guardMsg;
@@ -322,6 +336,7 @@ function enemySummary(e: BattleEnemy): L {
   }
 
   const skill = skillDefs[e.action.skillId];
+  if (!skill) return msg(`${nameZh}使用了未知技能。`, `${nameEn} uses an unknown skill.`);
   return msg(
     `${nameZh}使用了${skill.name.zh}。`,
     `${nameEn} uses ${skill.name.en}.`

@@ -21,9 +21,6 @@ const zh = {
   "stat.spd": "速度",
   "stat.damage": "伤害",
   "stat.momentum": "动量",
-  "stat.lv": "等级",
-  "stat.exp": "经验",
-  "stat.gold": "金币",
   "stat.adventurer": "冒险者",
 
   "itemtype.equipment": "装备",
@@ -54,19 +51,20 @@ const zh = {
   "room.notFound": "错误：房间不存在（{{id}}）",
 
   "start.enterVillage": "进入村庄",
+  "start.restart": "重新开始（清空进度）",
+  "start.restartConfirm": "确定要清空进度、从头开始吗？",
   "start.testBattles": "测试战斗",
   "start.placeholder": "规划中",
 
   "battle.title": "战斗",
   "battle.turn": "回合 {{n}}",
-  "battle.attack": "攻击",
   "battle.guard": "防御",
   "battle.rest": "休息",
   "battle.mpCost": "法力 {{n}}",
   "battle.damage": "伤害 {{n}}",
   "battle.momentum": "动量 {{n}}",
   "battle.active": "主动",
-  "battle.guardEffect": "减伤 50% 直到下一次攻击前",
+  "battle.guardEffect": "减伤 {{pct}}% 直到下一次攻击前",
   "battle.effect": "效果",
   "battle.restEffect": "回复 {{n}} 法力",
   "battle.selectTarget": "选择目标",
@@ -75,7 +73,7 @@ const zh = {
   "battle.defeat": "败北…",
   "battle.exit": "返回开始面板",
   "battle.status.guard.name": "举盾",
-  "battle.status.guard.desc": "减伤 50%，直到下一次攻击前",
+  "battle.status.guard.desc": "减伤 {{pct}}%，直到下一次攻击前",
 } as const;
 
 export type TKey = keyof typeof zh;
@@ -91,9 +89,6 @@ const en: Record<TKey, string> = {
   "stat.spd": "SPD",
   "stat.damage": "DMG",
   "stat.momentum": "MOM",
-  "stat.lv": "LV",
-  "stat.exp": "EXP",
-  "stat.gold": "Gold",
   "stat.adventurer": "Adventurer",
 
   "itemtype.equipment": "Equipment",
@@ -124,19 +119,20 @@ const en: Record<TKey, string> = {
   "room.notFound": "Error: Room not found ({{id}})",
 
   "start.enterVillage": "Enter Village",
+  "start.restart": "Restart (clear progress)",
+  "start.restartConfirm": "Reset all progress and start over?",
   "start.testBattles": "Test Battles",
   "start.placeholder": "Planned",
 
   "battle.title": "Battle",
   "battle.turn": "Turn {{n}}",
-  "battle.attack": "Attack",
   "battle.guard": "Guard",
   "battle.rest": "Rest",
   "battle.mpCost": "MP {{n}}",
   "battle.damage": "Damage {{n}}",
   "battle.momentum": "Momentum {{n}}",
   "battle.active": "Active",
-  "battle.guardEffect": "Reduce damage by 50% until your next attack",
+  "battle.guardEffect": "Reduce damage by {{pct}}% until your next attack",
   "battle.effect": "Effect",
   "battle.restEffect": "Restore {{n}} MP",
   "battle.selectTarget": "Choose Target",
@@ -145,7 +141,7 @@ const en: Record<TKey, string> = {
   "battle.defeat": "Defeat...",
   "battle.exit": "Back to Start",
   "battle.status.guard.name": "Guard",
-  "battle.status.guard.desc": "Reduce damage by 50% until your next attack",
+  "battle.status.guard.desc": "Reduce damage by {{pct}}% until your next attack",
 };
 
 export const translations: Record<Language, Record<TKey, string>> = { zh, en };

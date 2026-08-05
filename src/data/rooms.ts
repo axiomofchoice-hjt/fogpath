@@ -10,7 +10,7 @@ export const rooms: Record<string, RoomDef> = {
     },
     area: { zh: "村庄周边", en: "Village Outskirts" },
     isSafeRoom: true,
-    itemIds: ["rusty_sword"],
+    itemIds: ["herb_bundle"],
     npc: {
       name: { zh: "老汤姆", en: "Elder Tom" },
       icon: "\uD83D\uDC74",

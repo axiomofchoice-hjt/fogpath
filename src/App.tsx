@@ -1,7 +1,9 @@
 import { useState, useCallback, useEffect } from "react";
 import type { PanelTab } from "./types";
-import { GameProvider, useGame } from "./state/gameContext";
-import { LanguageProvider, useLang } from "./i18n/LanguageContext";
+import { GameProvider } from "./state/gameContext";
+import { useGame } from "./state/useGame";
+import { LanguageProvider } from "./i18n/LanguageContext";
+import { useLang } from "./i18n/useLang";
 import SidePanel from "./components/layout/SidePanel";
 import RoomView from "./components/room/RoomView";
 import BattleView from "./components/battle/BattleView";

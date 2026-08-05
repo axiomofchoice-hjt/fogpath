@@ -214,6 +214,7 @@ export interface TestScenarioGroup {
 export type GameAction =
   | { type: "START_GAME" }
   | { type: "BACK_TO_START" }
+  | { type: "RESET_GAME" }
   | { type: "START_TEST_BATTLE"; scenarioId: string }
   | { type: "BATTLE_ACT"; action: PlayerBattleAction }
   | { type: "EXIT_BATTLE" }

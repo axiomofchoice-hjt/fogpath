@@ -1,7 +1,7 @@
-import { useGame } from "../../state/gameContext";
+import { useGame } from "../../state/useGame";
 import { items as itemDefs } from "../../data/items";
 import { rooms as roomMap } from "../../data/rooms";
-import { useLang } from "../../i18n/LanguageContext";
+import { useLang } from "../../i18n/useLang";
 import { loc } from "../../i18n/translations";
 import Typewriter from "./Typewriter";
 import InteractCard from "./InteractCard";

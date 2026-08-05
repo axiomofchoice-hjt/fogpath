@@ -1,5 +1,5 @@
-import { useGame } from "../../state/gameContext";
-import { useLang } from "../../i18n/LanguageContext";
+import { useGame } from "../../state/useGame";
+import { useLang } from "../../i18n/useLang";
 
 function CharacterPanel() {
   const { state } = useGame();
@@ -12,16 +12,8 @@ function CharacterPanel() {
   const mp = battle ? battle.playerStats.mp : player.mp;
   const maxMp = battle ? battle.playerStats.maxMp : player.maxMp;
 
-  const expNeeded = player.lv * 100;
   const hpPct = Math.max(0, (hp / maxHp) * 100);
   const mpPct = Math.max(0, (mp / maxMp) * 100);
-
-  const stats = [
-    { label: t("stat.spd"), value: `${player.spd}`, color: "text-game-green" },
-    { label: t("stat.lv"), value: `${player.lv}`, color: "text-game-purple" },
-    { label: t("stat.exp"), value: `${player.exp} / ${expNeeded}`, color: "text-game-dim" },
-    { label: t("stat.gold"), value: `${player.gold}`, color: "text-game-gold" },
-  ];
 
   return (
     <div className="space-y-2">
@@ -51,18 +43,6 @@ function CharacterPanel() {
           </div>
           <span className="text-game-text text-[11px] font-mono">{mp}/{maxMp}</span>
         </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-1 mt-3">
-        {stats.map((s) => (
-          <div
-            key={s.label}
-            className="flex justify-between items-center bg-game-card border border-game-border rounded px-2 py-1.5"
-          >
-            <span className="text-game-dim text-[10px] font-mono">{s.label}</span>
-            <span className={`text-[10px] font-mono ${s.color}`}>{s.value}</span>
-          </div>
-        ))}
       </div>
     </div>
   );

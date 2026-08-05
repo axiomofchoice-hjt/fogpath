@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useGame } from "../../state/gameContext";
+import { useGame } from "../../state/useGame";
 import { items as itemDefs } from "../../data/items";
-import { useLang } from "../../i18n/LanguageContext";
+import { useLang } from "../../i18n/useLang";
 import { loc } from "../../i18n/translations";
 
 type SortMode = "type" | "time" | "rarity";
@@ -10,6 +10,7 @@ function InventoryPanel() {
   const { state, dispatch } = useGame();
   const { t, lang } = useLang();
   const { player } = state;
+  const inBattle = state.battle != null;
   const [sortMode, setSortMode] = useState<SortMode>("type");
 
   const inventoryItems = player.inventory
@@ -81,8 +82,9 @@ function InventoryPanel() {
             {canEquip(entry) && (
               <button
                 onClick={() => dispatch({ type: "EQUIP", itemId: item.id })}
-                className="text-game-gold text-[9px] opacity-0 group-hover:opacity-100 transition-opacity ml-1"
-                title={t("inventory.equip")}
+                disabled={inBattle}
+                className="text-game-gold text-[9px] opacity-0 group-hover:opacity-100 transition-opacity ml-1 disabled:opacity-0 disabled:cursor-not-allowed"
+                title={inBattle ? undefined : t("inventory.equip")}
               >
                 E
               </button>
@@ -90,16 +92,18 @@ function InventoryPanel() {
             {item.type === "consumable" && (
               <button
                 onClick={() => dispatch({ type: "USE_ITEM", itemId: item.id })}
-                className="text-game-green text-[9px] opacity-0 group-hover:opacity-100 transition-opacity ml-1"
-                title={t("inventory.use")}
+                disabled={inBattle}
+                className="text-game-green text-[9px] opacity-0 group-hover:opacity-100 transition-opacity ml-1 disabled:opacity-0 disabled:cursor-not-allowed"
+                title={inBattle ? undefined : t("inventory.use")}
               >
                 U
               </button>
             )}
             <button
               onClick={() => dispatch({ type: "DISCARD_ITEM", itemId: item.id })}
-              className="text-game-red text-[9px] opacity-0 group-hover:opacity-100 transition-opacity ml-1"
-              title={t("inventory.discard")}
+              disabled={inBattle}
+              className="text-game-red text-[9px] opacity-0 group-hover:opacity-100 transition-opacity ml-1 disabled:opacity-0 disabled:cursor-not-allowed"
+              title={inBattle ? undefined : t("inventory.discard")}
             >
               ✕
             </button>

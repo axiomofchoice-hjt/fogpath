@@ -1,7 +1,5 @@
 import {
-  createContext,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useState,
@@ -9,18 +7,10 @@ import {
 } from "react";
 import type { Language, TKey, Params } from "./translations";
 import { translations } from "./translations";
+import { LanguageContext } from "./LanguageContextValue";
 import type { L } from "../types";
 
 const STORAGE_KEY = "game-lang";
-
-type LanguageContextValue = {
-  lang: Language;
-  setLang: (lang: Language) => void;
-  toggleLang: () => void;
-  t: (key: TKey, params?: Params) => string;
-};
-
-const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 function stringify(value: string | number | L, lang: Language): string {
   if (typeof value === "object" && value !== null) {
@@ -75,10 +65,4 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       {children}
     </LanguageContext.Provider>
   );
-}
-
-export function useLang() {
-  const ctx = useContext(LanguageContext);
-  if (!ctx) throw new Error("useLang must be used within LanguageProvider");
-  return ctx;
 }

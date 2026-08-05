@@ -1,10 +1,13 @@
 import { useState } from "react";
-import { useGame } from "../../state/gameContext";
+import { useGame } from "../../state/useGame";
 import { items as itemDefs } from "../../data/items";
 import { skills as skillDefs } from "../../data/skills";
-import { useLang } from "../../i18n/LanguageContext";
+import { useLang } from "../../i18n/useLang";
 import { loc } from "../../i18n/translations";
 import { EQUIP_SLOT_COUNT } from "../../types";
+import { SHIELD_REDUCTION } from "../../state/battleEngine";
+
+const SHIELD_PCT = Math.round(SHIELD_REDUCTION * 100);
 
 function ItemTooltip({ itemId }: { itemId: string }) {
   const { t, lang } = useLang();
@@ -44,7 +47,7 @@ function ItemTooltip({ itemId }: { itemId: string }) {
         <div className="text-[10px] font-mono mt-0.5 leading-relaxed">
           <span className="text-game-text">{t("battle.guard")}</span>
           <span className="text-game-dim"> {t("battle.active")}，</span>
-          <span className="text-game-gold">{t("battle.guardEffect")}</span>
+          <span className="text-game-gold">{t("battle.guardEffect", { pct: SHIELD_PCT })}</span>
         </div>
       )}
       {item.spd != null && (
