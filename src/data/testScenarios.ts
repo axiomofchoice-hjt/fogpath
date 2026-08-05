@@ -121,8 +121,8 @@ export const testScenarioGroups: TestScenarioGroup[] = [
         id: "test_pierce",
         name: { zh: "穿透", en: "Pierce" },
         description: {
-          zh: "无视防御直接造成伤害，亦无视反甲。",
-          en: "Ignores defense and thorns entirely.",
+          zh: "直接无效化对面的非穿透攻击；两个穿透攻击对撞时按伤害/动量正常结算。",
+          en: "Directly nullifies the opponent's non-pierce attack; two pierce attacks clash by normal damage/momentum.",
         },
       },
     ],
