@@ -94,11 +94,11 @@ export const testScenarioGroups: TestScenarioGroup[] = [
     name: { zh: "特殊效果", en: "Special Effects" },
     scenarios: [
       {
-        id: "test_silence",
-        name: { zh: "沉默", en: "Silence" },
+        id: "test_blind",
+        name: { zh: "致盲", en: "Blind" },
         description: {
-          zh: "目标下回合无法使用魔法攻击与魔法反弹。",
-          en: "Target cannot use magic attacks or magic reflect next turn.",
+          zh: "目标下一回合的攻击无法命中目标（不造成伤害），但动量的格挡对撞作用仍生效。",
+          en: "Target's attacks cannot hit next turn (no damage), but momentum blocking still works.",
         },
       },
       {
@@ -135,8 +135,8 @@ export const testScenarioGroups: TestScenarioGroup[] = [
         id: "test_goblin_king",
         name: { zh: "哥布林王", en: "Goblin King" },
         description: {
-          zh: "Boss 强化模板（如所有攻击带沉默）。",
-          en: "Boss buff templates (e.g., all attacks carry silence).",
+          zh: "Boss 强化模板（如所有攻击带致盲）。",
+          en: "Boss buff templates (e.g., all attacks carry blind).",
         },
       },
     ],
