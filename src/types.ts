@@ -11,7 +11,7 @@ export interface L {
 
 // --- Items ---
 
-export type ItemType = "equipment" | "consumable";
+export type ItemType = "equipment" | "consumable" | "currency";
 
 export const EQUIP_SLOT_COUNT = 6;
 
@@ -73,9 +73,6 @@ export interface Player {
   atk: number;
   def: number;
   spd: number;
-  lv: number;
-  exp: number;
-  gold: number;
   currentRoomId: string;
   inventory: InventoryEntry[];
   /** 6 个通用装备格，值为物品 ID 或 null */

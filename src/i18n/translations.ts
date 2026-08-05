@@ -25,6 +25,7 @@ const zh = {
 
   "itemtype.equipment": "装备",
   "itemtype.consumable": "消耗品",
+  "itemtype.currency": "货币",
 
   "inventory.title": "背包",
   "inventory.sort.type": "类型",
@@ -34,6 +35,7 @@ const zh = {
   "inventory.equip": "装备",
   "inventory.use": "使用",
   "inventory.discard": "丢弃",
+  "inventory.currency": "货币",
 
   "equipment.title": "装备",
   "equipment.empty": "空",
@@ -93,6 +95,7 @@ const en: Record<TKey, string> = {
 
   "itemtype.equipment": "Equipment",
   "itemtype.consumable": "Consumable",
+  "itemtype.currency": "Currency",
 
   "inventory.title": "Inventory",
   "inventory.sort.type": "Type",
@@ -102,6 +105,7 @@ const en: Record<TKey, string> = {
   "inventory.equip": "Equip",
   "inventory.use": "Use",
   "inventory.discard": "Discard",
+  "inventory.currency": "Currency",
 
   "equipment.title": "Equipment",
   "equipment.empty": "Empty",

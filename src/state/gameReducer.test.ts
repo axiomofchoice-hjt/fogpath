@@ -12,6 +12,7 @@ describe("初始状态", () => {
     expect(s.player.equipment[0]).toBe("rusty_sword");
     expect(s.player.equipment[1]).toBe("rusty_shield");
     expect(s.player.inventory).toEqual([
+      { itemId: "gold", quantity: 20 },
       { itemId: "health_potion", quantity: 2 },
       { itemId: "apprentice_staff", quantity: 1 },
     ]);
@@ -136,6 +137,11 @@ describe("拾取与丢弃", () => {
     expect(s2.player.inventory.find((e) => e.itemId === "health_potion")).toBeUndefined();
     const s3 = gameReducer(s2, { type: "DISCARD_ITEM", itemId: "health_potion" });
     expect(s3.player.inventory).toEqual(s2.player.inventory);
+  });
+
+  it("货币（金币）不可丢弃", () => {
+    const init = initialGameState();
+    expect(gameReducer(init, { type: "DISCARD_ITEM", itemId: "gold" })).toBe(init);
   });
 
   it("战斗中丢弃被拒", () => {

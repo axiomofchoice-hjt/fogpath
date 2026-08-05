@@ -99,14 +99,20 @@ function InventoryPanel() {
                 U
               </button>
             )}
-            <button
-              onClick={() => dispatch({ type: "DISCARD_ITEM", itemId: item.id })}
-              disabled={inBattle}
-              className="text-game-red text-[9px] opacity-0 group-hover:opacity-100 transition-opacity ml-1 disabled:opacity-0 disabled:cursor-not-allowed"
-              title={inBattle ? undefined : t("inventory.discard")}
-            >
-              ✕
-            </button>
+            {item.type === "currency" ? (
+              <span className="text-game-gold text-[9px] font-mono ml-1" title={t("inventory.currency")}>
+                ●
+              </span>
+            ) : (
+              <button
+                onClick={() => dispatch({ type: "DISCARD_ITEM", itemId: item.id })}
+                disabled={inBattle}
+                className="text-game-red text-[9px] opacity-0 group-hover:opacity-100 transition-opacity ml-1 disabled:opacity-0 disabled:cursor-not-allowed"
+                title={inBattle ? undefined : t("inventory.discard")}
+              >
+                ✕
+              </button>
+            )}
           </div>
         );
       })}

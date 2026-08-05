@@ -50,9 +50,9 @@ function recalcStats(player: GameState["player"]): GameState["player"] {
   );
   return {
     ...player,
-    atk: 10 + (player.lv - 1) * 2 + atkBonus,
-    def: 5 + (player.lv - 1) * 1 + defBonus,
-    spd: 8 + (player.lv - 1) * 1 + spdBonus,
+    atk: 10 + atkBonus,
+    def: 5 + defBonus,
+    spd: 8 + spdBonus,
   };
 }
 
@@ -65,11 +65,9 @@ export function initialPlayer(): GameState["player"] {
     atk: 10,
     def: 5,
     spd: 8,
-    lv: 1,
-    exp: 0,
-    gold: 20,
     currentRoomId: "village_square",
     inventory: [
+      { itemId: "gold", quantity: 20 },
       { itemId: "health_potion", quantity: 2 },
       { itemId: "apprentice_staff", quantity: 1 },
     ],
@@ -146,6 +144,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case "DISCARD_ITEM": {
       if (state.battle) return state;
+      // 货币不可丢弃
+      if (itemDefs[action.itemId]?.type === "currency") return state;
       return {
         ...state,
         player: {

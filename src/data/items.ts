@@ -1,6 +1,14 @@
 import type { ItemDef } from "../types";
 
 export const items: Record<string, ItemDef> = {
+  gold: {
+    id: "gold",
+    name: { zh: "金币", en: "Gold" },
+    icon: "\uD83E\uDE99",
+    type: "currency",
+    description: { zh: "通用货币，在商店消费。", en: "Currency used at shops." },
+    rarity: 1,
+  },
   rusty_sword: {
     id: "rusty_sword",
     name: { zh: "生锈的剑", en: "Rusty Sword" },
