@@ -49,6 +49,7 @@ const zh = {
   "map.expand": "展开地图",
   "map.worldMap": "世界地图",
   "map.close": "关闭",
+  "map.back": "返回",
   "map.empty": "暂无相邻房间",
 
   "room.safeRoom": "安全屋",
@@ -56,13 +57,6 @@ const zh = {
   "room.notFound": "错误：房间不存在（{{id}}）",
   "room.exits": "出口",
   "room.enter": "进入",
-  "room.goDungeon": "前往地牢",
-
-  "dungeon.title": "选择地牢",
-  "dungeon.difficulty": "难度 {{n}}",
-  "dungeon.enter": "进入",
-  "dungeon.planned": "「{{name}}」地牢规划中，即将开放",
-  "dungeon.back": "返回",
 
   "shop.title": "商店",
   "shop.gold": "金币 {{n}}",
@@ -137,6 +131,7 @@ const en: Record<TKey, string> = {
   "map.expand": "Expand Map",
   "map.worldMap": "World Map",
   "map.close": "Close",
+  "map.back": "Back",
   "map.empty": "No adjacent rooms",
 
   "room.safeRoom": "Safe Room",
@@ -144,13 +139,6 @@ const en: Record<TKey, string> = {
   "room.notFound": "Error: Room not found ({{id}})",
   "room.exits": "Exits",
   "room.enter": "Enter",
-  "room.goDungeon": "Go to Dungeon",
-
-  "dungeon.title": "Select Dungeon",
-  "dungeon.difficulty": "Difficulty {{n}}",
-  "dungeon.enter": "Enter",
-  "dungeon.planned": "\u201c{{name}}\u201d dungeon is planned, coming soon",
-  "dungeon.back": "Back",
 
   "shop.title": "Shop",
   "shop.gold": "Gold {{n}}",

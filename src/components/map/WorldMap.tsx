@@ -50,7 +50,7 @@ function WorldMap({ open, onClose }: { open: boolean; onClose: () => void }) {
           onClick={onClose}
           className="absolute right-4 text-[10px] font-mono px-3 py-1 rounded border border-game-border text-game-dim hover:text-game-gold hover:border-game-gold/40 transition-colors"
         >
-          {"\u2190"} {t("dungeon.back")}
+          {"\u2190"} {t("map.back")}
         </button>
       </div>
       <div

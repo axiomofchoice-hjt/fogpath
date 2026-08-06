@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useGame } from "../../state/useGame";
 import { goldAmount } from "../../state/gameReducer";
 import { items as itemDefs, rooms as roomMap } from "../../data/config";
@@ -6,7 +6,6 @@ import { useLang } from "../../i18n/useLang";
 import { loc } from "../../i18n/translations";
 import Typewriter from "./Typewriter";
 import InteractCard from "./InteractCard";
-import DungeonSelect from "./DungeonSelect";
 import { dirFromKey, nearestInDir } from "../map/nav";
 
 /** 出口方向箭头（按节点坐标差） */
@@ -22,11 +21,10 @@ function RoomView({ mapOpen }: { mapOpen: boolean }) {
   const { t, lang } = useLang();
   const { player } = state;
   const room = roomMap[player.currentRoomId];
-  const [dungeonOpen, setDungeonOpen] = useState(false);
 
-  // 村庄 WASD 移动：朝方向最近的出口移动（弹窗/大地图打开时不接管）
+  // 村庄 WASD 移动：朝方向最近的出口移动（大地图打开时不接管）
   useEffect(() => {
-    if (state.battle || mapOpen || dungeonOpen || !room) return;
+    if (state.battle || mapOpen || !room) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.repeat) return;
       const dir = dirFromKey(e.key);
@@ -39,7 +37,7 @@ function RoomView({ mapOpen }: { mapOpen: boolean }) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [state.battle, mapOpen, dungeonOpen, room, dispatch]);
+  }, [state.battle, mapOpen, room, dispatch]);
 
   if (!room) {
     return (
@@ -171,21 +169,6 @@ function RoomView({ mapOpen }: { mapOpen: boolean }) {
           </div>
         </div>
       )}
-
-      {room.isSafeRoom && (
-        <div className="mt-3">
-          {room.id === "forest_entrance" && (
-            <button
-              onClick={() => setDungeonOpen(true)}
-              className="px-4 py-2 rounded text-xs font-mono border border-game-gold/40 bg-game-gold/10 text-game-gold hover:bg-game-gold/20 transition-colors"
-            >
-              {t("room.goDungeon")}
-            </button>
-          )}
-        </div>
-      )}
-
-      <DungeonSelect open={dungeonOpen} onClose={() => setDungeonOpen(false)} />
     </main>
   );
 }

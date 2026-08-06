@@ -11,7 +11,7 @@ function TabBar({ activeTab, onTabChange }: TabBarProps) {
 
   const tabs: { id: PanelTab; label: string; shortcut: string }[] = [
     { id: "map", label: t("tab.map"), shortcut: "M" },
-    { id: "inventory", label: t("tab.inventory"), shortcut: "T" },
+    { id: "inventory", label: t("tab.inventory"), shortcut: "E" },
   ];
 
   return (
@@ -20,7 +20,7 @@ function TabBar({ activeTab, onTabChange }: TabBarProps) {
         <button
           key={tab.id}
           onClick={() => onTabChange(tab.id)}
-          className={`flex-1 px-3 py-1.5 text-xs font-mono border rounded transition-colors duration-150 ${
+          className={`flex-1 px-3 py-1.5 text-xs font-mono border rounded transition-colors duration-150 outline-none focus:outline-none ${
             activeTab === tab.id
               ? "text-game-gold bg-game-card border-game-gold/40"
               : "text-game-dim border-game-border hover:text-game-text hover:bg-game-card/50"

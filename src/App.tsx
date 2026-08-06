@@ -47,7 +47,7 @@ function AppInner() {
       case "m":
         setActiveTab("map");
         break;
-      case "t":
+      case "e":
         setActiveTab("inventory");
         break;
     }

@@ -6,6 +6,11 @@
   box-sizing: border-box;
 }
 
+/* 纯键盘驱动的游戏 UI：选中态由自身样式表达，去掉浏览器焦点描边 */
+button:focus {
+  outline: none;
+}
+
 body {
   margin: 0;
   font-family: "Sarasa Mono SC", "JetBrains Mono", ui-monospace, Consolas, monospace;
