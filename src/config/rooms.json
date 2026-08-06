@@ -9,6 +9,8 @@
     "area": { "zh": "村庄周边", "en": "Village Outskirts" },
     "isSafeRoom": true,
     "itemIds": ["herb_bundle"],
+    "exits": ["village_shop", "forest_entrance"],
+    "pos": { "x": 0, "y": 0 },
     "npc": {
       "name": { "zh": "老汤姆", "en": "Elder Tom" },
       "icon": "\uD83D\uDC74",
@@ -20,8 +22,57 @@
         {
           "zh": "小心森林——边缘附近有哥布林出没。",
           "en": "Be careful in the forest — goblins have been spotted near the edge."
+        },
+        {
+          "zh": "需要补给的话，东边的商店一直开着。",
+          "en": "If you need supplies, the shop to the east stays open all day."
         }
       ]
     }
+  },
+  "village_shop": {
+    "id": "village_shop",
+    "name": { "zh": "村庄商店", "en": "Village Shop" },
+    "description": {
+      "zh": "一间堆满货架的狭小店铺。柜台后的店主打着瞌睡，听见脚步才抬起头来。",
+      "en": "A cramped shop crammed with shelves. The shopkeeper behind the counter stirs at the sound of footsteps."
+    },
+    "area": { "zh": "村庄周边", "en": "Village Outskirts" },
+    "isSafeRoom": true,
+    "itemIds": [],
+    "exits": ["village_square"],
+    "pos": { "x": 1, "y": 0 },
+    "npc": {
+      "name": { "zh": "老李", "en": "Elder Li" },
+      "icon": "\uD83D\uDC68\u200D\uD83D\uDCBC",
+      "dialogue": [
+        {
+          "zh": "客官看看，都是实惠的好货。",
+          "en": "Take a look, all good deals here."
+        },
+        {
+          "zh": "地牢里捡到的好东西，以后也能卖给我换金币。",
+          "en": "Found something good in the dungeon? I'll buy it off you for gold."
+        }
+      ]
+    },
+    "shopItems": [
+      { "itemId": "herb_bundle", "price": 5 },
+      { "itemId": "health_potion", "price": 10 },
+      { "itemId": "mana_potion", "price": 8 }
+    ]
+  },
+  "forest_entrance": {
+    "id": "forest_entrance",
+    "name": { "zh": "森林入口", "en": "Forest Entrance" },
+    "description": {
+      "zh": "村庄北缘的迷雾森林入口。林间雾气翻涌，一块歪斜的木牌上写着「前方危险」。准备好后，从这里进入森林地牢。",
+      "en": "The misty forest edge at the village's northern border. Fog churns between the trees; a crooked wooden sign reads \u201cDanger ahead\u201d. Enter the forest dungeon from here when ready."
+    },
+    "area": { "zh": "森林边缘", "en": "Forest Edge" },
+    "isSafeRoom": true,
+    "itemIds": [],
+    "exits": ["village_square"],
+    "pos": { "x": 0, "y": -1 }
   }
 }

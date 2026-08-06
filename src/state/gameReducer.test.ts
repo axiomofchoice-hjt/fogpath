@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { GameState } from "../types";
-import { gameReducer, initialGameState, initialPlayer } from "./gameReducer";
+import { gameReducer, goldAmount, initialGameState, initialPlayer } from "./gameReducer";
 
 describe("初始状态", () => {
   it("初始玩家：100/100，生锈剑+盾，背包 2 药水 1 木杖", () => {
@@ -94,7 +94,7 @@ describe("测试战斗流程", () => {
     expect(gameReducer(init, { type: "EXIT_BATTLE" })).toBe(init);
   });
 
-  it("EXIT_BATTLE 回写 HP/MP", () => {
+  it("EXIT_BATTLE 后 HP/MP 自动回满", () => {
     const s = gameReducer(initialGameState(), {
       type: "START_TEST_BATTLE",
       scenarioId: "test_atk_vs_atk",
@@ -107,8 +107,8 @@ describe("测试战斗流程", () => {
     };
     const exited = gameReducer(hurt, { type: "EXIT_BATTLE" });
     expect(exited.battle).toBeNull();
-    expect(exited.player.hp).toBe(60);
-    expect(exited.player.mp).toBe(70);
+    expect(exited.player.hp).toBe(exited.player.maxHp);
+    expect(exited.player.mp).toBe(exited.player.maxMp);
   });
 });
 
@@ -264,11 +264,69 @@ describe("消耗品与休息", () => {
     };
     expect(gameReducer(noPotion, { type: "USE_ITEM", itemId: "health_potion" })).toBe(noPotion);
   });
+});
 
-  it("REST 回满 HP/MP", () => {
-    const hurt = { ...initialGameState(), player: { ...initialPlayer(), hp: 10, mp: 5 } };
-    const s = gameReducer(hurt, { type: "REST" });
-    expect(s.player.hp).toBe(100);
-    expect(s.player.mp).toBe(100);
+describe("村庄：房间切换", () => {
+  const game = { ...initialGameState(), screen: "game" as const };
+
+  it("MOVE_ROOM：沿出口移动", () => {
+    const s = gameReducer(game, { type: "MOVE_ROOM", roomId: "village_shop" });
+    expect(s.player.currentRoomId).toBe("village_shop");
+    expect(goldAmount(s.player)).toBe(20);
+  });
+
+  it("MOVE_ROOM：非出口 / 未知房间被拒", () => {
+    expect(gameReducer(game, { type: "MOVE_ROOM", roomId: "nope" })).toBe(game);
+    // 商店的出口只有广场，从广场直接再进广场不是出口（广场出口不含自己）
+    expect(gameReducer(game, { type: "MOVE_ROOM", roomId: "village_square" })).toBe(game);
+  });
+
+  it("MOVE_ROOM：战斗中不可移动", () => {
+    const s = gameReducer(game, {
+      type: "START_TEST_BATTLE",
+      scenarioId: "test_atk_vs_atk",
+    });
+    expect(s.battle).not.toBeNull();
+    expect(gameReducer(s, { type: "MOVE_ROOM", roomId: "village_shop" })).toBe(s);
+  });
+});
+
+describe("村庄：商店购买", () => {
+  const shop = gameReducer(
+    { ...initialGameState(), screen: "game" as const },
+    { type: "MOVE_ROOM", roomId: "village_shop" }
+  );
+
+  it("BUY_ITEM：扣金币、加物品", () => {
+    const s = gameReducer(shop, { type: "BUY_ITEM", itemId: "herb_bundle" });
+    expect(s.player.inventory).toContainEqual({ itemId: "gold", quantity: 15 });
+    expect(s.player.inventory).toContainEqual({ itemId: "herb_bundle", quantity: 1 });
+  });
+
+  it("BUY_ITEM：金币不足被拒", () => {
+    const poor: GameState = {
+      ...shop,
+      player: {
+        ...shop.player,
+        inventory: shop.player.inventory.map((e) =>
+          e.itemId === "gold" ? { itemId: "gold", quantity: 3 } : e
+        ),
+      },
+    };
+    expect(gameReducer(poor, { type: "BUY_ITEM", itemId: "health_potion" })).toBe(poor);
+  });
+
+  it("BUY_ITEM：非商店货架 / 非商店房间被拒", () => {
+    // 广场不卖东西
+    const square = { ...initialGameState(), screen: "game" as const };
+    expect(gameReducer(square, { type: "BUY_ITEM", itemId: "herb_bundle" })).toBe(square);
+    // 货架上没有的物品（铁剑）不可购买
+    expect(gameReducer(shop, { type: "BUY_ITEM", itemId: "iron_sword" })).toBe(shop);
+  });
+
+  it("goldAmount：初始 20，商店支付后 15", () => {
+    expect(goldAmount(shop.player)).toBe(20);
+    const after = gameReducer(shop, { type: "BUY_ITEM", itemId: "mana_potion" });
+    expect(goldAmount(after.player)).toBe(12);
   });
 });

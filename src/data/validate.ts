@@ -1,4 +1,4 @@
-import type { EnemyDef, ItemDef, RoomDef, SkillDef } from "../types";
+import type { DungeonDef, EnemyDef, ItemDef, RoomDef, SkillDef } from "../types";
 
 /**
  * 轻量配置校验：JSON 数据没有编译期类型，在加载时逐字段检查，
@@ -210,14 +210,32 @@ export function validateRooms(raw: unknown, items: Record<string, ItemDef>): Rec
   for (const [key, value] of Object.entries(root)) {
     const path = `rooms.json:${key}`;
     const rec = assertRecord(value, path, [
-      "id", "name", "description", "area", "isSafeRoom", "itemIds", "npc",
+      "id", "name", "description", "area", "isSafeRoom", "itemIds", "exits", "pos", "npc", "shopItems",
     ]);
     const id = assertString(rec.id, `${path}.id`);
     assertKeyMatch(key, id, path);
     if (!Array.isArray(rec.itemIds)) fail(`${path}.itemIds`, "应为数组");
-    const npcRec = assertRecord(rec.npc, `${path}.npc`, ["name", "icon", "dialogue"]);
-    if (!Array.isArray(npcRec.dialogue) || npcRec.dialogue.length === 0) {
-      fail(`${path}.npc.dialogue`, "应为非空数组");
+    if (!Array.isArray(rec.exits)) fail(`${path}.exits`, "应为数组");
+    const posRec = assertRecord(rec.pos, `${path}.pos`, ["x", "y"]);
+    const npcRec = rec.npc === undefined ? undefined : assertRecord(rec.npc, `${path}.npc`, ["name", "icon", "dialogue"]);
+    if (npcRec) {
+      if (!Array.isArray(npcRec.dialogue) || npcRec.dialogue.length === 0) {
+        fail(`${path}.npc.dialogue`, "应为非空数组");
+      }
+    }
+    let shopItems: { itemId: string; price: number }[] | undefined;
+    if (rec.shopItems !== undefined) {
+      if (!Array.isArray(rec.shopItems) || rec.shopItems.length === 0) {
+        fail(`${path}.shopItems`, "应为非空数组");
+      }
+      shopItems = rec.shopItems.map((s, i) => {
+        const spath = `${path}.shopItems[${i}]`;
+        const srec = assertRecord(s, spath, ["itemId", "price"]);
+        return {
+          itemId: assertItemId(srec.itemId, `${spath}.itemId`, itemIds),
+          price: assertNumber(srec.price, `${spath}.price`, { gt: 0 }),
+        };
+      });
     }
     out[key] = {
       id,
@@ -225,12 +243,47 @@ export function validateRooms(raw: unknown, items: Record<string, ItemDef>): Rec
       description: assertL(rec.description, `${path}.description`),
       area: assertL(rec.area, `${path}.area`),
       isSafeRoom: assertBoolean(rec.isSafeRoom, `${path}.isSafeRoom`),
-      itemIds: rec.itemIds.map((iid, i) => assertItemId(iid, `${path}.itemIds[${i}]`, itemIds)),
-      npc: {
-        name: assertL(npcRec.name, `${path}.npc.name`),
-        icon: assertString(npcRec.icon, `${path}.npc.icon`),
-        dialogue: npcRec.dialogue.map((d, i) => assertL(d, `${path}.npc.dialogue[${i}]`)),
+      itemIds: rec.itemIds.map((iid: unknown, i: number) => assertItemId(iid, `${path}.itemIds[${i}]`, itemIds)),
+      exits: rec.exits.map((rid: unknown, i: number) => assertString(rid, `${path}.exits[${i}]`)),
+      pos: {
+        x: assertNumber(posRec.x, `${path}.pos.x`),
+        y: assertNumber(posRec.y, `${path}.pos.y`),
       },
+      ...(npcRec
+        ? {
+            npc: {
+              name: assertL(npcRec.name, `${path}.npc.name`),
+              icon: assertString(npcRec.icon, `${path}.npc.icon`),
+              dialogue: (npcRec.dialogue as unknown[]).map((d, i) => assertL(d, `${path}.npc.dialogue[${i}]`)),
+            },
+          }
+        : {}),
+      ...(shopItems ? { shopItems } : {}),
+    };
+  }
+  // 出口交叉引用：房间必须都存在（双向连通由数据保证，此处只查引用）
+  for (const [key, room] of Object.entries(out)) {
+    for (const rid of room.exits) {
+      if (!out[rid]) fail(`rooms.json:${key}.exits`, `出口引用了不存在的房间 "${rid}"`);
+    }
+  }
+  return out;
+}
+
+export function validateDungeons(raw: unknown): Record<string, DungeonDef> {
+  const root = assertRecord(raw, "dungeons.json");
+  const out: Record<string, DungeonDef> = {};
+  for (const [key, value] of Object.entries(root)) {
+    const path = `dungeons.json:${key}`;
+    const rec = assertRecord(value, path, ["id", "name", "icon", "description", "difficulty"]);
+    const id = assertString(rec.id, `${path}.id`);
+    assertKeyMatch(key, id, path);
+    out[key] = {
+      id,
+      name: assertL(rec.name, `${path}.name`),
+      icon: assertString(rec.icon, `${path}.icon`),
+      description: assertL(rec.description, `${path}.description`),
+      difficulty: assertNumber(rec.difficulty, `${path}.difficulty`, { gte: 1 }),
     };
   }
   return out;

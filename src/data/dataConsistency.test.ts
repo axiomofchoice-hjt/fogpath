@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { enemyDefs, items, rooms, skills } from "./config";
+import { dungeons, enemyDefs, items, rooms, skills } from "./config";
 import { testBattleConfigs } from "./battleTestConfigs";
 import { initialPlayer } from "../state/gameReducer";
 import { EQUIP_SLOT_COUNT } from "../types";
@@ -79,6 +79,33 @@ describe("房间与初始玩家", () => {
     }
   });
 
+  it("出口指向存在的房间，且双向连通", () => {
+    for (const room of Object.values(rooms)) {
+      for (const rid of room.exits) {
+        expect(rooms[rid], `${room.id} -> ${rid}`).toBeDefined();
+        expect(rooms[rid].exits, `${room.id} -> ${rid} 需反向出口`).toContain(room.id);
+      }
+    }
+  });
+
+  it("商店货架物品都存在且价格为正", () => {
+    for (const room of Object.values(rooms)) {
+      for (const s of room.shopItems ?? []) {
+        expect(items[s.itemId], `${room.id} -> ${s.itemId}`).toBeDefined();
+        expect(s.price, `${room.id} -> ${s.itemId}`).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("房间有唯一地图坐标", () => {
+    const seen = new Set<string>();
+    for (const room of Object.values(rooms)) {
+      const key = `${room.pos.x},${room.pos.y}`;
+      expect(seen.has(key), `${room.id} 坐标 ${key} 重复`).toBe(false);
+      seen.add(key);
+    }
+  });
+
   it("初始装备为 6 格且物品都存在", () => {
     const p = initialPlayer();
     expect(p.equipment).toHaveLength(EQUIP_SLOT_COUNT);
@@ -88,5 +115,18 @@ describe("房间与初始玩家", () => {
     for (const entry of p.inventory) {
       expect(items[entry.itemId]).toBeDefined();
     }
+  });
+});
+
+describe("地牢配置", () => {
+  it("地牢 ID 与键一致", () => {
+    for (const [id, d] of Object.entries(dungeons)) {
+      expect(d.id).toBe(id);
+    }
+  });
+
+  it("至少有一个可选地牢（森林）", () => {
+    expect(dungeons.forest).toBeDefined();
+    expect(dungeons.forest.difficulty).toBeGreaterThan(0);
   });
 });

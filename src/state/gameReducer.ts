@@ -1,7 +1,12 @@
 import type { GameState, GameAction, InventoryEntry } from "../types";
-import { items as itemDefs } from "../data/config";
+import { items as itemDefs, rooms as roomMap } from "../data/config";
 import { testBattleConfigs } from "../data/battleTestConfigs";
 import { initBattle, resolveTurn } from "./battleEngine";
+
+/** 背包中的金币数量（金币为货币物品，拾取自动入账） */
+export function goldAmount(player: GameState["player"]): number {
+  return player.inventory.find((e) => e.itemId === "gold")?.quantity ?? 0;
+}
 
 function addToInventory(
   inventory: InventoryEntry[],
@@ -116,17 +121,49 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case "EXIT_BATTLE": {
       if (!state.battle) return state;
-      // 战斗结果回写玩家：HP/MP 损耗在退出战斗时生效
+      // 非战斗状态 HP/MP 自动回满（无休息按钮/回血道具需求）
       return {
         ...state,
         player: {
           ...state.player,
-          hp: state.battle.playerStats.hp,
-          mp: state.battle.playerStats.mp,
+          hp: state.player.maxHp,
+          mp: state.player.maxMp,
         },
         battle: null,
       };
     }
+    case "MOVE_ROOM": {
+      if (state.battle) return state;
+      const room = roomMap[state.player.currentRoomId];
+      if (!room || !room.exits.includes(action.roomId)) return state;
+      if (!roomMap[action.roomId]) return state;
+      return {
+        ...state,
+        player: { ...state.player, currentRoomId: action.roomId },
+      };
+    }
+
+    case "BUY_ITEM": {
+      if (state.battle) return state;
+      const room = roomMap[state.player.currentRoomId];
+      const entry = room?.shopItems?.find((s) => s.itemId === action.itemId);
+      if (!entry) return state;
+      const item = itemDefs[action.itemId];
+      if (!item) return state;
+      const gold = goldAmount(state.player);
+      if (gold < entry.price) return state;
+      return {
+        ...state,
+        player: {
+          ...state.player,
+          inventory: [
+            ...removeFromInventory(state.player.inventory, "gold", entry.price),
+            ...addToInventory(state.player.inventory, action.itemId, 1),
+          ],
+        },
+      };
+    }
+
     case "PICKUP_ITEM": {
       if (state.battle) return state;
       const item = itemDefs[action.itemId];
@@ -213,13 +250,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         return { ...state, player: newPlayer };
       }
       return state;
-    }
-
-    case "REST": {
-      return {
-        ...state,
-        player: { ...state.player, hp: state.player.maxHp, mp: state.player.maxMp },
-      };
     }
 
     default:

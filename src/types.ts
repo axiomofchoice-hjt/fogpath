@@ -60,7 +60,23 @@ export interface RoomDef {
   area: L;
   isSafeRoom: boolean;
   itemIds: string[];
+  /** 相邻房间（出口），村庄/WASD 节点导航依赖 */
+  exits: string[];
+  /** 节点在地图上的位置（小地图/大地图渲染） */
+  pos: { x: number; y: number };
   npc?: NPC;
+  /** 商店货架：物品 + 价格（金币） */
+  shopItems?: { itemId: string; price: number }[];
+}
+
+/** 地牢入口（地图入口，GDD 3.2）：从村庄选择后进入 */
+export interface DungeonDef {
+  id: string;
+  name: L;
+  icon: string;
+  description: L;
+  /** 难度范围（GDD 3.2，如森林 1-3） */
+  difficulty: number;
 }
 
 // --- Player ---
@@ -223,9 +239,10 @@ export type GameAction =
   | { type: "START_TEST_BATTLE"; scenarioId: string }
   | { type: "BATTLE_ACT"; action: PlayerBattleAction }
   | { type: "EXIT_BATTLE" }
+  | { type: "MOVE_ROOM"; roomId: string }
+  | { type: "BUY_ITEM"; itemId: string }
   | { type: "PICKUP_ITEM"; itemId: string }
   | { type: "DISCARD_ITEM"; itemId: string }
   | { type: "EQUIP"; itemId: string }
   | { type: "UNEQUIP"; slotIndex: number }
-  | { type: "USE_ITEM"; itemId: string }
-  | { type: "REST" };
+  | { type: "USE_ITEM"; itemId: string };

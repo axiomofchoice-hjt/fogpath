@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { validateEnemies, validateItems, validateRooms, validateSkills } from "./validate";
+import { validateDungeons, validateEnemies, validateItems, validateRooms, validateSkills } from "./validate";
 
 describe("配置校验", () => {
   it("非法技能：未知类型被拒绝", () => {
@@ -57,10 +57,19 @@ describe("配置校验", () => {
   it("非法房间：物品引用不存在被拒绝", () => {
     expect(() =>
       validateRooms(
-        { room: { id: "room", name: { zh: "a", en: "b" }, description: { zh: "a", en: "b" }, area: { zh: "a", en: "b" }, isSafeRoom: true, itemIds: ["ghost_item"], npc: { name: { zh: "a", en: "b" }, icon: "x", dialogue: [{ zh: "a", en: "b" }] } } },
+        { room: { id: "room", name: { zh: "a", en: "b" }, description: { zh: "a", en: "b" }, area: { zh: "a", en: "b" }, isSafeRoom: true, itemIds: ["ghost_item"], exits: [], pos: { x: 0, y: 0 }, npc: { name: { zh: "a", en: "b" }, icon: "x", dialogue: [{ zh: "a", en: "b" }] } } },
         {},
       ),
     ).toThrow(/不存在的物品/);
+  });
+
+  it("非法房间：出口引用不存在的房间被拒绝", () => {
+    expect(() =>
+      validateRooms(
+        { room: { id: "room", name: { zh: "a", en: "b" }, description: { zh: "a", en: "b" }, area: { zh: "a", en: "b" }, isSafeRoom: true, itemIds: [], exits: ["nope"], pos: { x: 0, y: 0 } } },
+        {},
+      ),
+    ).toThrow(/不存在的房间/);
   });
 
   it("未实现功能字段被拒绝：敌人 isBoss（Boss 系统规划中）", () => {
@@ -85,6 +94,7 @@ describe("配置校验", () => {
     const skills = validateSkills({ hit: { id: "hit", name: { zh: "a", en: "b" }, icon: "x", type: "physical", mpCost: 1 } });
     const items = validateItems({ sword: { id: "sword", name: { zh: "a", en: "b" }, icon: "x", type: "equipment", description: { zh: "a", en: "b" }, rarity: 1, actions: [{ skillId: "hit", damage: 1, momentum: 1 }] } }, skills);
     validateEnemies({ goblin: { id: "goblin", name: { zh: "a", en: "b" }, icon: "x", maxHp: 10, maxMp: 0, damage: 1, momentum: 1, patterns: [{ id: "p", weight: 1, steps: [{ kind: "charge" }, { kind: "attack", name: { zh: "a", en: "b" }, damage: 1, momentum: 1 }] }] } });
-    validateRooms({ room: { id: "room", name: { zh: "a", en: "b" }, description: { zh: "a", en: "b" }, area: { zh: "a", en: "b" }, isSafeRoom: true, itemIds: ["sword"], npc: { name: { zh: "a", en: "b" }, icon: "x", dialogue: [{ zh: "a", en: "b" }] } } }, items);
+    validateRooms({ room: { id: "room", name: { zh: "a", en: "b" }, description: { zh: "a", en: "b" }, area: { zh: "a", en: "b" }, isSafeRoom: true, itemIds: ["sword"], exits: [], pos: { x: 0, y: 0 }, npc: { name: { zh: "a", en: "b" }, icon: "x", dialogue: [{ zh: "a", en: "b" }] } } }, items);
+    validateDungeons({ forest: { id: "forest", name: { zh: "a", en: "b" }, icon: "x", description: { zh: "a", en: "b" }, difficulty: 1 } });
   });
 });

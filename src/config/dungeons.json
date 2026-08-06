@@ -1,0 +1,12 @@
+{
+  "forest": {
+    "id": "forest",
+    "name": { "zh": "森林", "en": "Forest" },
+    "icon": "\uD83C\uDF32",
+    "description": {
+      "zh": "迷雾森林的边缘地带，哥布林在此出没。教学引导区域。",
+      "en": "The misty forest fringe, home to goblins. A teaching ground."
+    },
+    "difficulty": 1
+  }
+}

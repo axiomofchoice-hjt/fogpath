@@ -10,6 +10,7 @@ import BattleView from "./components/battle/BattleView";
 import StartPanel from "./components/start/StartPanel";
 import CharacterPanel from "./components/panels/CharacterPanel";
 import EquipmentPanel from "./components/panels/EquipmentPanel";
+import WorldMap from "./components/map/WorldMap";
 
 function Header() {
   const { lang, toggleLang } = useLang();
@@ -39,6 +40,7 @@ function Header() {
 function AppInner() {
   const { state } = useGame();
   const [activeTab, setActiveTab] = useState<PanelTab>("map");
+  const [worldMapOpen, setWorldMapOpen] = useState(false);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     switch (e.key.toLowerCase()) {
@@ -56,7 +58,11 @@ function AppInner() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
-  const center = state.battle ? <BattleView /> : <RoomView />;
+  useEffect(() => {
+    if (state.screen !== "game" || state.battle) setWorldMapOpen(false);
+  }, [state.screen, state.battle]);
+
+  const center = state.battle ? <BattleView /> : <RoomView mapOpen={worldMapOpen} />;
   if (state.screen === "start" && !state.battle) return <StartPanel />;
 
   return (
@@ -70,8 +76,13 @@ function AppInner() {
           </div>
         </aside>
         {center}
-        <SidePanel activeTab={activeTab} onTabChange={setActiveTab} />
+        <SidePanel
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          onExpandMap={() => setWorldMapOpen(true)}
+        />
       </div>
+      <WorldMap open={worldMapOpen} onClose={() => setWorldMapOpen(false)} />
     </div>
   );
 }
