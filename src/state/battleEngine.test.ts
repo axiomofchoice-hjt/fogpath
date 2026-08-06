@@ -79,9 +79,9 @@ describe("resolveTurn：攻击对撞", () => {
     expect(next.playerStats.hp).toBe(94);
     expect(next.playerStats.momentum).toBe(0);
     expect(next.playerStats.damage).toBe(0);
-    // 敌方动量 min(7, 5)=5 → 动量 2、伤害显示 12-5=7
+    // 敌方动量 min(7, 5)=5 → 动量 2；敌方为赢家，伤害显示满值 12
     expect(next.enemies[0].momentum).toBe(2);
-    expect(next.enemies[0].damage).toBe(7);
+    expect(next.enemies[0].damage).toBe(12);
     expect(next.log.some((l) => l.zh.includes("格挡"))).toBe(true);
   });
 

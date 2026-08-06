@@ -130,7 +130,7 @@ export function initBattle(
 
 /**
  * 同时结算一回合（GDD 2.4）：
- * - 攻击 vs 攻击：动量较大的一方生效，造成「自己的伤害 − 对面的动量」；动量相等双方无效
+ * - 攻击 vs 攻击：动量较大的一方生效，造成自己全额伤害；被压制方（含动量相等）全数格挡
  * - 攻击 vs 防御：普通攻击被防住（无伤）
  * - 攻击 vs 休息：攻击全额命中
  * - 多怪（2.4.7）：玩家攻击整体判定（动量须大于所有怪的攻击的动量）
@@ -317,7 +317,8 @@ export function resolveTurn(
       const e = next.enemies[i];
       const momChange = Math.min(e.momentum, playerSkillMomentum);
       e.momentum = e.momentum - momChange;
-      e.damage = clashWon ? 0 : Math.max(0, e.damage - momChange);
+      // 赢家伤害显示满值：玩家赢 → 敌方全数格挡（0）；玩家输 → 敌方全额（满值）
+      e.damage = clashWon ? 0 : e.maxDamage;
     }
   } else {
     next.playerStats.damage = 0;
