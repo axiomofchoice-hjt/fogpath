@@ -76,8 +76,6 @@ const zh = {
   "battle.exit": "返回开始面板",
   "battle.status.guard.name": "举盾",
   "battle.status.guard.desc": "减伤 {{pct}}%，直到下一次攻击前",
-  "battle.status.charge.name": "蓄力",
-  "battle.status.charge.desc": "本回合不攻击，下一回合释放高伤害蓄力技（不可打断）",
 } as const;
 
 export type TKey = keyof typeof zh;
@@ -148,8 +146,6 @@ const en: Record<TKey, string> = {
   "battle.exit": "Back to Start",
   "battle.status.guard.name": "Guard",
   "battle.status.guard.desc": "Reduce damage by {{pct}}% until your next attack",
-  "battle.status.charge.name": "Charging",
-  "battle.status.charge.desc": "No attack this turn; releases a powerful charged attack next turn (cannot be interrupted)",
 };
 
 export const translations: Record<Language, Record<TKey, string>> = { zh, en };

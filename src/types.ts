@@ -124,9 +124,9 @@ export interface BattleState {
 
 export type BattleResult = "ongoing" | "victory" | "defeat";
 
-// --- 状态（战斗中可叠加多个：举盾、蓄力、中毒等） ---
+// --- 状态（战斗中可叠加多个：举盾、中毒等） ---
 
-export type StatusId = "guard" | "charge";
+export type StatusId = "guard";
 
 // --- 技能 ---
 
