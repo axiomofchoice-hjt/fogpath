@@ -178,6 +178,7 @@ export interface BattleEnemy {
 export type PlayerBattleAction =
   | { kind: "attack"; skillId: string; targetIndex: number }
   | { kind: "guard" }
+  | { kind: "useItem"; itemId: string }
   | { kind: "rest" };
 
 /** 敌人本回合动作（AI 决策结果） */

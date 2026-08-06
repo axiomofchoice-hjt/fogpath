@@ -118,11 +118,11 @@ export const testScenarioGroups: TestScenarioGroup[] = [
         },
       },
       {
-        id: "test_pierce",
-        name: { zh: "穿透", en: "Pierce" },
+        id: "test_vulnerable",
+        name: { zh: "易损", en: "Vulnerable" },
         description: {
-          zh: "直接无效化对面的非穿透攻击；两个穿透攻击对撞时按伤害/动量正常结算。",
-          en: "Directly nullifies the opponent's non-pierce attack; two pierce attacks clash by normal damage/momentum.",
+          zh: "目标下一回合受到的伤害翻倍。",
+          en: "Target takes double damage next turn.",
         },
       },
     ],

@@ -92,9 +92,8 @@ function InventoryPanel() {
             {item.type === "consumable" && (
               <button
                 onClick={() => dispatch({ type: "USE_ITEM", itemId: item.id })}
-                disabled={inBattle}
-                className="text-game-green text-[9px] opacity-0 group-hover:opacity-100 transition-opacity ml-1 disabled:opacity-0 disabled:cursor-not-allowed"
-                title={inBattle ? undefined : t("inventory.use")}
+                className="text-game-green text-[9px] opacity-0 group-hover:opacity-100 transition-opacity ml-1"
+                title={t("inventory.use")}
               >
                 U
               </button>

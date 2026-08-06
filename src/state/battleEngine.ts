@@ -151,6 +151,13 @@ export function resolveTurn(
       ? GUARD_MP
       : 0;
   if (mpCost > 0 && state.playerStats.mp < mpCost) return state;
+  // 使用道具：必须为消耗品且有效果
+  if (action.kind === "useItem") {
+    const item = itemDefs[action.itemId];
+    if (!item || item.type !== "consumable" || !(item.hpRestore || item.mpRestore)) {
+      return state;
+    }
+  }
 
   // 本回合攻击动作的属性：由装备提供的动作决定；防御/休息无攻击属性
   const stats = action.kind === "attack" ? actionStats(state.playerActions, action.skillId) : { damage: 0, momentum: 0 };
@@ -199,7 +206,8 @@ export function resolveTurn(
     );
     clashWon = stats.momentum > 0 && stats.momentum > maxEnemyMomentum;
     if (clashWon) {
-      const dmg = Math.max(0, stats.damage - maxEnemyMomentum);
+      // 全额生效：动量大者造成自己全额伤害
+      const dmg = stats.damage;
       const target = next.enemies[action.targetIndex];
       if (target && target.hp > 0) {
         target.hp = Math.max(0, target.hp - dmg);
@@ -252,6 +260,27 @@ export function resolveTurn(
     next.playerSummary = guardMsg;
     next.log.push(guardMsg);
     enemiesHitPlayer(next, aliveIndices, reduction);
+  } else if (action.kind === "useItem") {
+    // 使用道具：消耗一个回合（无防御、不破盾），效果作用于战斗内属性
+    const item = itemDefs[action.itemId];
+    next.playerStats.hp = Math.min(
+      next.playerStats.maxHp,
+      next.playerStats.hp + (item?.hpRestore ?? 0)
+    );
+    next.playerStats.mp = Math.min(
+      next.playerStats.maxMp,
+      next.playerStats.mp + (item?.mpRestore ?? 0)
+    );
+    next.playerSummary = msg(
+      `你使用了${item?.name.zh ?? "道具"}。`,
+      `You use ${item?.name.en ?? "item"}.`
+    );
+    next.log.push(next.playerSummary);
+    enemiesHitPlayer(
+      next,
+      aliveIndices,
+      next.shieldActive && next.guardReduction > 0 ? next.guardReduction : 0
+    );
   } else {
     next.playerSummary = msg(
       `你选择了休息，恢复了 ${REST_MP} 点 MP。`,
@@ -274,8 +303,8 @@ export function resolveTurn(
   // 对撞后的属性显示：动作属性每回合重置，不累计。
   // 双方动量各自减少自己的动量变化量：单怪 = min(自己, 对方)；
   //   多怪时玩家面对全体，变化量 = min(自己动量, 所有存活怪动量之和)；
-  // 伤害减去自己动量的变化量；败方动量归零（伤害变灰）
-  // 防御（减伤）/休息动作本身无伤害/动量属性，攻击方不受动量惩罚
+  // 全额生效：赢家伤害显示满值；被压制方全数格挡，伤害显示 0（变灰）
+  // 防御（减伤）/休息/使用道具动作本身无伤害/动量属性，显示 0/0
   if (action.kind === "attack") {
     const totalEnemyMomentum = aliveIndices.reduce(
       (sum, i) => sum + next.enemies[i].momentum,
@@ -283,12 +312,12 @@ export function resolveTurn(
     );
     const playerMomChange = Math.min(next.playerStats.momentum, totalEnemyMomentum);
     next.playerStats.momentum = next.playerStats.momentum - playerMomChange;
-    next.playerStats.damage = Math.max(0, next.playerStats.damage - playerMomChange);
+    next.playerStats.damage = clashWon ? next.playerStats.maxDamage : 0;
     for (const i of aliveIndices) {
       const e = next.enemies[i];
       const momChange = Math.min(e.momentum, playerSkillMomentum);
       e.momentum = e.momentum - momChange;
-      e.damage = Math.max(0, e.damage - momChange);
+      e.damage = clashWon ? 0 : Math.max(0, e.damage - momChange);
     }
   } else {
     next.playerStats.damage = 0;

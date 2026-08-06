@@ -187,10 +187,25 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case "USE_ITEM": {
-      if (state.battle) return state;
       const item = itemDefs[action.itemId];
       if (!item) return state;
       if (item.type === "consumable") {
+        if (state.battle) {
+          // 战斗中使用道具：作为战斗动作生效于战斗内属性（引擎校验并结算敌方回合）
+          if (!state.player.inventory.some((e) => e.itemId === action.itemId && e.quantity > 0)) {
+            return state;
+          }
+          const battle = resolveTurn(state.battle, { kind: "useItem", itemId: action.itemId });
+          if (battle === state.battle) return state;
+          return {
+            ...state,
+            battle,
+            player: {
+              ...state.player,
+              inventory: removeFromInventory(state.player.inventory, action.itemId, 1),
+            },
+          };
+        }
         let newPlayer = { ...state.player };
         if (item.hpRestore) newPlayer.hp = Math.min(newPlayer.maxHp, newPlayer.hp + item.hpRestore);
         if (item.mpRestore) newPlayer.mp = Math.min(newPlayer.maxMp, newPlayer.mp + item.mpRestore);

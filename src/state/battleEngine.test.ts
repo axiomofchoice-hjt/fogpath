@@ -48,7 +48,7 @@ describe("initBattle", () => {
 });
 
 describe("resolveTurn：攻击对撞", () => {
-  it("动量大者生效：命中 10-4=6，扣 MP 10，对撞后动量互相扣减", () => {
+  it("动量大者生效：全额命中 10，扣 MP 10，对撞后动量互相扣减", () => {
     const battle = initBattle("test_atk_vs_atk", testPlayer());
     const next = resolveTurn(battle, {
       kind: "attack",
@@ -57,18 +57,18 @@ describe("resolveTurn：攻击对撞", () => {
     });
     expect(next.turn).toBe(1);
     expect(next.playerStats.mp).toBe(100 - 10);
-    expect(next.enemies[0].hp).toBe(24);
+    expect(next.enemies[0].hp).toBe(20);
     expect(next.playerStats.hasAttack).toBe(true);
-    // 玩家 min(5, 4)=4 → 动量 1、伤害 10-4=6；怪 min(4, 5)=4 → 动量 0、伤害 8-4=4
+    // 玩家 min(5, 4)=4 → 动量 1、伤害满值 10；怪 min(4, 5)=4 → 动量 0、伤害 0（全数格挡）
     expect(next.playerStats.momentum).toBe(1);
-    expect(next.playerStats.damage).toBe(6);
+    expect(next.playerStats.damage).toBe(10);
     expect(next.enemies[0].momentum).toBe(0);
-    expect(next.enemies[0].damage).toBe(4);
+    expect(next.enemies[0].damage).toBe(0);
     expect(next.result).toBe("ongoing");
     expect(next.log.some((l) => l.zh.includes("命中"))).toBe(true);
   });
 
-  it("动量被压制：攻击被格挡，敌方反击 12-6=6", () => {
+  it("动量被压制：攻击被全数格挡，敌方反击 12-6=6", () => {
     const battle = initBattle("test_clash_loss", testPlayer());
     const next = resolveTurn(battle, {
       kind: "attack",
@@ -78,7 +78,10 @@ describe("resolveTurn：攻击对撞", () => {
     expect(next.enemies[0].hp).toBe(45);
     expect(next.playerStats.hp).toBe(94);
     expect(next.playerStats.momentum).toBe(0);
-    expect(next.playerStats.damage).toBe(5);
+    expect(next.playerStats.damage).toBe(0);
+    // 敌方动量 min(7, 5)=5 → 动量 2、伤害显示 12-5=7
+    expect(next.enemies[0].momentum).toBe(2);
+    expect(next.enemies[0].damage).toBe(7);
     expect(next.log.some((l) => l.zh.includes("格挡"))).toBe(true);
   });
 
@@ -184,18 +187,18 @@ describe("resolveTurn：防御与休息", () => {
 });
 
 describe("resolveTurn：多怪", () => {
-  it("整体判定：动量须大于所有怪，命中后伤害按最大动量计算", () => {
+  it("整体判定：动量须大于所有怪，命中造成全额伤害", () => {
     const battle = initBattle("test_goblins_x3", testPlayer());
     const next = resolveTurn(battle, {
       kind: "attack",
       skillId: "basic_attack",
       targetIndex: 1,
     });
-    expect(next.enemies[1].hp).toBe(24);
+    expect(next.enemies[1].hp).toBe(20);
     expect(next.enemies[0].hp).toBe(30);
-    // 玩家动量变化量 = min(5, 4*3) = 5
+    // 玩家动量变化量 = min(5, 4*3) = 5；伤害显示满值 10
     expect(next.playerStats.momentum).toBe(0);
-    expect(next.playerStats.damage).toBe(5);
+    expect(next.playerStats.damage).toBe(10);
     expect(next.playerStats.hp).toBe(100);
   });
 
@@ -205,6 +208,43 @@ describe("resolveTurn：多怪", () => {
     expect(rest.playerStats.hp).toBe(100 - 8 * 3);
     const guarded = resolveTurn(battle, { kind: "guard" });
     expect(guarded.playerStats.hp).toBe(100 - 4 * 3);
+  });
+});
+
+describe("resolveTurn：使用道具", () => {
+  it("使用治疗药水：回复战斗内 HP、消耗回合、敌方全额攻击", () => {
+    const battle = initBattle("test_atk_vs_atk", testPlayer());
+    const hurt = {
+      ...battle,
+      playerStats: { ...battle.playerStats, hp: 50 },
+    };
+    const next = resolveTurn(hurt, { kind: "useItem", itemId: "health_potion" });
+    expect(next.turn).toBe(1);
+    expect(next.playerStats.hp).toBe(72); // 50+30=80，再被哥布林打 8
+    expect(next.playerStats.hasAttack).toBe(false);
+    expect(next.playerStats.damage).toBe(0);
+    expect(next.playerSummary.zh).toContain("治疗药水");
+  });
+
+  it("法力药水回复 MP（封顶）", () => {
+    const battle = initBattle("test_atk_vs_atk", testPlayer({ mp: 30 }));
+    const next = resolveTurn(battle, { kind: "useItem", itemId: "mana_potion" });
+    expect(next.playerStats.mp).toBe(50); // 30+20
+  });
+
+  it("非消耗品 / 未知物品不可使用", () => {
+    const battle = initBattle("test_atk_vs_atk", testPlayer());
+    expect(resolveTurn(battle, { kind: "useItem", itemId: "rusty_sword" })).toBe(battle);
+    expect(resolveTurn(battle, { kind: "useItem", itemId: "nope" })).toBe(battle);
+  });
+
+  it("举盾后使用道具：不破盾，减伤仍生效", () => {
+    const battle = initBattle("test_atk_vs_atk", testPlayer());
+    const guarded = resolveTurn(battle, { kind: "guard" }); // hp 96，shieldActive
+    const next = resolveTurn(guarded, { kind: "useItem", itemId: "health_potion" });
+    // 96+30 封顶 100，哥布林减伤 4 → 96
+    expect(next.playerStats.hp).toBe(96);
+    expect(next.shieldActive).toBe(true);
   });
 });
 

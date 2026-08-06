@@ -227,15 +227,42 @@ describe("消耗品与休息", () => {
     expect(s.player.mp).toBe(100);
   });
 
-  it("装备类型 / 未知物品不可使用；战斗中不可使用", () => {
+  it("装备类型 / 未知物品不可使用", () => {
     const init = initialGameState();
     expect(gameReducer(init, { type: "USE_ITEM", itemId: "rusty_sword" })).toBe(init);
     expect(gameReducer(init, { type: "USE_ITEM", itemId: "nope" })).toBe(init);
-    const s = gameReducer(init, {
+  });
+
+  it("战斗中使用药水：作用于战斗内属性并扣除背包数量", () => {
+    const s = gameReducer(initialGameState(), {
       type: "START_TEST_BATTLE",
       scenarioId: "test_atk_vs_atk",
     });
-    expect(gameReducer(s, { type: "USE_ITEM", itemId: "health_potion" })).toBe(s);
+    const hurt: GameState = {
+      ...s,
+      battle: s.battle
+        ? { ...s.battle, playerStats: { ...s.battle.playerStats, hp: 40 } }
+        : null,
+    };
+    const used = gameReducer(hurt, { type: "USE_ITEM", itemId: "health_potion" });
+    expect(used.battle?.playerStats.hp).toBe(62); // 40+30=70，哥布林打 8
+    expect(used.battle?.turn).toBe(1);
+    expect(used.player.inventory).toContainEqual({ itemId: "health_potion", quantity: 1 });
+  });
+
+  it("战斗中药水不足时不可使用", () => {
+    const s = gameReducer(initialGameState(), {
+      type: "START_TEST_BATTLE",
+      scenarioId: "test_atk_vs_atk",
+    });
+    const noPotion: GameState = {
+      ...s,
+      player: {
+        ...s.player,
+        inventory: s.player.inventory.filter((e) => e.itemId !== "health_potion"),
+      },
+    };
+    expect(gameReducer(noPotion, { type: "USE_ITEM", itemId: "health_potion" })).toBe(noPotion);
   });
 
   it("REST 回满 HP/MP", () => {
