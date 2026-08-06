@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useGame } from "../../state/useGame";
-import { items as itemDefs } from "../../data/items";
-import { skills as skillDefs } from "../../data/skills";
+import { items as itemDefs, skills as skillDefs } from "../../data/config";
 import { useLang } from "../../i18n/useLang";
 import { loc } from "../../i18n/translations";
 import { EQUIP_SLOT_COUNT } from "../../types";

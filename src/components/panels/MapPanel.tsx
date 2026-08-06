@@ -1,5 +1,5 @@
 import { useGame } from "../../state/useGame";
-import { rooms as roomMap } from "../../data/rooms";
+import { rooms as roomMap } from "../../data/config";
 import { useLang } from "../../i18n/useLang";
 import { loc } from "../../i18n/translations";
 

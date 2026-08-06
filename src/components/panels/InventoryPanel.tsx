@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useGame } from "../../state/useGame";
-import { items as itemDefs } from "../../data/items";
+import { items as itemDefs } from "../../data/config";
 import { useLang } from "../../i18n/useLang";
 import { loc } from "../../i18n/translations";
 

@@ -1,6 +1,5 @@
 import { useGame } from "../../state/useGame";
-import { items as itemDefs } from "../../data/items";
-import { rooms as roomMap } from "../../data/rooms";
+import { items as itemDefs, rooms as roomMap } from "../../data/config";
 import { useLang } from "../../i18n/useLang";
 import { loc } from "../../i18n/translations";
 import Typewriter from "./Typewriter";

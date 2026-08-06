@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { items } from "./items";
-import { skills } from "./skills";
-import { enemyDefs } from "./enemies";
+import { enemyDefs, items, rooms, skills } from "./config";
 import { testBattleConfigs } from "./battleTestConfigs";
-import { rooms } from "./rooms";
 import { initialPlayer } from "../state/gameReducer";
 import { EQUIP_SLOT_COUNT } from "../types";
 

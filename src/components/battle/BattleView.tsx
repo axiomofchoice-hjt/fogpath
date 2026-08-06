@@ -3,9 +3,7 @@ import type { CombatStats, L, StatusId } from "../../types";
 import { useGame } from "../../state/useGame";
 import { useLang } from "../../i18n/useLang";
 import { loc, type TKey, type Params } from "../../i18n/translations";
-import { skills as skillDefs } from "../../data/skills";
-import { enemyDefs } from "../../data/enemies";
-import { items as itemDefs } from "../../data/items";
+import { enemyDefs, items as itemDefs, skills as skillDefs } from "../../data/config";
 import { GUARD_MP, REST_MP, SHIELD_REDUCTION } from "../../state/battleEngine";
 
 type Mode = "idle" | "target";

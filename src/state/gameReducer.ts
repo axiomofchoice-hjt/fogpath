@@ -1,5 +1,5 @@
 import type { GameState, GameAction, InventoryEntry } from "../types";
-import { items as itemDefs } from "../data/items";
+import { items as itemDefs } from "../data/config";
 import { testBattleConfigs } from "../data/battleTestConfigs";
 import { initBattle, resolveTurn } from "./battleEngine";
 

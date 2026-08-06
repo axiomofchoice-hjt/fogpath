@@ -6,9 +6,7 @@ import type {
   Player,
   PlayerBattleAction,
 } from "../types";
-import { enemyDefs } from "../data/enemies";
-import { skills as skillDefs } from "../data/skills";
-import { items as itemDefs } from "../data/items";
+import { enemyDefs, items as itemDefs, skills as skillDefs } from "../data/config";
 import { testBattleConfigs } from "../data/battleTestConfigs";
 
 /** 休息动作的 MP 回复量 */
