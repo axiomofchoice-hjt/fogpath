@@ -106,7 +106,6 @@ export interface BattleState {
   turn: number;
   /** 玩家属性槽（HP/MP/伤害/动量） */
   playerStats: CombatStats;
-  playerDef: number;
   /** 玩家本回合动作摘要（双语） */
   playerSummary: L;
   /** 装备提供的攻击动作快照（技能 + 伤害/动量） */

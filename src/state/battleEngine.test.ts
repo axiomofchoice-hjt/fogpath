@@ -135,7 +135,7 @@ describe("resolveTurn：蓄力技", () => {
       targetIndex: 0,
     });
     expect(next.enemies[0].hp).toBe(30);
-    expect(next.playerStats.hp).toBe(100); // 6 动量不破防御 6，无反击
+    expect(next.playerStats.hp).toBe(100 - 14); // 缠斗胜出，全额命中
     expect(next.playerStats).toMatchObject({ momentum: 0, damage: 0 });
     // 敌方为赢家：动量 6-5=1，伤害显示满值 14
     expect(next.enemies[0]).toMatchObject({ momentum: 1, damage: 14 });
@@ -149,7 +149,7 @@ describe("resolveTurn：蓄力技", () => {
       targetIndex: 0,
     });
     expect(next.enemies[0].hp).toBe(30);
-    expect(next.playerStats.hp).toBe(100 - (20 - 6)); // 反击 8>6 → 14
+    expect(next.playerStats.hp).toBe(100 - 20); // 重击 20 全额命中
     expect(next.enemies[0]).toMatchObject({ momentum: 3, damage: 20 });
     expect(next.enemies[0].summary.zh).toContain("重击");
   });
@@ -190,7 +190,7 @@ describe("resolveTurn：对撞", () => {
       targetIndex: 0,
     }); // 10/5 vs 12/7
     expect(next.enemies[0].hp).toBe(45);
-    expect(next.playerStats.hp).toBe(94); // 反击 7>6 → 12-6=6
+    expect(next.playerStats.hp).toBe(88); // 壮汉 12 全额命中
     expect(next.playerStats).toMatchObject({ momentum: 0, damage: 0 });
     expect(next.enemies[0]).toMatchObject({ momentum: 2, damage: 12 });
   });
@@ -292,7 +292,7 @@ describe("resolveTurn：多怪", () => {
       targetIndex: 1,
     }); // 5 vs max 6 → 被压制
     expect(next.enemies[1].hp).toBe(30);
-    expect(next.playerStats.hp).toBe(100); // 6 动量不破防御 6
+    expect(next.playerStats.hp).toBe(100 - 14 * 3); // 三只哥布林全额命中
     expect(next.playerStats).toMatchObject({ momentum: 0, damage: 0 });
   });
 
@@ -311,7 +311,7 @@ describe("resolveTurn：多怪", () => {
       skillId: "basic_attack",
       targetIndex: 0,
     }); // 对撞只看重击怪动量 8 → 被压制
-    expect(next.playerStats.hp).toBe(100 - (20 - 6) * 2); // 两只重击怪各反击 14
+    expect(next.playerStats.hp).toBe(100 - 20 * 2); // 两只重击怪各全额命中 20
   });
 
   it("休息/防御时全体攻击步的怪同时攻击，蓄力怪不攻击", () => {

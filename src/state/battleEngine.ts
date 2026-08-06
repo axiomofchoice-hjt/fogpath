@@ -177,7 +177,6 @@ export function initBattle(
       maxMomentum: 0,
       hasAttack: false,
     },
-    playerDef: player.def,
     playerSummary: msg("蓄势待发。", "Getting ready..."),
     playerActions,
     equipment,
@@ -291,10 +290,11 @@ export function resolveTurn(
           "Your attack is deflected, dealing no damage."
         )
       );
+      // 缠斗胜出的敌人对玩家造成全额伤害（无防御减免）
       for (const i of aliveIndices) {
         const e = next.enemies[i];
-        if (e.momentum > 0 && e.momentum > state.playerDef) {
-          const dmg = Math.max(0, e.damage - state.playerDef);
+        if (e.momentum > 0) {
+          const dmg = e.damage;
           next.playerStats.hp = Math.max(0, next.playerStats.hp - dmg);
           next.log.push(
             msg(
