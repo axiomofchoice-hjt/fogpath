@@ -1,7 +1,7 @@
 import type {
+  AttackPattern,
   BattleEnemy,
   BattleState,
-  EnemyBattleAction,
   L,
   Player,
   PlayerBattleAction,
@@ -19,6 +19,9 @@ export const GUARD_MP = 10;
 
 /** 举盾减伤比例（盾牌防御动作） */
 export const SHIELD_REDUCTION = 0.5;
+
+/** 模式防重复：刚完成模式在下次选取时权重降低的比例（GDD 2.4.9） */
+export const PATTERN_REPEAT_PENALTY = 0.25;
 
 function enemyName(e: BattleEnemy, lang: "zh" | "en"): string {
   const def = enemyDefs[e.defId];
@@ -39,12 +42,76 @@ function actionStats(
   );
 }
 
-/** 敌人 AI：当前仅攻击策略，动作由敌人定义展开（预留扩展） */
-function enemyAi(): EnemyBattleAction {
-  return { kind: "attack", skillId: "basic_attack" };
+/**
+ * 模式池加权随机选取（GDD 2.4.9）：
+ * 刚完成的模式权重 × PATTERN_REPEAT_PENALTY 降档，提高不重复概率。
+ */
+export function pickPattern(
+  patterns: AttackPattern[],
+  lastPatternId: string | null,
+  rng: () => number = Math.random
+): AttackPattern {
+  const pool = patterns.map((p) => ({
+    pattern: p,
+    weight: p.id === lastPatternId ? p.weight * PATTERN_REPEAT_PENALTY : p.weight,
+  }));
+  const total = pool.reduce((sum, x) => sum + x.weight, 0);
+  let roll = rng() * total;
+  for (const { pattern, weight } of pool) {
+    roll -= weight;
+    if (roll < 0) return pattern;
+  }
+  return patterns[patterns.length - 1];
 }
 
-/** 全体存活敌人攻击玩家：按减伤比例计算伤害并写入日志、更新摘要 */
+/** 按敌人当前模式步设置本回合属性与摘要（蓄力回合无攻击属性，等同休息方） */
+function applyEnemyStep(e: BattleEnemy): BattleEnemy {
+  const def = enemyDefs[e.defId];
+  const pattern = def.patterns.find((p) => p.id === e.pattern.patternId);
+  const step = pattern?.steps[e.pattern.stepIndex];
+  if (!step || step.kind === "charge") {
+    return {
+      ...e,
+      damage: 0,
+      maxDamage: 0,
+      momentum: 0,
+      maxMomentum: 0,
+      hasAttack: false,
+      summary: msg(`${def.name.zh}正在蓄力…`, `${def.name.en} is charging...`),
+    };
+  }
+  return {
+    ...e,
+    damage: step.damage,
+    maxDamage: step.damage,
+    momentum: step.momentum,
+    maxMomentum: step.momentum,
+    hasAttack: true,
+    summary: msg(
+      `${def.name.zh}使用了${step.name.zh}！`,
+      `${def.name.en} uses ${step.name.en}!`
+    ),
+  };
+}
+
+/** 模式推进：执行完当前步后进入下一步；模式完成则选取下一个模式（防重复权重惩罚） */
+function advanceEnemyPattern(e: BattleEnemy): BattleEnemy {
+  const def = enemyDefs[e.defId];
+  const pattern = def.patterns.find((p) => p.id === e.pattern.patternId);
+  if (!pattern) return e;
+  const nextStep = e.pattern.stepIndex + 1;
+  if (nextStep < pattern.steps.length) {
+    return { ...e, pattern: { patternId: pattern.id, stepIndex: nextStep } };
+  }
+  const picked = pickPattern(def.patterns, pattern.id);
+  return {
+    ...e,
+    pattern: { patternId: picked.id, stepIndex: 0 },
+    lastPatternId: pattern.id,
+  };
+}
+
+/** 全体有攻击属性的存活敌人攻击玩家：按减伤比例计算伤害并写入日志 */
 function enemiesHitPlayer(
   next: BattleState,
   aliveIndices: number[],
@@ -52,6 +119,7 @@ function enemiesHitPlayer(
 ): void {
   for (const i of aliveIndices) {
     const e = next.enemies[i];
+    if (!e.hasAttack) continue;
     const dmg =
       reduction > 0 ? Math.max(0, Math.floor(e.damage * (1 - reduction))) : e.damage;
     next.playerStats.hp = Math.max(0, next.playerStats.hp - dmg);
@@ -61,7 +129,6 @@ function enemiesHitPlayer(
         `${enemyName(e, "en")} attacks you for ${dmg} damage.`
       )
     );
-    e.summary = enemySummary(e);
   }
 }
 
@@ -79,6 +146,7 @@ export function initBattle(
   const enemies: BattleEnemy[] = (config?.enemies ?? []).flatMap((id) => {
     const def = enemyDefs[id];
     if (!def) return [];
+    const first = pickPattern(def.patterns, null);
     return [{
       defId: id,
       hp: def.maxHp,
@@ -91,7 +159,9 @@ export function initBattle(
       maxMomentum: def.momentum,
       hasAttack: false,
       isBoss: !!def.isBoss,
-      action: enemyAi(),
+      pattern: { patternId: first.id, stepIndex: 0 },
+      lastPatternId: null,
+      // 战斗开始：蓄势待发（模式步从第一回合开始生效）
       summary: msg("蓄势待发。", "Getting ready..."),
     }];
   });
@@ -173,11 +243,7 @@ export function resolveTurn(
       maxMomentum: stats.momentum,
     },
     shieldActive: state.shieldActive,
-    enemies: state.enemies.map((e) => ({
-      ...e,
-      damage: e.maxDamage,
-      momentum: e.maxMomentum,
-    })),
+    enemies: state.enemies.map(applyEnemyStep),
     log: [...state.log],
   };
 
@@ -240,9 +306,6 @@ export function resolveTurn(
           );
         }
       }
-    }
-    for (const i of aliveIndices) {
-      next.enemies[i].summary = enemySummary(next.enemies[i]);
     }
   } else if (action.kind === "guard") {
     next.shieldActive = true;
@@ -313,23 +376,23 @@ export function resolveTurn(
     const playerMomChange = Math.min(next.playerStats.momentum, totalEnemyMomentum);
     next.playerStats.momentum = next.playerStats.momentum - playerMomChange;
     next.playerStats.damage = clashWon ? next.playerStats.maxDamage : 0;
+    // 敌方获胜 = 玩家对撞失败且非平局（平局双方均格挡）
+    const enemyWon = !clashWon && stats.momentum < maxEnemyMomentum;
     for (const i of aliveIndices) {
       const e = next.enemies[i];
       const momChange = Math.min(e.momentum, playerSkillMomentum);
       e.momentum = e.momentum - momChange;
-      // 赢家伤害显示满值：玩家赢 → 敌方全数格挡（0）；玩家输 → 敌方全额（满值）
-      e.damage = clashWon ? 0 : e.maxDamage;
+      // 赢家伤害显示满值：敌方赢 → 满值；玩家赢或平局 → 全数格挡（0）
+      e.damage = enemyWon ? e.maxDamage : 0;
     }
   } else {
     next.playerStats.damage = 0;
     next.playerStats.momentum = 0;
   }
 
-  // 攻击属性标记：玩家攻击 → 有效；防御/休息 → 无效（显示 0/0）
+  // 攻击属性标记：玩家攻击 → 有效；防御/休息/使用道具 → 无效（显示 0/0）
   next.playerStats.hasAttack = action.kind === "attack";
-  for (const i of aliveIndices) {
-    next.enemies[i].hasAttack = true;
-  }
+  // 敌人 hasAttack 已在回合开始时按模式步设置（蓄力回合为 false）
 
   const remaining = next.enemies.filter((e) => e.hp > 0).length;
   if (remaining === 0) {
@@ -339,36 +402,11 @@ export function resolveTurn(
     next.result = "defeat";
     next.log.push(msg("你被击败了…", "You have been defeated..."));
   } else {
+    // 模式推进：存活敌人执行下一步（模式完成则选取下一个模式）
     next.enemies = next.enemies.map((e) =>
-      e.hp > 0 ? { ...e, action: enemyAi() } : e
+      e.hp > 0 ? advanceEnemyPattern(e) : e
     );
   }
 
   return next;
-}
-
-/**
- * 生成敌人本回合动作摘要（在敌人卡右侧显示），简洁版：XXX使用了普通攻击。
- */
-function enemySummary(e: BattleEnemy): L {
-  const def = enemyDefs[e.defId];
-  const nameZh = def.name.zh;
-  const nameEn = def.name.en;
-
-  if (e.action.kind === "guard") {
-    return msg(`${nameZh}选择了防御。`, `${nameEn} guards.`);
-  }
-  if (e.action.kind === "rest") {
-    return msg(
-      `${nameZh}选择了休息，恢复了 ${REST_MP} 点 MP。`,
-      `${nameEn} rests, recovering ${REST_MP} MP.`
-    );
-  }
-
-  const skill = skillDefs[e.action.skillId];
-  if (!skill) return msg(`${nameZh}使用了未知技能。`, `${nameEn} uses an unknown skill.`);
-  return msg(
-    `${nameZh}使用了${skill.name.zh}。`,
-    `${nameEn} uses ${skill.name.en}.`
-  );
 }

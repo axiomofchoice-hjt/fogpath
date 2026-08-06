@@ -245,7 +245,7 @@ describe("消耗品与休息", () => {
         : null,
     };
     const used = gameReducer(hurt, { type: "USE_ITEM", itemId: "health_potion" });
-    expect(used.battle?.playerStats.hp).toBe(62); // 40+30=70，哥布林打 8
+    expect(used.battle?.playerStats.hp).toBe(70); // 40+30，哥布林首回合蓄力不攻击
     expect(used.battle?.turn).toBe(1);
     expect(used.player.inventory).toContainEqual({ itemId: "health_potion", quantity: 1 });
   });

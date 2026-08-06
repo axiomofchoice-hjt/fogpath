@@ -22,6 +22,10 @@ const STATUS_INFO: Record<
     descKey: "battle.status.guard.desc",
     params: { pct: SHIELD_PCT },
   },
+  charge: {
+    nameKey: "battle.status.charge.name",
+    descKey: "battle.status.charge.desc",
+  },
 };
 
 type StatRowProps = {
@@ -322,7 +326,7 @@ function BattleView() {
               borderClass={alive ? "border-game-red/40" : "border-game-border"}
               dimmed={!alive}
               stats={enemy}
-              statuses={[]}
+              statuses={alive && battle.turn > 0 && !enemy.hasAttack ? ["charge"] : []}
               summary={loc(enemy.summary, lang)}
             />
           );

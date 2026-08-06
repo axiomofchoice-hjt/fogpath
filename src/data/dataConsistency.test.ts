@@ -33,6 +33,24 @@ describe("敌人定义", () => {
       expect(def.id).toBe(id);
     }
   });
+
+  it("攻击模式合法：模式非空、ID 唯一、权重与步数有效、攻击步数值为正", () => {
+    for (const def of Object.values(enemyDefs)) {
+      expect(def.patterns.length, def.id).toBeGreaterThan(0);
+      const ids = def.patterns.map((p) => p.id);
+      expect(new Set(ids).size, def.id).toBe(ids.length);
+      for (const pattern of def.patterns) {
+        expect(pattern.weight, `${def.id}:${pattern.id}`).toBeGreaterThan(0);
+        expect(pattern.steps.length, `${def.id}:${pattern.id}`).toBeGreaterThan(0);
+        for (const step of pattern.steps) {
+          if (step.kind === "attack") {
+            expect(step.damage, `${def.id}:${pattern.id}`).toBeGreaterThan(0);
+            expect(step.momentum, `${def.id}:${pattern.id}`).toBeGreaterThan(0);
+          }
+        }
+      }
+    }
+  });
 });
 
 describe("测试场景配置", () => {

@@ -9,7 +9,35 @@ export const enemyDefs: Record<string, EnemyDef> = {
     maxMp: 10,
     damage: 8,
     momentum: 4,
-    ai: "attack",
+    patterns: [
+      {
+        id: "combo",
+        weight: 10,
+        steps: [
+          { kind: "charge" },
+          {
+            kind: "attack",
+            name: { zh: "普通攻击", en: "Basic Attack" },
+            damage: 14,
+            momentum: 6,
+          },
+        ],
+      },
+      {
+        id: "heavy",
+        weight: 6,
+        steps: [
+          { kind: "charge" },
+          { kind: "charge" },
+          {
+            kind: "attack",
+            name: { zh: "重击", en: "Heavy Blow" },
+            damage: 20,
+            momentum: 8,
+          },
+        ],
+      },
+    ],
   },
   goblin_brute: {
     id: "goblin_brute",
@@ -19,6 +47,39 @@ export const enemyDefs: Record<string, EnemyDef> = {
     maxMp: 10,
     damage: 12,
     momentum: 7,
-    ai: "attack",
+    patterns: [
+      {
+        id: "press",
+        weight: 10,
+        steps: [
+          {
+            kind: "attack",
+            name: { zh: "普通攻击", en: "Basic Attack" },
+            damage: 12,
+            momentum: 7,
+          },
+          {
+            kind: "attack",
+            name: { zh: "普通攻击", en: "Basic Attack" },
+            damage: 12,
+            momentum: 7,
+          },
+        ],
+      },
+      {
+        id: "heavy",
+        weight: 5,
+        steps: [
+          { kind: "charge" },
+          { kind: "charge" },
+          {
+            kind: "attack",
+            name: { zh: "重击", en: "Heavy Blow" },
+            damage: 30,
+            momentum: 12,
+          },
+        ],
+      },
+    ],
   },
 };

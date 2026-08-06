@@ -124,9 +124,9 @@ export interface BattleState {
 
 export type BattleResult = "ongoing" | "victory" | "defeat";
 
-// --- 状态（战斗中可叠加多个：举盾、致盲、中毒等） ---
+// --- 状态（战斗中可叠加多个：举盾、蓄力、中毒等） ---
 
-export type StatusId = "guard";
+export type StatusId = "guard" | "charge";
 
 // --- 技能 ---
 
@@ -142,6 +142,19 @@ export interface SkillDef {
 
 // --- 敌人 ---
 
+/** 模式步：蓄力回合（不攻击）或攻击步（蓄力技，显式数值） */
+export type PatternStep =
+  | { kind: "charge" }
+  | { kind: "attack"; name: L; damage: number; momentum: number };
+
+/** 敌人攻击模式：固定动作序列，模式内部完全确定（GDD 2.4.9） */
+export interface AttackPattern {
+  id: string;
+  /** 模式池权重：模式完成后随机选取，刚完成的权重降低（防重复） */
+  weight: number;
+  steps: PatternStep[];
+}
+
 export interface EnemyDef {
   id: string;
   name: L;
@@ -151,8 +164,8 @@ export interface EnemyDef {
   damage: number;
   momentum: number;
   isBoss?: boolean;
-  /** AI 策略（实现时定） */
-  ai: string;
+  /** 攻击模式池（固定序列，随机选取） */
+  patterns: AttackPattern[];
 }
 
 export interface BattleEnemy {
@@ -165,10 +178,13 @@ export interface BattleEnemy {
   maxDamage: number;
   momentum: number;
   maxMomentum: number;
-  /** 本回合动作是否带攻击属性（未出手时为 false，显示 0/0） */
+  /** 本回合动作是否带攻击属性（蓄力/未出手时为 false，显示 0/0） */
   hasAttack: boolean;
   isBoss: boolean;
-  action: EnemyBattleAction;
+  /** 当前模式与步骤 */
+  pattern: { patternId: string; stepIndex: number };
+  /** 上一回合完成的模式 ID（防重复权重惩罚用） */
+  lastPatternId: string | null;
   /** 上一回合动作的结果摘要（双语） */
   summary: L;
 }
@@ -179,12 +195,6 @@ export type PlayerBattleAction =
   | { kind: "attack"; skillId: string; targetIndex: number }
   | { kind: "guard" }
   | { kind: "useItem"; itemId: string }
-  | { kind: "rest" };
-
-/** 敌人本回合动作（AI 决策结果） */
-export type EnemyBattleAction =
-  | { kind: "attack"; skillId: string }
-  | { kind: "guard" }
   | { kind: "rest" };
 
 export interface GameState {
