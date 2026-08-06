@@ -63,6 +63,24 @@ describe("配置校验", () => {
     ).toThrow(/不存在的物品/);
   });
 
+  it("未实现功能字段被拒绝：敌人 isBoss（Boss 系统规划中）", () => {
+    expect(() =>
+      validateEnemies({ goblin: { id: "goblin", name: { zh: "a", en: "b" }, icon: "x", maxHp: 10, maxMp: 0, damage: 1, momentum: 1, isBoss: true, patterns: [{ id: "p", weight: 1, steps: [{ kind: "charge" }] }] } }),
+    ).toThrow(/isBoss.*未知字段|未知字段/);
+  });
+
+  it("未实现功能字段被拒绝：技能 effects（特殊效果规划中）", () => {
+    expect(() =>
+      validateSkills({ hit: { id: "hit", name: { zh: "a", en: "b" }, icon: "x", type: "physical", mpCost: 1, effects: ["poison"] } }),
+    ).toThrow(/未知字段/);
+  });
+
+  it("蓄力步携带攻击数值被拒绝", () => {
+    expect(() =>
+      validateEnemies({ goblin: { id: "goblin", name: { zh: "a", en: "b" }, icon: "x", maxHp: 10, maxMp: 0, damage: 1, momentum: 1, patterns: [{ id: "p", weight: 1, steps: [{ kind: "charge", damage: 5 }] }] } }),
+    ).toThrow(/蓄力步不允许额外字段/);
+  });
+
   it("合法数据通过", () => {
     const skills = validateSkills({ hit: { id: "hit", name: { zh: "a", en: "b" }, icon: "x", type: "physical", mpCost: 1 } });
     const items = validateItems({ sword: { id: "sword", name: { zh: "a", en: "b" }, icon: "x", type: "equipment", description: { zh: "a", en: "b" }, rarity: 1, actions: [{ skillId: "hit", damage: 1, momentum: 1 }] } }, skills);

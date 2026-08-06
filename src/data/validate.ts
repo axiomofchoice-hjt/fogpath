@@ -3,6 +3,8 @@ import type { EnemyDef, ItemDef, RoomDef, SkillDef } from "../types";
 /**
  * 轻量配置校验：JSON 数据没有编译期类型，在加载时逐字段检查，
  * 失败时抛出带路径的错误信息（如 `[config] enemies.json: goblin.patterns[0]`）。
+ * 未实现的 GDD 功能字段（isBoss、特殊效果、AOE 等）一律按未知字段拒绝——
+ * 数据层不允许出现代码尚未实现的内容。
  */
 
 type AnyRecord = Record<string, unknown>;
@@ -15,8 +17,16 @@ function fail(path: string, msg: string): never {
   throw new Error(`[config] ${path}: ${msg}`);
 }
 
-function assertRecord(v: unknown, path: string): AnyRecord {
+/** 严格对象检查：字段白名单之外的内容（未实现功能/拼写错误）直接拒绝 */
+function assertRecord(v: unknown, path: string, fields?: readonly string[]): AnyRecord {
   if (!isRecord(v)) fail(path, "应为对象");
+  if (fields) {
+    for (const key of Object.keys(v)) {
+      if (!fields.includes(key)) {
+        fail(`${path}.${key}`, `未知字段（未实现的 GDD 功能不允许出现在配置中）`);
+      }
+    }
+  }
   return v;
 }
 
@@ -38,7 +48,7 @@ function assertBoolean(v: unknown, path: string): boolean {
 }
 
 function assertL(v: unknown, path: string): { zh: string; en: string } {
-  const rec = assertRecord(v, path);
+  const rec = assertRecord(v, path, ["zh", "en"]);
   return { zh: assertString(rec.zh, `${path}.zh`), en: assertString(rec.en, `${path}.en`) };
 }
 
@@ -63,7 +73,7 @@ export function validateSkills(raw: unknown): Record<string, SkillDef> {
   const out: Record<string, SkillDef> = {};
   for (const [key, value] of Object.entries(root)) {
     const path = `skills.json:${key}`;
-    const rec = assertRecord(value, path);
+    const rec = assertRecord(value, path, ["id", "name", "icon", "type", "mpCost"]);
     const id = assertString(rec.id, `${path}.id`);
     assertKeyMatch(key, id, path);
     const type = assertString(rec.type, `${path}.type`);
@@ -85,7 +95,10 @@ export function validateItems(raw: unknown, skills: Record<string, SkillDef>): R
   const out: Record<string, ItemDef> = {};
   for (const [key, value] of Object.entries(root)) {
     const path = `items.json:${key}`;
-    const rec = assertRecord(value, path);
+    const rec = assertRecord(value, path, [
+      "id", "name", "icon", "type", "description", "rarity",
+      "atk", "def", "spd", "hpRestore", "mpRestore", "isShield", "actions",
+    ]);
     const id = assertString(rec.id, `${path}.id`);
     assertKeyMatch(key, id, path);
     const type = assertString(rec.type, `${path}.type`);
@@ -116,7 +129,7 @@ export function validateItems(raw: unknown, skills: Record<string, SkillDef>): R
       }
       item.actions = rec.actions.map((a, i) => {
         const apath = `${path}.actions[${i}]`;
-        const arec = assertRecord(a, apath);
+        const arec = assertRecord(a, apath, ["skillId", "damage", "momentum"]);
         return {
           skillId: assertSkillId(arec.skillId, `${apath}.skillId`, skillIds),
           damage: assertNumber(arec.damage, `${apath}.damage`, { gt: 0 }),
@@ -134,7 +147,9 @@ export function validateEnemies(raw: unknown): Record<string, EnemyDef> {
   const out: Record<string, EnemyDef> = {};
   for (const [key, value] of Object.entries(root)) {
     const path = `enemies.json:${key}`;
-    const rec = assertRecord(value, path);
+    const rec = assertRecord(value, path, [
+      "id", "name", "icon", "maxHp", "maxMp", "damage", "momentum", "patterns",
+    ]);
     const id = assertString(rec.id, `${path}.id`);
     assertKeyMatch(key, id, path);
     if (!Array.isArray(rec.patterns) || rec.patterns.length === 0) {
@@ -143,7 +158,7 @@ export function validateEnemies(raw: unknown): Record<string, EnemyDef> {
     const patternIds = new Set<string>();
     const patterns = rec.patterns.map((p, pi) => {
       const ppath = `${path}.patterns[${pi}]`;
-      const prec = assertRecord(p, ppath);
+      const prec = assertRecord(p, ppath, ["id", "weight", "steps"]);
       const pid = assertString(prec.id, `${ppath}.id`);
       if (patternIds.has(pid)) fail(ppath, `模式 id "${pid}" 重复`);
       patternIds.add(pid);
@@ -155,9 +170,11 @@ export function validateEnemies(raw: unknown): Record<string, EnemyDef> {
         weight: assertNumber(prec.weight, `${ppath}.weight`, { gt: 0 }),
         steps: prec.steps.map((s, si) => {
           const spath = `${ppath}.steps[${si}]`;
-          const srec = assertRecord(s, spath);
+          const srec = assertRecord(s, spath, ["kind", "name", "damage", "momentum"]);
           const kind = assertString(srec.kind, `${spath}.kind`);
           if (kind === "charge") {
+            const extra = Object.keys(srec).filter((k) => k !== "kind");
+            if (extra.length > 0) fail(spath, `蓄力步不允许额外字段 ${extra.join(",")}`);
             return { kind: "charge" as const };
           }
           if (kind === "attack") {
@@ -192,11 +209,13 @@ export function validateRooms(raw: unknown, items: Record<string, ItemDef>): Rec
   const out: Record<string, RoomDef> = {};
   for (const [key, value] of Object.entries(root)) {
     const path = `rooms.json:${key}`;
-    const rec = assertRecord(value, path);
+    const rec = assertRecord(value, path, [
+      "id", "name", "description", "area", "isSafeRoom", "itemIds", "npc",
+    ]);
     const id = assertString(rec.id, `${path}.id`);
     assertKeyMatch(key, id, path);
     if (!Array.isArray(rec.itemIds)) fail(`${path}.itemIds`, "应为数组");
-    const npcRec = assertRecord(rec.npc, `${path}.npc`);
+    const npcRec = assertRecord(rec.npc, `${path}.npc`, ["name", "icon", "dialogue"]);
     if (!Array.isArray(npcRec.dialogue) || npcRec.dialogue.length === 0) {
       fail(`${path}.npc.dialogue`, "应为非空数组");
     }

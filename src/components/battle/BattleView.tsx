@@ -56,7 +56,6 @@ function StatRow({ label, value, max, fillClass, labelClass, gray = false }: Sta
 type CombatantCardProps = {
   icon: string;
   name: string;
-  badge?: React.ReactNode;
   borderClass: string;
   dimmed?: boolean;
   stats: CombatStats;
@@ -68,7 +67,6 @@ type CombatantCardProps = {
 function CombatantCard({
   icon,
   name,
-  badge,
   borderClass,
   dimmed = false,
   stats: { hp, maxHp, mp, maxMp, damage, maxDamage, momentum, maxMomentum, hasAttack },
@@ -85,7 +83,6 @@ function CombatantCard({
           <span className="text-game-text text-xs font-mono text-center leading-tight">
             {name}
           </span>
-          {badge}
         </div>
         <div className="w-36 flex-shrink-0 space-y-1.5">
           <StatRow
@@ -310,13 +307,6 @@ function BattleView() {
               key={`${enemy.defId}-${i}`}
               icon={def.icon}
               name={loc(def.name, lang)}
-              badge={
-                enemy.isBoss && (
-                  <span className="text-game-red text-[9px] font-mono border border-game-red/40 rounded px-1">
-                    BOSS
-                  </span>
-                )
-              }
               borderClass={alive ? "border-game-red/40" : "border-game-border"}
               dimmed={!alive}
               stats={enemy}

@@ -65,8 +65,14 @@ export function pickPattern(
 /** 按敌人当前模式步设置本回合属性与摘要（蓄力回合无攻击属性，等同休息方） */
 function applyEnemyStep(e: BattleEnemy): BattleEnemy {
   const def = enemyDefs[e.defId];
+  if (!def) {
+    throw new Error(`[battle] 未知敌人定义 "${e.defId}"`);
+  }
   const pattern = def.patterns.find((p) => p.id === e.pattern.patternId);
-  const step = pattern?.steps[e.pattern.stepIndex];
+  if (!pattern) {
+    throw new Error(`[battle] 敌人 ${e.defId} 的模式 "${e.pattern.patternId}" 不存在`);
+  }
+  const step = pattern.steps[e.pattern.stepIndex];
   if (!step || step.kind === "charge") {
     return {
       ...e,
@@ -95,8 +101,13 @@ function applyEnemyStep(e: BattleEnemy): BattleEnemy {
 /** 模式推进：执行完当前步后进入下一步；模式完成则选取下一个模式（防重复权重惩罚） */
 function advanceEnemyPattern(e: BattleEnemy): BattleEnemy {
   const def = enemyDefs[e.defId];
+  if (!def) {
+    throw new Error(`[battle] 未知敌人定义 "${e.defId}"`);
+  }
   const pattern = def.patterns.find((p) => p.id === e.pattern.patternId);
-  if (!pattern) return e;
+  if (!pattern) {
+    throw new Error(`[battle] 敌人 ${e.defId} 的模式 "${e.pattern.patternId}" 不存在`);
+  }
   const nextStep = e.pattern.stepIndex + 1;
   if (nextStep < pattern.steps.length) {
     return { ...e, pattern: { patternId: pattern.id, stepIndex: nextStep } };
@@ -135,17 +146,25 @@ export function initBattle(
   player: Player
 ): BattleState {
   const config = testBattleConfigs[scenarioId];
+  if (!config) {
+    throw new Error(`[battle] 未知测试场景 "${scenarioId}"（testBattleConfigs 中不存在）`);
+  }
   // 玩家本身无属性：攻击动作全部来自装备（测试场景可直接覆盖装备）
-  const equipment = config?.equipment ?? player.equipment;
+  const equipment = config.equipment ?? player.equipment;
   const playerActions = equipment.flatMap((id) => {
+    if (id && !itemDefs[id]) {
+      throw new Error(`[battle] 场景 "${scenarioId}" 装备覆盖引用了不存在的物品 "${id}"`);
+    }
     const def = id ? itemDefs[id] : undefined;
     return def?.actions ?? [];
   });
-  const enemies: BattleEnemy[] = (config?.enemies ?? []).flatMap((id) => {
+  const enemies: BattleEnemy[] = config.enemies.map((id) => {
     const def = enemyDefs[id];
-    if (!def) return [];
+    if (!def) {
+      throw new Error(`[battle] 场景 "${scenarioId}" 引用了不存在的敌人 "${id}"`);
+    }
     const first = pickPattern(def.patterns, null);
-    return [{
+    return {
       defId: id,
       hp: def.maxHp,
       maxHp: def.maxHp,
@@ -156,12 +175,11 @@ export function initBattle(
       momentum: 0,
       maxMomentum: def.momentum,
       hasAttack: false,
-      isBoss: !!def.isBoss,
       pattern: { patternId: first.id, stepIndex: 0 },
       lastPatternId: null,
       // 战斗开始：蓄势待发（模式步从第一回合开始生效）
       summary: msg("蓄势待发。", "Getting ready..."),
-    }];
+    };
   });
   return {
     scenarioId,

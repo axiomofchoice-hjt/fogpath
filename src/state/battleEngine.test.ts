@@ -30,6 +30,10 @@ function setPattern(
 }
 
 describe("initBattle", () => {
+  it("未知测试场景：启动即断言（不静默开始空战斗）", () => {
+    expect(() => initBattle("no_such_scenario", testPlayer())).toThrow(/未知测试场景/);
+  });
+
   it("默认装备提供普通攻击动作，识别盾牌减伤", () => {
     const battle = initBattle("test_atk_vs_atk", testPlayer());
     expect(battle.playerActions).toEqual([

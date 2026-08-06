@@ -162,7 +162,6 @@ export interface EnemyDef {
   maxMp: number;
   damage: number;
   momentum: number;
-  isBoss?: boolean;
   /** 攻击模式池（固定序列，随机选取） */
   patterns: AttackPattern[];
 }
@@ -179,7 +178,6 @@ export interface BattleEnemy {
   maxMomentum: number;
   /** 本回合动作是否带攻击属性（蓄力/未出手时为 false，显示 0/0） */
   hasAttack: boolean;
-  isBoss: boolean;
   /** 当前模式与步骤 */
   pattern: { patternId: string; stepIndex: number };
   /** 上一回合完成的模式 ID（防重复权重惩罚用） */
