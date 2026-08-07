@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { DungeonRoom } from "../../types";
 import { useGame } from "../../state/useGame";
 import { dungeons as dungeonDefs, enemyDefs, items as itemDefs } from "../../data/config";
 import { useLang } from "../../i18n/useLang";
@@ -8,7 +9,7 @@ import Typewriter from "../room/Typewriter";
 
 /** 当前房间的文字描述：类型底文 + 敌人/物品补充 */
 function roomDescription(
-  room: { type: string; enemyIds: string[]; itemIds: string[] },
+  room: Pick<DungeonRoom, "type" | "enemyIds" | "itemIds">,
   t: (key: TKey, params?: Params) => string,
   lang: "zh" | "en"
 ): string {
@@ -74,6 +75,13 @@ function DungeonView() {
   const { rooms, playerPos } = dungeon;
   const currentRoom = rooms[playerPos.y][playerPos.x]!;
   const pendingRoom = pending ? rooms[pending.y][pending.x] : null;
+  // 情报面板敌人：按种类聚合（同种多只显示 xN）
+  const pendingEnemies = pendingRoom
+    ? [...pendingRoom.enemyIds.reduce<Map<string, number>>((m, id) => {
+        m.set(id, (m.get(id) ?? 0) + 1);
+        return m;
+      }, new Map())]
+    : [];
 
   return (
     <main className="flex-1 overflow-y-auto p-6">
@@ -133,14 +141,14 @@ function DungeonView() {
               {pendingRoom.type === "boss" ? t("dungeon.bossRoom") : t("dungeon.room")}
             </div>
             <div className="space-y-1">
-              {pendingRoom.enemyIds.map((id, i) => {
+              {pendingEnemies.map(([id, count]) => {
                 const def = enemyDefs[id];
                 if (!def) return null;
                 return (
-                  <div key={i} className="flex items-center gap-2 text-game-text text-xs font-mono">
+                  <div key={id} className="flex items-center gap-2 text-game-text text-xs font-mono">
                     <span>{def.icon}</span>
                     <span>{loc(def.name, lang)}</span>
-                    <span className="text-game-dim">x1</span>
+                    <span className="text-game-dim">x{count}</span>
                   </div>
                 );
               })}

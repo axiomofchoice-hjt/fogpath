@@ -75,6 +75,51 @@ function articulationPoints(d: DungeonState): { x: number; y: number }[] {
   return out;
 }
 
+/** 重新 BFS 计算的深度矩阵（用于与存储的 depth 一致性校验） */
+function bfsDepths(d: DungeonState): number[][] {
+  const out = Array.from({ length: d.size.h }, () =>
+    Array.from({ length: d.size.w }, () => -1)
+  );
+  out[d.playerPos.y][d.playerPos.x] = 0;
+  const queue = [{ x: d.playerPos.x, y: d.playerPos.y }];
+  for (let qi = 0; qi < queue.length; qi++) {
+    const cur = queue[qi];
+    for (const dir of DIRS) {
+      const nx = cur.x + dir.x;
+      const ny = cur.y + dir.y;
+      if (nx < 0 || ny < 0 || nx >= d.size.w || ny >= d.size.h) continue;
+      if (!d.rooms[ny][nx] || out[ny][nx] !== -1) continue;
+      out[ny][nx] = out[cur.y][cur.x] + 1;
+      queue.push({ x: nx, y: ny });
+    }
+  }
+  return out;
+}
+
+/** 汇总结构指标：房间数、三岔数、最深深度、Boss 位置 */
+function metrics(d: DungeonState): {
+  count: number;
+  branched: number;
+  maxDepth: number;
+  boss: { x: number; y: number } | null;
+} {
+  let count = 0;
+  let branched = 0;
+  let maxDepth = 0;
+  let boss: { x: number; y: number } | null = null;
+  for (let y = 0; y < d.size.h; y++) {
+    for (let x = 0; x < d.size.w; x++) {
+      const r = d.rooms[y][x];
+      if (!r) continue;
+      count++;
+      maxDepth = Math.max(maxDepth, r.depth);
+      if (r.type === "boss") boss = { x, y };
+      if (degreeOf(d, x, y) >= 3) branched++;
+    }
+  }
+  return { count, branched, maxDepth, boss };
+}
+
 describe("generateDungeon（以撒式稀疏生成）", () => {
   it("尺寸与入口正确：居中、已探索、无敌人/物品", () => {
     const d = generateDungeon(forest, seeded(42));
@@ -162,6 +207,58 @@ describe("generateDungeon（以撒式稀疏生成）", () => {
         if (!r) continue;
         for (const id of r.itemIds) {
           expect(forest.itemPool).toContain(id);
+        }
+      }
+    }
+  });
+});
+
+describe("generateDungeon（多种子不变量，防回归）", () => {
+  it("50 个随机种子全部满足生成不变量", () => {
+    for (let seed = 0; seed < 50; seed++) {
+      const label = `seed ${seed}`;
+      const d = generateDungeon(forest, seeded(seed));
+      const { count, branched, maxDepth, boss } = metrics(d);
+
+      // 房数在目标附近（软约束）
+      expect(count, `${label} 房数`).toBeGreaterThanOrEqual(forest.roomCount - 3);
+      expect(count, `${label} 房数`).toBeLessThanOrEqual(forest.roomCount + 10);
+      // 稀疏：存在墙格
+      expect(d.rooms.flat().some((r) => r === null), `${label} 稀疏`).toBe(true);
+      // 全连通
+      expect(reachableCount(d), `${label} 全连通`).toBe(count);
+      // 存储深度与 BFS 重算一致（敌人分布依赖 depth）
+      const bfs = bfsDepths(d);
+      for (let y = 0; y < d.size.h; y++) {
+        for (let x = 0; x < d.size.w; x++) {
+          if (!d.rooms[y][x]) continue;
+          expect(d.rooms[y][x]!.depth, `${label} 深度(${x},${y})`).toBe(bfs[y][x]);
+        }
+      }
+      // Boss：唯一、最深、非入口、携带 Boss 敌人
+      expect(boss, `${label} Boss 存在`).not.toBeNull();
+      const bossRoom = d.rooms[boss!.y][boss!.x]!;
+      expect(boss, `${label} Boss 非入口`).not.toEqual({
+        x: d.playerPos.x,
+        y: d.playerPos.y,
+      });
+      expect(bossRoom.depth, `${label} Boss 最深`).toBe(maxDepth);
+      expect(maxDepth, `${label} 深度`).toBeGreaterThan(0);
+      expect(bossRoom.enemyIds, `${label} Boss 敌人`).toContain(forest.bossId);
+      // 必经房间（割点）与多分支
+      expect(articulationPoints(d).length, `${label} 必经房间`).toBeGreaterThanOrEqual(1);
+      expect(branched, `${label} 多分支`).toBeGreaterThanOrEqual(1);
+      // 敌人深度全部落在池区间内
+      for (let y = 0; y < d.size.h; y++) {
+        for (let x = 0; x < d.size.w; x++) {
+          const r = d.rooms[y][x];
+          if (!r || r.type !== "normal") continue;
+          const norm = Math.floor((r.depth * 10) / maxDepth);
+          for (const id of r.enemyIds) {
+            const pool = forest.enemyPool.find((e) => e.enemyId === id)!;
+            expect(norm, `${label} 敌人 ${id} @${norm}`).toBeGreaterThanOrEqual(pool.minDepth);
+            expect(norm, `${label} 敌人 ${id} @${norm}`).toBeLessThanOrEqual(pool.maxDepth);
+          }
         }
       }
     }

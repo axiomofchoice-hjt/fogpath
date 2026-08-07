@@ -3,6 +3,9 @@ import type { DungeonDef, DungeonRoom, DungeonState } from "../types";
 /** 随机源（可注入便于测试） */
 export type Rng = () => number;
 
+/** 网格坐标 */
+type Pos = { x: number; y: number };
+
 const DIRS = [
   { x: 1, y: 0 },
   { x: -1, y: 0 },
@@ -15,6 +18,9 @@ const ANCHOR_COUNT = 4;
 
 /** 锚点最小曼哈顿间距（保证足迹铺开） */
 const ANCHOR_MIN_SEP = 6;
+
+/** 锚点散布尝试上限（放不满时以已放置锚点继续） */
+const MAX_ANCHOR_TRIES = 1000;
 
 /** 走廊单条步数上限（防病态种子死循环） */
 const MAX_CORRIDOR_STEPS = 400;
@@ -36,12 +42,8 @@ function pickOne<T>(list: T[], rng: Rng): T {
   return list[Math.floor(rng() * list.length)];
 }
 
-function emptyRoom(
-  type: DungeonRoom["type"],
-  explored: boolean,
-  depth: number
-): DungeonRoom {
-  return { type, explored, depth, enemyIds: [], itemIds: [] };
+function emptyRoom(type: DungeonRoom["type"], explored: boolean): DungeonRoom {
+  return { type, explored, depth: 0, enemyIds: [], itemIds: [] };
 }
 
 /**
@@ -64,12 +66,11 @@ export function generateDungeon(def: DungeonDef, rng: Rng = Math.random): Dungeo
   // 入口居中
   const cx = Math.floor(w / 2);
   const cy = Math.floor(h / 2);
-  rooms[cy][cx] = emptyRoom("entrance", true, 0);
-  const placed: { x: number; y: number }[] = [{ x: cx, y: cy }];
+  rooms[cy][cx] = emptyRoom("entrance", true);
+  const placed: Pos[] = [{ x: cx, y: cy }];
 
   const inBounds = (x: number, y: number) => x >= 0 && y >= 0 && x < w && y < h;
-  const manhattan = (a: { x: number; y: number }, b: { x: number; y: number }) =>
-    Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+  const manhattan = (a: Pos, b: Pos) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
   const neighborCount = (x: number, y: number) => {
     let n = 0;
     for (const d of DIRS) {
@@ -81,14 +82,14 @@ export function generateDungeon(def: DungeonDef, rng: Rng = Math.random): Dungeo
   };
   const place = (x: number, y: number) => {
     if (rooms[y][x]) return;
-    rooms[y][x] = emptyRoom("normal", false, 0);
+    rooms[y][x] = emptyRoom("normal", false);
     placed.push({ x, y });
   };
 
   // 1. 锚点：入口 + 随机散布（最小间距保证铺开）
-  const anchors: { x: number; y: number }[] = [{ x: cx, y: cy }];
+  const anchors: Pos[] = [{ x: cx, y: cy }];
   let tries = 0;
-  while (anchors.length < ANCHOR_COUNT && tries < 1000) {
+  while (anchors.length < ANCHOR_COUNT && tries < MAX_ANCHOR_TRIES) {
     tries++;
     const x = Math.floor(rng() * w);
     const y = Math.floor(rng() * h);
@@ -99,7 +100,7 @@ export function generateDungeon(def: DungeonDef, rng: Rng = Math.random): Dungeo
 
   // 2. 骨架：锚点曼哈顿最小生成树
   const inTree = new Set([0]);
-  const treeEdges: { a: { x: number; y: number }; b: { x: number; y: number } }[] = [];
+  const treeEdges: { a: Pos; b: Pos }[] = [];
   while (inTree.size < anchors.length) {
     let best: { i: number; j: number; d: number } | null = null;
     for (let i = 0; i < anchors.length; i++) {
@@ -160,7 +161,7 @@ export function generateDungeon(def: DungeonDef, rng: Rng = Math.random): Dungeo
   }
 
   // 5. 多分支保证：若没有度数 ≥3 的房间，给一个度数 2 的房间接枝
-  const degree = (p: { x: number; y: number }) => neighborCount(p.x, p.y);
+  const degree = (p: Pos) => neighborCount(p.x, p.y);
   if (!placed.some((p) => degree(p) >= 3)) {
     for (const root of placed.filter((p) => degree(p) === 2)) {
       for (const dir of DIRS) {
@@ -176,46 +177,46 @@ export function generateDungeon(def: DungeonDef, rng: Rng = Math.random): Dungeo
   }
 
   // BFS 深度（从入口的最短步数）
-  const depthOf = (x: number, y: number) => rooms[y][x]!.depth;
   const queue: { x: number; y: number }[] = [{ x: cx, y: cy }];
   const seen = new Set([`${cx},${cy}`]);
-  while (queue.length > 0) {
-    const cur = queue.shift()!;
+  for (let qi = 0; qi < queue.length; qi++) {
+    const cur = queue[qi];
     for (const d of DIRS) {
       const nx = cur.x + d.x;
       const ny = cur.y + d.y;
       if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
       if (!rooms[ny][nx] || seen.has(`${nx},${ny}`)) continue;
-      rooms[ny][nx]!.depth = depthOf(cur.x, cur.y) + 1;
+      rooms[ny][nx]!.depth = rooms[cur.y][cur.x]!.depth + 1;
       seen.add(`${nx},${ny}`);
       queue.push({ x: nx, y: ny });
     }
   }
 
-  // Boss 房：最深处随机取一；平手取邻居最少的（叶节点，以撒式）
+  // Boss 房：最深处中取邻居最少的（叶节点，以撒式），并列随机取一
   let bossDepth = 0;
   for (const room of placed) bossDepth = Math.max(bossDepth, rooms[room.y][room.x]!.depth);
-  const deepest = placed.filter((p) => rooms[p.y][p.x]!.depth === bossDepth);
-  let bossPos = pickOne(deepest, rng);
-  let minNeighbors = Infinity;
-  for (const p of deepest) {
+  const deepest: (Pos & { neighbors: number })[] = [];
+  for (const p of placed) {
+    if (rooms[p.y][p.x]!.depth !== bossDepth) continue;
     let neighbors = 0;
     for (const d of DIRS) {
       const nx = p.x + d.x;
       const ny = p.y + d.y;
       if (nx >= 0 && ny >= 0 && nx < w && ny < h && rooms[ny][nx]) neighbors++;
     }
-    if (neighbors < minNeighbors) {
-      minNeighbors = neighbors;
-      bossPos = p;
-    }
+    deepest.push({ x: p.x, y: p.y, neighbors });
   }
+  const minNeighbors = Math.min(...deepest.map((p) => p.neighbors));
+  const bossPos = pickOne(
+    deepest.filter((p) => p.neighbors === minNeighbors),
+    rng
+  );
   rooms[bossPos.y][bossPos.x]!.type = "boss";
   rooms[bossPos.y][bossPos.x]!.enemyIds = [def.bossId];
 
-  // 归一化深度（0-10）：敌人池区间与地图尺寸解耦
+  // 归一化深度（0-10）：敌人池区间与地图尺寸解耦（bossDepth 恒 > 0，防御除零）
   const normDepth = (x: number, y: number) =>
-    Math.floor((rooms[y][x]!.depth * 10) / bossDepth);
+    Math.floor((rooms[y][x]!.depth * 10) / (bossDepth || 1));
 
   // 普通房：敌人 + 物品
   for (const room of placed) {

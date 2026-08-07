@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { DungeonRoom, DungeonState, GameState } from "../types";
+import type { DungeonRoom, GameState } from "../types";
 import { gameReducer, initialGameState, initialPlayer, rollLoot } from "./gameReducer";
 
 describe("rollLoot（掉落结算）", () => {
@@ -131,11 +131,33 @@ describe("地牢：移动与情报", () => {
     expect(gameReducer(s, { type: "DUNGEON_MOVE", dx: 0, dy: 1 })).toBe(s); // 撞墙
     expect(gameReducer(s, { type: "DUNGEON_MOVE", dx: -1, dy: 0 })).toBe(s); // 边界外
     // 从右边缘 (2,0) 向右：边界外被拒
-    const atRight: GameState = {
-      ...s,
-      dungeon: { ...d, playerPos: { x: 2, y: 0 } } as DungeonState,
-    };
+    const atRight: GameState = { ...s, dungeon: { ...d, playerPos: { x: 2, y: 0 } } };
     expect(gameReducer(atRight, { type: "DUNGEON_MOVE", dx: 1, dy: 0 })).toBe(atRight);
+  });
+
+  it("DUNGEON_MOVE：真实生成地牢中向墙移动被拒", () => {
+    const s = entered();
+    const d = s.dungeon!;
+    // 找一个邻接墙格（null）的房间与方向
+    let from: { x: number; y: number } | null = null;
+    let dir: { dx: number; dy: number } | null = null;
+    for (let y = 0; y < d.size.h && !from; y++) {
+      for (let x = 0; x < d.size.w && !from; x++) {
+        if (!d.rooms[y][x]) continue;
+        for (const [dx, dy] of NEIGHBORS) {
+          const nx = x + dx;
+          const ny = y + dy;
+          if (nx >= 0 && ny >= 0 && nx < d.size.w && ny < d.size.h && !d.rooms[ny][nx]) {
+            from = { x, y };
+            dir = { dx, dy };
+            break;
+          }
+        }
+      }
+    }
+    if (!from || !dir) return; // 稀疏地图必有墙邻，理论不可能走到这里
+    const at: GameState = { ...s, dungeon: { ...d, playerPos: from } };
+    expect(gameReducer(at, { type: "DUNGEON_MOVE", dx: dir.dx, dy: dir.dy })).toBe(at);
   });
 
   it("DUNGEON_ENTER_TILE：未探索有敌人 → 移动 + 开战", () => {

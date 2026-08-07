@@ -1,4 +1,4 @@
-import type { GameState, GameAction, InventoryEntry } from "../types";
+import type { DungeonRoom, DungeonState, GameState, GameAction, InventoryEntry } from "../types";
 import { dungeons as dungeonDefs, items as itemDefs, loot as lootDefs, rooms as roomMap } from "../data/config";
 import { testBattleConfigs } from "../data/battleTestConfigs";
 import { initBattle, initBattleFromEnemies, resolveTurn } from "./battleEngine";
@@ -58,6 +58,18 @@ function removeFromInventory(
     updated[idx] = { ...entry, quantity: entry.quantity - qty };
   }
   return updated;
+}
+
+/** 不可变更新单个房间（其余格原样保留） */
+function patchRoom(
+  dungeon: DungeonState,
+  x: number,
+  y: number,
+  patch: Partial<DungeonRoom>
+): DungeonState["rooms"] {
+  return dungeon.rooms.map((row, yy) =>
+    row.map((r, xx) => (xx === x && yy === y ? { ...r!, ...patch } : r))
+  );
 }
 
 function recalcStats(player: GameState["player"]): GameState["player"] {
@@ -149,13 +161,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         if (battle.result === "victory") {
           // 胜利：敌人清除 + 掉落入账，HP/MP 损耗保留在地牢中
           const drop = rollLoot(room.enemyIds);
-          const rooms = dungeon.rooms.map((row, y) =>
-            row.map((r, x) =>
-              x === dungeon.playerPos.x && y === dungeon.playerPos.y
-                ? { ...r!, enemyIds: [] }
-                : r
-            )
-          );
+          const rooms = patchRoom(dungeon, dungeon.playerPos.x, dungeon.playerPos.y, {
+            enemyIds: [],
+          });
           return {
             ...state,
             player: {
@@ -220,9 +228,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (!target) return state; // 墙（无房间）不可通行
       // 未探索且有敌人：不移动（由情报面板确认后 DUNGEON_ENTER_TILE）
       if (!target.explored && target.enemyIds.length > 0) return state;
-      const rooms = dungeon.rooms.map((row, yy) =>
-        row.map((r, xx) => (xx === nx && yy === ny ? { ...r!, explored: true } : r))
-      );
+      const rooms = patchRoom(dungeon, nx, ny, { explored: true });
       return {
         ...state,
         dungeon: { ...dungeon, rooms, playerPos: { x: nx, y: ny } },
@@ -240,9 +246,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const target = dungeon.rooms[action.y][action.x];
       if (!target) return state; // 墙（无房间）不可进入
       if (target.explored || target.enemyIds.length === 0) return state;
-      const rooms = dungeon.rooms.map((row, yy) =>
-        row.map((r, xx) => (xx === action.x && yy === action.y ? { ...r!, explored: true } : r))
-      );
+      const rooms = patchRoom(dungeon, action.x, action.y, { explored: true });
       return {
         ...state,
         dungeon: { ...dungeon, rooms, playerPos: { x: action.x, y: action.y } },
@@ -255,13 +259,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const { dungeon } = state;
       const room = dungeon.rooms[dungeon.playerPos.y][dungeon.playerPos.x]!;
       if (!room.itemIds.includes(action.itemId)) return state;
-      const rooms = dungeon.rooms.map((row, y) =>
-        row.map((r, x) =>
-          x === dungeon.playerPos.x && y === dungeon.playerPos.y
-            ? { ...r!, itemIds: r!.itemIds.filter((id) => id !== action.itemId) }
-            : r
-        )
-      );
+      const rooms = patchRoom(dungeon, dungeon.playerPos.x, dungeon.playerPos.y, {
+        itemIds: room.itemIds.filter((id) => id !== action.itemId),
+      });
       return {
         ...state,
         player: {
