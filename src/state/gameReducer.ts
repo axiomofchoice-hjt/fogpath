@@ -145,14 +145,14 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       // 地牢战斗结算
       if (state.dungeon) {
         const { player, battle, dungeon } = state;
-        const room = dungeon.rooms[dungeon.playerPos.y][dungeon.playerPos.x];
+        const room = dungeon.rooms[dungeon.playerPos.y][dungeon.playerPos.x]!;
         if (battle.result === "victory") {
           // 胜利：敌人清除 + 掉落入账，HP/MP 损耗保留在地牢中
           const drop = rollLoot(room.enemyIds);
           const rooms = dungeon.rooms.map((row, y) =>
             row.map((r, x) =>
               x === dungeon.playerPos.x && y === dungeon.playerPos.y
-                ? { ...r, enemyIds: [] }
+                ? { ...r!, enemyIds: [] }
                 : r
             )
           );
@@ -217,10 +217,11 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const ny = y + action.dy;
       if (nx < 0 || ny < 0 || nx >= dungeon.size.w || ny >= dungeon.size.h) return state;
       const target = dungeon.rooms[ny][nx];
+      if (!target) return state; // 墙（无房间）不可通行
       // 未探索且有敌人：不移动（由情报面板确认后 DUNGEON_ENTER_TILE）
       if (!target.explored && target.enemyIds.length > 0) return state;
       const rooms = dungeon.rooms.map((row, yy) =>
-        row.map((r, xx) => (xx === nx && yy === ny ? { ...r, explored: true } : r))
+        row.map((r, xx) => (xx === nx && yy === ny ? { ...r!, explored: true } : r))
       );
       return {
         ...state,
@@ -237,9 +238,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         return state;
       }
       const target = dungeon.rooms[action.y][action.x];
+      if (!target) return state; // 墙（无房间）不可进入
       if (target.explored || target.enemyIds.length === 0) return state;
       const rooms = dungeon.rooms.map((row, yy) =>
-        row.map((r, xx) => (xx === action.x && yy === action.y ? { ...r, explored: true } : r))
+        row.map((r, xx) => (xx === action.x && yy === action.y ? { ...r!, explored: true } : r))
       );
       return {
         ...state,
@@ -251,12 +253,12 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case "DUNGEON_PICKUP": {
       if (state.battle || !state.dungeon) return state;
       const { dungeon } = state;
-      const room = dungeon.rooms[dungeon.playerPos.y][dungeon.playerPos.x];
+      const room = dungeon.rooms[dungeon.playerPos.y][dungeon.playerPos.x]!;
       if (!room.itemIds.includes(action.itemId)) return state;
       const rooms = dungeon.rooms.map((row, y) =>
         row.map((r, x) =>
           x === dungeon.playerPos.x && y === dungeon.playerPos.y
-            ? { ...r, itemIds: r.itemIds.filter((id) => id !== action.itemId) }
+            ? { ...r!, itemIds: r!.itemIds.filter((id) => id !== action.itemId) }
             : r
         )
       );

@@ -92,7 +92,7 @@ describe("配置校验", () => {
   it("非法地牢：敌人池为空被拒绝", () => {
     expect(() =>
       validateDungeons(
-        { forest: { id: "forest", name: { zh: "a", en: "b" }, icon: "x", description: { zh: "a", en: "b" }, difficulty: 1, size: { w: 6, h: 6 }, enemyPool: [], itemPool: [], bossId: "b" } },
+        { forest: { id: "forest", name: { zh: "a", en: "b" }, icon: "x", description: { zh: "a", en: "b" }, difficulty: 1, size: { w: 6, h: 6 }, roomCount: 8, enemyPool: [], itemPool: [], bossId: "b" } },
         {},
         {},
       ),
@@ -119,7 +119,7 @@ describe("配置校验", () => {
     validateEnemies({ goblin: { id: "goblin", name: { zh: "a", en: "b" }, icon: "x", maxHp: 10, maxMp: 0, damage: 1, momentum: 1, patterns: [{ id: "p", weight: 1, steps: [{ kind: "charge" }, { kind: "attack", name: { zh: "a", en: "b" }, damage: 1, momentum: 1 }] }] } });
     validateRooms({ room: { id: "room", name: { zh: "a", en: "b" }, description: { zh: "a", en: "b" }, area: { zh: "a", en: "b" }, isSafeRoom: true, itemIds: ["sword"], exits: [], pos: { x: 0, y: 0 }, npc: { name: { zh: "a", en: "b" }, icon: "x", dialogue: [{ zh: "a", en: "b" }] } } }, items);
     const enemies = validateEnemies({ goblin: { id: "goblin", name: { zh: "a", en: "b" }, icon: "x", maxHp: 10, maxMp: 0, damage: 1, momentum: 1, patterns: [{ id: "p", weight: 1, steps: [{ kind: "charge" }] }] } });
-    validateDungeons({ forest: { id: "forest", name: { zh: "a", en: "b" }, icon: "x", description: { zh: "a", en: "b" }, difficulty: 1, size: { w: 6, h: 6 }, enemyPool: [{ enemyId: "goblin", minDepth: 0, maxDepth: 2, weight: 1 }], itemPool: ["sword"], bossId: "goblin" } }, enemies, items);
+    validateDungeons({ forest: { id: "forest", name: { zh: "a", en: "b" }, icon: "x", description: { zh: "a", en: "b" }, difficulty: 1, size: { w: 6, h: 6 }, roomCount: 8, enemyPool: [{ enemyId: "goblin", minDepth: 0, maxDepth: 2, weight: 1 }], itemPool: ["sword"], bossId: "goblin" } }, enemies, items);
     validateLoot({ goblin: { items: [{ itemId: "sword", chance: 0.5 }], gold: [1, 5] } }, items, enemies);
   });
 });

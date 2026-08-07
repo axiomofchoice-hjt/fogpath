@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { GameState } from "../types";
+import type { DungeonRoom, DungeonState, GameState } from "../types";
 import { gameReducer, initialGameState, initialPlayer, rollLoot } from "./gameReducer";
 
 describe("rollLoot（掉落结算）", () => {
@@ -33,14 +33,64 @@ function entered(): GameState {
   return gameReducer(startAtEntrance(), { type: "ENTER_DUNGEON", dungeonId: "forest" });
 }
 
+const NEIGHBORS = [[1, 0], [0, 1], [-1, 0], [0, -1]] as const;
+
+/** 找入口/当前位置的任意一个存在邻格 */
+function firstNeighbor(s: GameState): { x: number; y: number } | null {
+  const d = s.dungeon!;
+  for (const [dx, dy] of NEIGHBORS) {
+    const nx = d.playerPos.x + dx;
+    const ny = d.playerPos.y + dy;
+    if (nx >= 0 && ny >= 0 && nx < d.size.w && ny < d.size.h && d.rooms[ny][nx]) {
+      return { x: nx, y: ny };
+    }
+  }
+  return null;
+}
+
+/** 找未探索且有敌人的邻格 */
+function firstEnemyNeighbor(s: GameState): { x: number; y: number } | null {
+  const d = s.dungeon!;
+  for (const [dx, dy] of NEIGHBORS) {
+    const nx = d.playerPos.x + dx;
+    const ny = d.playerPos.y + dy;
+    const r = nx >= 0 && ny >= 0 && nx < d.size.w && ny < d.size.h ? d.rooms[ny][nx] : null;
+    if (r && !r.explored && r.enemyIds.length > 0) return { x: nx, y: ny };
+  }
+  return null;
+}
+
+/** 手工构造 3×3 地牢：入口 (0,0)、墙 (0,1)、其余普通房，玩家在 (0,0) */
+function miniDungeon(): GameState {
+  const base = startAtEntrance();
+  const room = (type: DungeonRoom["type"]): DungeonRoom => ({
+    type,
+    explored: false,
+    depth: 0,
+    enemyIds: [],
+    itemIds: [],
+  });
+  const rooms: (DungeonRoom | null)[][] = [
+    [room("entrance"), room("normal"), room("normal")],
+    [null, room("normal"), room("normal")],
+    [room("normal"), room("normal"), room("normal")],
+  ];
+  return {
+    ...base,
+    dungeon: { dungeonId: "forest", size: { w: 3, h: 3 }, rooms, playerPos: { x: 0, y: 0 } },
+  };
+}
+
 describe("地牢：进入", () => {
-  it("ENTER_DUNGEON 在入口房间生成地牢", () => {
+  it("ENTER_DUNGEON 在入口房间生成稀疏大图", () => {
     const s = entered();
     expect(s.dungeon).not.toBeNull();
     expect(s.dungeon!.dungeonId).toBe("forest");
-    expect(s.dungeon!.size).toEqual({ w: 6, h: 6 });
-    expect(s.dungeon!.playerPos).toEqual({ x: 0, y: 0 });
-    expect(s.dungeon!.rooms[0][0].type).toBe("entrance");
+    expect(s.dungeon!.size).toEqual({ w: 15, h: 15 });
+    expect(s.dungeon!.playerPos).toEqual({ x: 7, y: 7 });
+    expect(s.dungeon!.rooms[7][7]!.type).toBe("entrance");
+    // 稀疏：网格中存在墙（null）
+    expect(s.dungeon!.rooms.flat().some((r) => r === null)).toBe(true);
   });
 
   it("ENTER_DUNGEON 非入口房间/战斗中/已有地牢被拒", () => {
@@ -59,54 +109,59 @@ describe("地牢：进入", () => {
 describe("地牢：移动与情报", () => {
   it("DUNGEON_MOVE：空房间直接移动并点亮，有敌人则待情报确认", () => {
     const s = entered();
-    const targetRoom = s.dungeon!.rooms[0][1];
-    const next = gameReducer(s, { type: "DUNGEON_MOVE", dx: 1, dy: 0 });
+    const nb = firstNeighbor(s)!;
+    const targetRoom = s.dungeon!.rooms[nb.y][nb.x]!;
+    const next = gameReducer(s, {
+      type: "DUNGEON_MOVE",
+      dx: nb.x - s.dungeon!.playerPos.x,
+      dy: nb.y - s.dungeon!.playerPos.y,
+    });
     if (targetRoom.explored || targetRoom.enemyIds.length === 0) {
-      expect(next.dungeon!.playerPos).toEqual({ x: 1, y: 0 });
-      expect(next.dungeon!.rooms[0][1].explored).toBe(true);
+      expect(next.dungeon!.playerPos).toEqual(nb);
+      expect(next.dungeon!.rooms[nb.y][nb.x]!.explored).toBe(true);
     } else {
       expect(next).toBe(s); // 未探索有敌人：不移动，等 DUNGEON_ENTER_TILE
     }
   });
 
-  it("DUNGEON_MOVE：边界外被拒", () => {
-    const s = entered();
-    expect(gameReducer(s, { type: "DUNGEON_MOVE", dx: -1, dy: 0 })).toBe(s);
-    expect(gameReducer(s, { type: "DUNGEON_MOVE", dx: 0, dy: -1 })).toBe(s);
+  it("DUNGEON_MOVE：边界外/墙被拒", () => {
+    const s = miniDungeon();
+    const d = s.dungeon!;
+    expect(d.rooms[1][0]).toBeNull(); // (0,1) 是墙
+    expect(gameReducer(s, { type: "DUNGEON_MOVE", dx: 0, dy: 1 })).toBe(s); // 撞墙
+    expect(gameReducer(s, { type: "DUNGEON_MOVE", dx: -1, dy: 0 })).toBe(s); // 边界外
+    // 从右边缘 (2,0) 向右：边界外被拒
+    const atRight: GameState = {
+      ...s,
+      dungeon: { ...d, playerPos: { x: 2, y: 0 } } as DungeonState,
+    };
+    expect(gameReducer(atRight, { type: "DUNGEON_MOVE", dx: 1, dy: 0 })).toBe(atRight);
   });
 
   it("DUNGEON_ENTER_TILE：未探索有敌人 → 移动 + 开战", () => {
     const s = entered();
-    // 找一个未探索且有敌人的邻格
-    const d = s.dungeon!;
-    let target: { x: number; y: number } | null = null;
-    for (const [dx, dy] of [[1, 0], [0, 1]] as const) {
-      const room = d.rooms[dy][dx];
-      if (!room.explored && room.enemyIds.length > 0) target = { x: dx, y: dy };
-    }
-    if (!target) return; // 生成随机：邻格可能无敌人，跳过
+    const target = firstEnemyNeighbor(s);
+    if (!target) return; // 生成随机：入口邻格可能无敌人，跳过
     const next = gameReducer(s, { type: "DUNGEON_ENTER_TILE", x: target.x, y: target.y });
     expect(next.battle).not.toBeNull();
     expect(next.dungeon!.playerPos).toEqual(target);
-    expect(next.dungeon!.rooms[target.y][target.x].explored).toBe(true);
+    expect(next.dungeon!.rooms[target.y][target.x]!.explored).toBe(true);
     expect(next.battle!.enemies.map((e) => e.defId)).toEqual(
-      d.rooms[target.y][target.x].enemyIds
+      s.dungeon!.rooms[target.y][target.x]!.enemyIds
     );
   });
 
-  it("DUNGEON_ENTER_TILE：非相邻/已探索/无敌人被拒", () => {
+  it("DUNGEON_ENTER_TILE：非相邻/墙/已探索/无敌人被拒", () => {
     const s = entered();
     expect(gameReducer(s, { type: "DUNGEON_ENTER_TILE", x: 3, y: 3 })).toBe(s);
     expect(gameReducer(s, { type: "DUNGEON_ENTER_TILE", x: 1, y: 1 })).toBe(s);
+    const m = miniDungeon();
+    expect(gameReducer(m, { type: "DUNGEON_ENTER_TILE", x: 0, y: 1 })).toBe(m); // 墙
   });
 
   it("地牢战斗中无法移动/拾取/撤离", () => {
     const s = entered();
-    const d = s.dungeon!;
-    let target: { x: number; y: number } | null = null;
-    for (const [dx, dy] of [[1, 0], [0, 1]] as const) {
-      if (!d.rooms[dy][dx].explored && d.rooms[dy][dx].enemyIds.length > 0) target = { x: dx, y: dy };
-    }
+    const target = firstEnemyNeighbor(s);
     if (!target) return;
     const inBattle = gameReducer(s, { type: "DUNGEON_ENTER_TILE", x: target.x, y: target.y });
     expect(inBattle.battle).not.toBeNull();
@@ -119,11 +174,7 @@ describe("地牢：移动与情报", () => {
 describe("地牢：战斗结算", () => {
   it("胜利：敌人清除、掉落入账、损耗保留", () => {
     const s = entered();
-    const d = s.dungeon!;
-    let target: { x: number; y: number } | null = null;
-    for (const [dx, dy] of [[1, 0], [0, 1]] as const) {
-      if (!d.rooms[dy][dx].explored && d.rooms[dy][dx].enemyIds.length > 0) target = { x: dx, y: dy };
-    }
+    const target = firstEnemyNeighbor(s);
     if (!target) return;
     const inBattle = gameReducer(s, { type: "DUNGEON_ENTER_TILE", x: target.x, y: target.y });
     // 强制胜利：清空敌人 HP
@@ -140,7 +191,7 @@ describe("地牢：战斗结算", () => {
     vi.restoreAllMocks();
     expect(exited.battle).toBeNull();
     expect(exited.dungeon).not.toBeNull();
-    const room = exited.dungeon!.rooms[target.y][target.x];
+    const room = exited.dungeon!.rooms[target.y][target.x]!;
     expect(room.enemyIds).toEqual([]);
     // 全掉 + 最大金币（rng=0 → 全部掉落，金币 min）
     const beforeGold = initialPlayer().inventory.find((e) => e.itemId === "gold")!.quantity;
@@ -151,11 +202,7 @@ describe("地牢：战斗结算", () => {
 
   it("败北：装备全丢、背包保留、地牢废弃回村回满", () => {
     const s = entered();
-    const d = s.dungeon!;
-    let target: { x: number; y: number } | null = null;
-    for (const [dx, dy] of [[1, 0], [0, 1]] as const) {
-      if (!d.rooms[dy][dx].explored && d.rooms[dy][dx].enemyIds.length > 0) target = { x: dx, y: dy };
-    }
+    const target = firstEnemyNeighbor(s);
     if (!target) return;
     const inBattle = gameReducer(s, { type: "DUNGEON_ENTER_TILE", x: target.x, y: target.y });
     const lost: GameState = {
@@ -192,18 +239,18 @@ describe("地牢：拾取", () => {
   it("DUNGEON_PICKUP：当前格物品入背包并移除", () => {
     const s = entered();
     const d = s.dungeon!;
-    // 找一个有物品的已探索格（入口格）——入口无物品，直接构造
+    // 入口无物品，直接构造
     const withItem: GameState = {
       ...s,
       dungeon: {
         ...d,
         rooms: d.rooms.map((row, y) =>
-          row.map((r, x) => (x === 0 && y === 0 ? { ...r, itemIds: ["herb_bundle"] } : r))
+          row.map((r, x) => (x === 7 && y === 7 ? { ...r!, itemIds: ["herb_bundle"] } : r))
         ),
       },
     };
     const picked = gameReducer(withItem, { type: "DUNGEON_PICKUP", itemId: "herb_bundle" });
-    expect(picked.dungeon!.rooms[0][0].itemIds).toEqual([]);
+    expect(picked.dungeon!.rooms[7][7]!.itemIds).toEqual([]);
     expect(picked.player.inventory).toContainEqual({ itemId: "herb_bundle", quantity: 1 });
     // 不在当前格的物品不可拾取
     expect(gameReducer(withItem, { type: "DUNGEON_PICKUP", itemId: "mana_potion" })).toBe(withItem);

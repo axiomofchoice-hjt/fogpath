@@ -77,9 +77,11 @@ export interface DungeonDef {
   description: L;
   /** 难度范围（GDD 3.2，如森林 1-3） */
   difficulty: number;
-  /** 地牢尺寸（GDD 3.3，N×M 方格） */
+  /** 地牢网格边界（GDD 3.3，格内稀疏放置房间，非满格） */
   size: { w: number; h: number };
-  /** 敌人池：按深度区间分布（加权随机） */
+  /** 目标房间数（生成器软约束，可能略多/略少） */
+  roomCount: number;
+  /** 敌人池：按归一化深度（0-10）区间分布（加权随机） */
   enemyPool: { enemyId: string; minDepth: number; maxDepth: number; weight: number }[];
   /** 普通房物品池（按深度随机放置） */
   itemPool: string[];
@@ -107,6 +109,8 @@ export interface DungeonRoom {
   type: DungeonRoomType;
   /** 已探索（未探索显示迷雾） */
   explored: boolean;
+  /** 距入口的最短步数（BFS 距离；内容分布与测试用） */
+  depth: number;
   /** 房间敌人（战斗胜利后清空） */
   enemyIds: string[];
   /** 房间物品（拾取后移除） */
@@ -116,7 +120,8 @@ export interface DungeonRoom {
 export interface DungeonState {
   dungeonId: string;
   size: { w: number; h: number };
-  rooms: DungeonRoom[][];
+  /** 方格地图：null = 墙（无房间，不可通行） */
+  rooms: (DungeonRoom | null)[][];
   playerPos: { x: number; y: number };
 }
 

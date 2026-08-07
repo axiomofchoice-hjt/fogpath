@@ -58,6 +58,7 @@ function DungeonView() {
       const ny = playerPos.y + dir.y;
       if (nx < 0 || ny < 0 || nx >= dungeon.size.w || ny >= dungeon.size.h) return;
       const target = dungeon.rooms[ny][nx];
+      if (!target) return; // 墙（无房间）不可通行
       if (!target.explored && target.enemyIds.length > 0) {
         setPending({ x: nx, y: ny });
       } else {
@@ -71,7 +72,7 @@ function DungeonView() {
   if (!dungeon || !def) return null;
 
   const { rooms, playerPos } = dungeon;
-  const currentRoom = rooms[playerPos.y][playerPos.x];
+  const currentRoom = rooms[playerPos.y][playerPos.x]!;
   const pendingRoom = pending ? rooms[pending.y][pending.x] : null;
 
   return (

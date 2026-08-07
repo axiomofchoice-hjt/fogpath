@@ -284,13 +284,19 @@ export function validateDungeons(
   for (const [key, value] of Object.entries(root)) {
     const path = `dungeons.json:${key}`;
     const rec = assertRecord(value, path, [
-      "id", "name", "icon", "description", "difficulty", "size", "enemyPool", "itemPool", "bossId",
+      "id", "name", "icon", "description", "difficulty", "size", "roomCount",
+      "enemyPool", "itemPool", "bossId",
     ]);
     const id = assertString(rec.id, `${path}.id`);
     assertKeyMatch(key, id, path);
     const sizeRec = assertRecord(rec.size, `${path}.size`, ["w", "h"]);
     const sizeW = assertNumber(sizeRec.w, `${path}.size.w`, { gt: 0 });
     const sizeH = assertNumber(sizeRec.h, `${path}.size.h`, { gt: 0 });
+    const roomCount = assertNumber(rec.roomCount, `${path}.roomCount`, {
+      gte: 4,
+      lte: sizeW * sizeH,
+    });
+    if (!Number.isInteger(roomCount)) fail(`${path}.roomCount`, "应为整数");
     if (!Array.isArray(rec.enemyPool) || rec.enemyPool.length === 0) {
       fail(`${path}.enemyPool`, "应为非空数组");
     }
@@ -319,6 +325,7 @@ export function validateDungeons(
       description: assertL(rec.description, `${path}.description`),
       difficulty: assertNumber(rec.difficulty, `${path}.difficulty`, { gte: 1 }),
       size: { w: sizeW, h: sizeH },
+      roomCount,
       enemyPool,
       itemPool: rec.itemPool.map((iid: unknown, i: number) =>
         assertItemId(iid, `${path}.itemPool[${i}]`, itemIds)
