@@ -94,6 +94,15 @@ describe("测试战斗流程", () => {
     expect(gameReducer(init, { type: "EXIT_BATTLE" })).toBe(init);
   });
 
+  it("EXIT_BATTLE 战斗未结束时被拒（防绕过）", () => {
+    const s = gameReducer(initialGameState(), {
+      type: "START_TEST_BATTLE",
+      scenarioId: "test_atk_vs_atk",
+    });
+    expect(s.battle?.result).toBe("ongoing");
+    expect(gameReducer(s, { type: "EXIT_BATTLE" })).toBe(s);
+  });
+
   it("EXIT_BATTLE 后 HP/MP 自动回满", () => {
     const s = gameReducer(initialGameState(), {
       type: "START_TEST_BATTLE",
@@ -102,7 +111,7 @@ describe("测试战斗流程", () => {
     const hurt: GameState = {
       ...s,
       battle: s.battle
-        ? { ...s.battle, playerStats: { ...s.battle.playerStats, hp: 60, mp: 70 } }
+        ? { ...s.battle, result: "victory", playerStats: { ...s.battle.playerStats, hp: 60, mp: 70 } }
         : null,
     };
     const exited = gameReducer(hurt, { type: "EXIT_BATTLE" });

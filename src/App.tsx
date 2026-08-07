@@ -19,7 +19,7 @@ function Header() {
   return (
     <header className="h-10 bg-game-panel border-b border-game-border flex items-center px-4 flex-shrink-0 select-none">
       <span className="text-game-gold font-bold tracking-wider">雾之径</span>
-      {state.screen === "game" && !state.battle && (
+      {state.screen === "game" && !state.battle && !state.dungeon && (
         <button
           onClick={() => dispatch({ type: "BACK_TO_START" })}
           className="ml-4 text-[9px] font-mono px-2 py-0.5 rounded border border-game-border text-game-dim hover:text-game-gold hover:border-game-gold/40 transition-colors"

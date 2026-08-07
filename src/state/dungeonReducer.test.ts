@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { DungeonRoom, GameState } from "../types";
 import { gameReducer, initialGameState, initialPlayer, rollLoot } from "./gameReducer";
+import { loot } from "../data/config";
 
 describe("rollLoot（掉落结算）", () => {
   it("rng=0：所有条目掉落 + 最低金币", () => {
@@ -220,6 +221,50 @@ describe("地牢：战斗结算", () => {
     const afterGold = exited.player.inventory.find((e) => e.itemId === "gold")!.quantity;
     expect(afterGold).toBeGreaterThanOrEqual(beforeGold);
     expect(exited.player.hp).toBe(77); // 损耗保留
+  });
+
+  it("胜利：掉落金币按表入账（rng=0 → 各表最低金币）", () => {
+    const s = entered();
+    const target = firstEnemyNeighbor(s);
+    if (!target) return;
+    const inBattle = gameReducer(s, { type: "DUNGEON_ENTER_TILE", x: target.x, y: target.y });
+    const won: GameState = {
+      ...inBattle,
+      battle: {
+        ...inBattle.battle!,
+        result: "victory",
+        playerStats: { ...inBattle.battle!.playerStats, hp: 100 },
+      },
+    };
+    const enemyIds = s.dungeon!.rooms[target.y][target.x]!.enemyIds;
+    const beforeGold = inBattle.player.inventory.find((e) => e.itemId === "gold")!.quantity;
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    const exited = gameReducer(won, { type: "EXIT_BATTLE" });
+    vi.restoreAllMocks();
+    const expected = enemyIds.reduce((sum, id) => sum + loot[id].gold[0], 0);
+    const afterGold = exited.player.inventory.find((e) => e.itemId === "gold")!.quantity;
+    expect(expected).toBeGreaterThan(0);
+    expect(afterGold).toBe(beforeGold + expected);
+  });
+
+  it("地牢存在时开测试战斗：败北按测试通道结算，不触发地牢惩罚", () => {
+    const s = entered();
+    const back = gameReducer(s, { type: "BACK_TO_START" });
+    expect(back.screen).toBe("start");
+    expect(back.dungeon).not.toBeNull();
+    const inTest = gameReducer(back, {
+      type: "START_TEST_BATTLE",
+      scenarioId: "test_atk_vs_atk",
+    });
+    expect(inTest.battle?.scenarioId).toBe("test_atk_vs_atk");
+    const defeated: GameState = {
+      ...inTest,
+      battle: { ...inTest.battle!, result: "defeat" },
+    };
+    const exited = gameReducer(defeated, { type: "EXIT_BATTLE" });
+    expect(exited.dungeon).not.toBeNull(); // 地牢不废弃
+    expect(exited.player.equipment[0]).toBe("rusty_sword"); // 装备不丢
+    expect(exited.player.hp).toBe(exited.player.maxHp);
   });
 
   it("败北：装备全丢、背包保留、地牢废弃回村回满", () => {

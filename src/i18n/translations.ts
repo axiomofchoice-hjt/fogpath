@@ -104,6 +104,8 @@ const zh = {
   "battle.victory": "胜利！",
   "battle.defeat": "败北…",
   "battle.exit": "返回开始面板",
+  "battle.exitDungeon": "返回地牢",
+  "battle.boss": "Boss",
   "battle.status.guard.name": "举盾",
   "battle.status.guard.desc": "减伤 {{pct}}%，直到下一次攻击前",
 } as const;
@@ -204,6 +206,8 @@ const en: Record<TKey, string> = {
   "battle.victory": "Victory!",
   "battle.defeat": "Defeat...",
   "battle.exit": "Back to Start",
+  "battle.exitDungeon": "Back to Dungeon",
+  "battle.boss": "Boss",
   "battle.status.guard.name": "Guard",
   "battle.status.guard.desc": "Reduce damage by {{pct}}% until your next attack",
 };

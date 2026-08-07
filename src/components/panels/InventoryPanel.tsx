@@ -23,7 +23,10 @@ function InventoryPanel() {
   const sorted = [...inventoryItems].sort((a, b) => {
     if (sortMode === "type") return a.def.type.localeCompare(b.def.type);
     if (sortMode === "rarity") return b.def.rarity - a.def.rarity;
-    return 0;
+    // 时间：按背包数组顺序（获得顺序，新获得的追加在尾部）
+    const ia = player.inventory.findIndex((e) => e.itemId === a.itemId);
+    const ib = player.inventory.findIndex((e) => e.itemId === b.itemId);
+    return ia - ib;
   });
 
   const canEquip = (item: (typeof sorted)[0]) => {

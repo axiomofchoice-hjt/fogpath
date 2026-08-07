@@ -39,7 +39,8 @@
     "type": "equipment",
     "description": { "zh": "一把坚固的铁剑。", "en": "A sturdy iron blade." },
     "rarity": 2,
-    "atk": 7
+    "atk": 7,
+    "actions": [{ "skillId": "basic_attack", "damage": 12, "momentum": 6 }]
   },
   "leather_cap": {
     "id": "leather_cap",

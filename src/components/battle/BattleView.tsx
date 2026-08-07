@@ -58,6 +58,8 @@ type CombatantCardProps = {
   name: string;
   borderClass: string;
   dimmed?: boolean;
+  /** Boss 标记（GDD 4.3：名字带标记） */
+  boss?: boolean;
   stats: CombatStats;
   /** 当前状态（可多个，横排显示在摘要上方） */
   statuses: StatusId[];
@@ -69,6 +71,7 @@ function CombatantCard({
   name,
   borderClass,
   dimmed = false,
+  boss = false,
   stats: { hp, maxHp, mp, maxMp, damage, maxDamage, momentum, maxMomentum, hasAttack },
   statuses,
   summary,
@@ -82,6 +85,7 @@ function CombatantCard({
           <span className="text-2xl">{icon}</span>
           <span className="text-game-text text-xs font-mono text-center leading-tight">
             {name}
+            {boss && <span className="text-game-gold ml-1" title={t("battle.boss")}>{"\uD83D\uDC51"}</span>}
           </span>
         </div>
         <div className="w-36 flex-shrink-0 space-y-1.5">
@@ -309,6 +313,7 @@ function BattleView() {
               name={loc(def.name, lang)}
               borderClass={alive ? "border-game-red/40" : "border-game-border"}
               dimmed={!alive}
+              boss={enemy.isBoss}
               stats={enemy}
               statuses={[]}
               summary={loc(enemy.summary, lang)}
@@ -394,7 +399,7 @@ function BattleView() {
             onClick={() => dispatch({ type: "EXIT_BATTLE" })}
             className="px-4 py-2 rounded text-xs font-mono border border-game-border text-game-dim hover:text-game-gold hover:border-game-gold/40 transition-colors"
           >
-            {t("battle.exit")}
+            {t(battle.scenarioId === "dungeon" ? "battle.exitDungeon" : "battle.exit")}
           </button>
         </div>
       )}

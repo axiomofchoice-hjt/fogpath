@@ -22,6 +22,12 @@ describe("物品定义", () => {
   it("盾牌存在且至少一面", () => {
     expect(Object.values(items).filter((i) => i.isShield).length).toBeGreaterThan(0);
   });
+
+  it("铁剑提供普通攻击动作（无动作的武器会让玩家失去全部攻击按钮）", () => {
+    const act = items.iron_sword.actions;
+    expect(act).toBeDefined();
+    expect(act!.some((a) => a.skillId === "basic_attack")).toBe(true);
+  });
 });
 
 describe("敌人定义", () => {

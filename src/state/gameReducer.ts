@@ -154,34 +154,33 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case "EXIT_BATTLE": {
       if (!state.battle) return state;
-      // 地牢战斗结算
-      if (state.dungeon) {
+      // 战斗未结束不可结算（UI 只在结束时显示按钮，此处防绕过）
+      if (state.battle.result === "ongoing") return state;
+      // 地牢战斗结算（按场景判定：测试战斗为调试通道，不触发地牢结算）
+      if (state.battle.scenarioId === "dungeon" && state.dungeon) {
         const { player, battle, dungeon } = state;
-        const room = dungeon.rooms[dungeon.playerPos.y][dungeon.playerPos.x]!;
+        const room = dungeon!.rooms[dungeon!.playerPos.y][dungeon!.playerPos.x]!;
         if (battle.result === "victory") {
-          // 胜利：敌人清除 + 掉落入账，HP/MP 损耗保留在地牢中
+          // 胜利：敌人清除 + 掉落入账（含金币），HP/MP 损耗保留在地牢中
           const drop = rollLoot(room.enemyIds);
-          const rooms = patchRoom(dungeon, dungeon.playerPos.x, dungeon.playerPos.y, {
+          const rooms = patchRoom(dungeon!, dungeon!.playerPos.x, dungeon!.playerPos.y, {
             enemyIds: [],
           });
+          let inventory = [...player.inventory];
+          inventory = addToInventory(inventory, "gold", drop.gold);
+          for (const itemId of drop.items) {
+            inventory = addToInventory(inventory, itemId, 1);
+          }
           return {
             ...state,
             player: {
               ...player,
               hp: battle.playerStats.hp,
               mp: battle.playerStats.mp,
-              inventory: [
-                ...player.inventory,
-                ...drop.items.map((itemId) => ({ itemId, quantity: 1 })),
-              ].reduce<InventoryEntry[]>((acc, e) => {
-                const found = acc.find((a) => a.itemId === e.itemId);
-                if (found) found.quantity += 1;
-                else acc.push({ ...e });
-                return acc;
-              }, []),
+              inventory,
             },
             battle: null,
-            dungeon: { ...dungeon, rooms },
+            dungeon: { ...dungeon!, rooms },
           };
         }
         // 败北：死亡结算——装备全丢、背包保留、地牢废弃回村庄（HP/MP 回满）
