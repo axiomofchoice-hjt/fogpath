@@ -241,10 +241,15 @@ describe("地牢：战斗结算", () => {
     vi.spyOn(Math, "random").mockReturnValue(0);
     const exited = gameReducer(won, { type: "EXIT_BATTLE" });
     vi.restoreAllMocks();
+    // rng=0：金币范围取各表最低值；金币物品条目（如哥布林 30%）全部掉落，按 1 枚入账
     const expected = enemyIds.reduce((sum, id) => sum + loot[id].gold[0], 0);
+    const goldItems = enemyIds.reduce(
+      (sum, id) => sum + loot[id].items.filter((e) => e.itemId === "gold").length,
+      0
+    );
     const afterGold = exited.player.inventory.find((e) => e.itemId === "gold")!.quantity;
-    expect(expected).toBeGreaterThan(0);
-    expect(afterGold).toBe(beforeGold + expected);
+    expect(expected + goldItems).toBeGreaterThan(0);
+    expect(afterGold).toBe(beforeGold + expected + goldItems);
   });
 
   it("地牢存在时开测试战斗：败北按测试通道结算，不触发地牢惩罚", () => {

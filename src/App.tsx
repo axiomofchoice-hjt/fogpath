@@ -38,7 +38,7 @@ function Header() {
   );
 }
 
-function AppInner() {
+export function AppInner() {
   const { state } = useGame();
   const [activeTab, setActiveTab] = useState<PanelTab>("map");
   const [worldMapOpen, setWorldMapOpen] = useState(false);
