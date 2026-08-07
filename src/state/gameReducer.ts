@@ -1,11 +1,31 @@
 import type { GameState, GameAction, InventoryEntry } from "../types";
-import { items as itemDefs, rooms as roomMap } from "../data/config";
+import { dungeons as dungeonDefs, items as itemDefs, loot as lootDefs, rooms as roomMap } from "../data/config";
 import { testBattleConfigs } from "../data/battleTestConfigs";
-import { initBattle, resolveTurn } from "./battleEngine";
+import { initBattle, initBattleFromEnemies, resolveTurn } from "./battleEngine";
+import { generateDungeon } from "./dungeonGen";
 
 /** 背包中的金币数量（金币为货币物品，拾取自动入账） */
 export function goldAmount(player: GameState["player"]): number {
   return player.inventory.find((e) => e.itemId === "gold")?.quantity ?? 0;
+}
+
+/** 掉落结算（GDD 6）：逐条滚概率，金币随机范围入账 */
+export function rollLoot(
+  enemyIds: string[],
+  rng: () => number = Math.random
+): { items: string[]; gold: number } {
+  const items: string[] = [];
+  let gold = 0;
+  for (const id of enemyIds) {
+    const table = lootDefs[id];
+    if (!table) continue;
+    for (const entry of table.items) {
+      if (rng() < entry.chance) items.push(entry.itemId);
+    }
+    const [min, max] = table.gold;
+    gold += min + Math.floor(rng() * (max - min + 1));
+  }
+  return { items, gold };
 }
 
 function addToInventory(
@@ -86,6 +106,7 @@ export function initialGameState(): GameState {
     screen: "start",
     player: initialPlayer(),
     battle: null,
+    dungeon: null,
   };
 }
 
@@ -121,7 +142,54 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case "EXIT_BATTLE": {
       if (!state.battle) return state;
-      // 非战斗状态 HP/MP 自动回满（无休息按钮/回血道具需求）
+      // 地牢战斗结算
+      if (state.dungeon) {
+        const { player, battle, dungeon } = state;
+        const room = dungeon.rooms[dungeon.playerPos.y][dungeon.playerPos.x];
+        if (battle.result === "victory") {
+          // 胜利：敌人清除 + 掉落入账，HP/MP 损耗保留在地牢中
+          const drop = rollLoot(room.enemyIds);
+          const rooms = dungeon.rooms.map((row, y) =>
+            row.map((r, x) =>
+              x === dungeon.playerPos.x && y === dungeon.playerPos.y
+                ? { ...r, enemyIds: [] }
+                : r
+            )
+          );
+          return {
+            ...state,
+            player: {
+              ...player,
+              hp: battle.playerStats.hp,
+              mp: battle.playerStats.mp,
+              inventory: [
+                ...player.inventory,
+                ...drop.items.map((itemId) => ({ itemId, quantity: 1 })),
+              ].reduce<InventoryEntry[]>((acc, e) => {
+                const found = acc.find((a) => a.itemId === e.itemId);
+                if (found) found.quantity += 1;
+                else acc.push({ ...e });
+                return acc;
+              }, []),
+            },
+            battle: null,
+            dungeon: { ...dungeon, rooms },
+          };
+        }
+        // 败北：死亡结算——装备全丢、背包保留、地牢废弃回村庄（HP/MP 回满）
+        return {
+          ...state,
+          player: {
+            ...player,
+            hp: player.maxHp,
+            mp: player.maxMp,
+            equipment: player.equipment.map(() => null),
+          },
+          battle: null,
+          dungeon: null,
+        };
+      }
+      // 测试战斗：非战斗状态 HP/MP 自动回满
       return {
         ...state,
         player: {
@@ -130,6 +198,90 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           mp: state.player.maxMp,
         },
         battle: null,
+      };
+    }
+
+    case "ENTER_DUNGEON": {
+      if (state.battle || state.dungeon) return state;
+      if (state.player.currentRoomId !== "forest_entrance") return state;
+      const def = dungeonDefs[action.dungeonId];
+      if (!def) return state;
+      return { ...state, dungeon: generateDungeon(def) };
+    }
+
+    case "DUNGEON_MOVE": {
+      if (state.battle || !state.dungeon) return state;
+      const { dungeon } = state;
+      const { x, y } = dungeon.playerPos;
+      const nx = x + action.dx;
+      const ny = y + action.dy;
+      if (nx < 0 || ny < 0 || nx >= dungeon.size.w || ny >= dungeon.size.h) return state;
+      const target = dungeon.rooms[ny][nx];
+      // 未探索且有敌人：不移动（由情报面板确认后 DUNGEON_ENTER_TILE）
+      if (!target.explored && target.enemyIds.length > 0) return state;
+      const rooms = dungeon.rooms.map((row, yy) =>
+        row.map((r, xx) => (xx === nx && yy === ny ? { ...r, explored: true } : r))
+      );
+      return {
+        ...state,
+        dungeon: { ...dungeon, rooms, playerPos: { x: nx, y: ny } },
+      };
+    }
+
+    case "DUNGEON_ENTER_TILE": {
+      if (state.battle || !state.dungeon) return state;
+      const { dungeon } = state;
+      const { x, y } = dungeon.playerPos;
+      if (Math.abs(action.x - x) + Math.abs(action.y - y) !== 1) return state;
+      if (action.x < 0 || action.y < 0 || action.x >= dungeon.size.w || action.y >= dungeon.size.h) {
+        return state;
+      }
+      const target = dungeon.rooms[action.y][action.x];
+      if (target.explored || target.enemyIds.length === 0) return state;
+      const rooms = dungeon.rooms.map((row, yy) =>
+        row.map((r, xx) => (xx === action.x && yy === action.y ? { ...r, explored: true } : r))
+      );
+      return {
+        ...state,
+        dungeon: { ...dungeon, rooms, playerPos: { x: action.x, y: action.y } },
+        battle: initBattleFromEnemies(target.enemyIds, state.player),
+      };
+    }
+
+    case "DUNGEON_PICKUP": {
+      if (state.battle || !state.dungeon) return state;
+      const { dungeon } = state;
+      const room = dungeon.rooms[dungeon.playerPos.y][dungeon.playerPos.x];
+      if (!room.itemIds.includes(action.itemId)) return state;
+      const rooms = dungeon.rooms.map((row, y) =>
+        row.map((r, x) =>
+          x === dungeon.playerPos.x && y === dungeon.playerPos.y
+            ? { ...r, itemIds: r.itemIds.filter((id) => id !== action.itemId) }
+            : r
+        )
+      );
+      return {
+        ...state,
+        player: {
+          ...state.player,
+          inventory: addToInventory(state.player.inventory, action.itemId, 1),
+        },
+        dungeon: { ...dungeon, rooms },
+      };
+    }
+
+    case "DUNGEON_RETREAT": {
+      if (state.battle || !state.dungeon) return state;
+      // 撤离：地牢废弃，回村庄，HP/MP 回满
+      return {
+        ...state,
+        player: {
+          ...state.player,
+          hp: state.player.maxHp,
+          mp: state.player.maxMp,
+          currentRoomId: "forest_entrance",
+        },
+        dungeon: null,
       };
     }
     case "MOVE_ROOM": {

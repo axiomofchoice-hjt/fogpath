@@ -77,6 +77,47 @@ export interface DungeonDef {
   description: L;
   /** 难度范围（GDD 3.2，如森林 1-3） */
   difficulty: number;
+  /** 地牢尺寸（GDD 3.3，N×M 方格） */
+  size: { w: number; h: number };
+  /** 敌人池：按深度区间分布（加权随机） */
+  enemyPool: { enemyId: string; minDepth: number; maxDepth: number; weight: number }[];
+  /** 普通房物品池（按深度随机放置） */
+  itemPool: string[];
+  /** Boss 敌人 ID（Boss 房位于最深处） */
+  bossId: string;
+}
+
+/** 掉落条目：物品 + 掉率（GDD 6） */
+export interface LootEntry {
+  itemId: string;
+  chance: number;
+}
+
+/** 掉落表：按敌人 ID 索引；items 每次掉落独立判定，gold 为随机范围 */
+export interface LootTable {
+  items: LootEntry[];
+  gold: [number, number];
+}
+
+// --- 地牢状态 ---
+
+export type DungeonRoomType = "entrance" | "normal" | "boss";
+
+export interface DungeonRoom {
+  type: DungeonRoomType;
+  /** 已探索（未探索显示迷雾） */
+  explored: boolean;
+  /** 房间敌人（战斗胜利后清空） */
+  enemyIds: string[];
+  /** 房间物品（拾取后移除） */
+  itemIds: string[];
+}
+
+export interface DungeonState {
+  dungeonId: string;
+  size: { w: number; h: number };
+  rooms: DungeonRoom[][];
+  playerPos: { x: number; y: number };
 }
 
 // --- Player ---
@@ -178,6 +219,8 @@ export interface EnemyDef {
   maxMp: number;
   damage: number;
   momentum: number;
+  /** Boss 标记（Boss 房、掉落表区分；强化模板见 GDD 2.4.6） */
+  isBoss?: boolean;
   /** 攻击模式池（固定序列，随机选取） */
   patterns: AttackPattern[];
 }
@@ -194,6 +237,8 @@ export interface BattleEnemy {
   maxMomentum: number;
   /** 本回合动作是否带攻击属性（蓄力/未出手时为 false，显示 0/0） */
   hasAttack: boolean;
+  /** Boss 标记（战斗界面显示徽标） */
+  isBoss: boolean;
   /** 当前模式与步骤 */
   pattern: { patternId: string; stepIndex: number };
   /** 上一回合完成的模式 ID（防重复权重惩罚用） */
@@ -214,6 +259,8 @@ export interface GameState {
   screen: Screen;
   player: Player;
   battle: BattleState | null;
+  /** 当前地牢（村庄为 null；撤离/死亡后废弃） */
+  dungeon: DungeonState | null;
 }
 
 // --- 测试场景 ---
@@ -239,6 +286,11 @@ export type GameAction =
   | { type: "START_TEST_BATTLE"; scenarioId: string }
   | { type: "BATTLE_ACT"; action: PlayerBattleAction }
   | { type: "EXIT_BATTLE" }
+  | { type: "ENTER_DUNGEON"; dungeonId: string }
+  | { type: "DUNGEON_MOVE"; dx: number; dy: number }
+  | { type: "DUNGEON_ENTER_TILE"; x: number; y: number }
+  | { type: "DUNGEON_PICKUP"; itemId: string }
+  | { type: "DUNGEON_RETREAT" }
   | { type: "MOVE_ROOM"; roomId: string }
   | { type: "BUY_ITEM"; itemId: string }
   | { type: "PICKUP_ITEM"; itemId: string }

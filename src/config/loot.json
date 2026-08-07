@@ -1,0 +1,28 @@
+{
+  "goblin": {
+    "items": [
+      { "itemId": "herb_bundle", "chance": 0.25 },
+      { "itemId": "gold", "chance": 0.3 }
+    ],
+    "gold": [5, 15]
+  },
+  "goblin_brute": {
+    "items": [
+      { "itemId": "health_potion", "chance": 0.3 },
+      { "itemId": "leather_cap", "chance": 0.1 },
+      { "itemId": "leather_gloves", "chance": 0.1 },
+      { "itemId": "iron_sword", "chance": 0.05 }
+    ],
+    "gold": [30, 60]
+  },
+  "goblin_king": {
+    "items": [
+      { "itemId": "iron_sword", "chance": 0.5 },
+      { "itemId": "lucky_ring", "chance": 0.4 },
+      { "itemId": "leather_cap", "chance": 0.4 },
+      { "itemId": "health_potion", "chance": 0.6 },
+      { "itemId": "mana_potion", "chance": 0.4 }
+    ],
+    "gold": [100, 300]
+  }
+}

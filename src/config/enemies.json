@@ -79,5 +79,50 @@
         ]
       }
     ]
+  },
+  "goblin_king": {
+    "id": "goblin_king",
+    "name": { "zh": "哥布林王", "en": "Goblin King" },
+    "icon": "\uD83D\uDC7A\uD83D\uDC51",
+    "maxHp": 80,
+    "maxMp": 20,
+    "damage": 16,
+    "momentum": 9,
+    "isBoss": true,
+    "patterns": [
+      {
+        "id": "royal_combo",
+        "weight": 10,
+        "steps": [
+          { "kind": "charge" },
+          {
+            "kind": "attack",
+            "name": { "zh": "王冠突刺", "en": "Crown Thrust" },
+            "damage": 24,
+            "momentum": 10
+          },
+          {
+            "kind": "attack",
+            "name": { "zh": "王冠突刺", "en": "Crown Thrust" },
+            "damage": 24,
+            "momentum": 10
+          }
+        ]
+      },
+      {
+        "id": "royal_heavy",
+        "weight": 8,
+        "steps": [
+          { "kind": "charge" },
+          { "kind": "charge" },
+          {
+            "kind": "attack",
+            "name": { "zh": "王之重击", "en": "King's Crush" },
+            "damage": 42,
+            "momentum": 14
+          }
+        ]
+      }
+    ]
   }
 }

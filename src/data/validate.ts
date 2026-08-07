@@ -1,9 +1,9 @@
-import type { DungeonDef, EnemyDef, ItemDef, RoomDef, SkillDef } from "../types";
+import type { DungeonDef, EnemyDef, ItemDef, LootTable, RoomDef, SkillDef } from "../types";
 
 /**
  * 轻量配置校验：JSON 数据没有编译期类型，在加载时逐字段检查，
  * 失败时抛出带路径的错误信息（如 `[config] enemies.json: goblin.patterns[0]`）。
- * 未实现的 GDD 功能字段（isBoss、特殊效果、AOE 等）一律按未知字段拒绝——
+ * 未实现的 GDD 功能字段（特殊效果、AOE 等）一律按未知字段拒绝——
  * 数据层不允许出现代码尚未实现的内容。
  */
 
@@ -35,10 +35,11 @@ function assertString(v: unknown, path: string): string {
   return v;
 }
 
-function assertNumber(v: unknown, path: string, opts?: { gt?: number; gte?: number }): number {
+function assertNumber(v: unknown, path: string, opts?: { gt?: number; gte?: number; lte?: number }): number {
   if (typeof v !== "number" || !Number.isFinite(v)) fail(path, "应为数字");
   if (opts?.gt !== undefined && v <= opts.gt) fail(path, `应大于 ${opts.gt}`);
   if (opts?.gte !== undefined && v < opts.gte) fail(path, `应不小于 ${opts.gte}`);
+  if (opts?.lte !== undefined && v > opts.lte) fail(path, `应不大于 ${opts.lte}`);
   return v;
 }
 
@@ -148,7 +149,7 @@ export function validateEnemies(raw: unknown): Record<string, EnemyDef> {
   for (const [key, value] of Object.entries(root)) {
     const path = `enemies.json:${key}`;
     const rec = assertRecord(value, path, [
-      "id", "name", "icon", "maxHp", "maxMp", "damage", "momentum", "patterns",
+      "id", "name", "icon", "maxHp", "maxMp", "damage", "momentum", "isBoss", "patterns",
     ]);
     const id = assertString(rec.id, `${path}.id`);
     assertKeyMatch(key, id, path);
@@ -197,6 +198,7 @@ export function validateEnemies(raw: unknown): Record<string, EnemyDef> {
       maxMp: assertNumber(rec.maxMp, `${path}.maxMp`, { gte: 0 }),
       damage: assertNumber(rec.damage, `${path}.damage`, { gte: 0 }),
       momentum: assertNumber(rec.momentum, `${path}.momentum`, { gte: 0 }),
+      ...(rec.isBoss !== undefined ? { isBoss: assertBoolean(rec.isBoss, `${path}.isBoss`) } : {}),
       patterns,
     };
   }
@@ -270,20 +272,92 @@ export function validateRooms(raw: unknown, items: Record<string, ItemDef>): Rec
   return out;
 }
 
-export function validateDungeons(raw: unknown): Record<string, DungeonDef> {
+export function validateDungeons(
+  raw: unknown,
+  enemies: Record<string, EnemyDef>,
+  items: Record<string, ItemDef>
+): Record<string, DungeonDef> {
   const root = assertRecord(raw, "dungeons.json");
+  const enemyIds = new Set(Object.keys(enemies));
+  const itemIds = new Set(Object.keys(items));
   const out: Record<string, DungeonDef> = {};
   for (const [key, value] of Object.entries(root)) {
     const path = `dungeons.json:${key}`;
-    const rec = assertRecord(value, path, ["id", "name", "icon", "description", "difficulty"]);
+    const rec = assertRecord(value, path, [
+      "id", "name", "icon", "description", "difficulty", "size", "enemyPool", "itemPool", "bossId",
+    ]);
     const id = assertString(rec.id, `${path}.id`);
     assertKeyMatch(key, id, path);
+    const sizeRec = assertRecord(rec.size, `${path}.size`, ["w", "h"]);
+    const sizeW = assertNumber(sizeRec.w, `${path}.size.w`, { gt: 0 });
+    const sizeH = assertNumber(sizeRec.h, `${path}.size.h`, { gt: 0 });
+    if (!Array.isArray(rec.enemyPool) || rec.enemyPool.length === 0) {
+      fail(`${path}.enemyPool`, "应为非空数组");
+    }
+    const enemyPool = rec.enemyPool.map((e, i) => {
+      const epath = `${path}.enemyPool[${i}]`;
+      const erec = assertRecord(e, epath, ["enemyId", "minDepth", "maxDepth", "weight"]);
+      const enemyId = assertString(erec.enemyId, `${epath}.enemyId`);
+      if (!enemyIds.has(enemyId)) fail(`${epath}.enemyId`, `引用了不存在的敌人 "${enemyId}"`);
+      const minDepth = assertNumber(erec.minDepth, `${epath}.minDepth`, { gte: 0 });
+      const maxDepth = assertNumber(erec.maxDepth, `${epath}.maxDepth`, { gte: minDepth });
+      return {
+        enemyId,
+        minDepth,
+        maxDepth,
+        weight: assertNumber(erec.weight, `${epath}.weight`, { gt: 0 }),
+      };
+    });
+    if (!Array.isArray(rec.itemPool)) fail(`${path}.itemPool`, "应为数组");
+    if (!enemyIds.has(rec.bossId as string)) {
+      fail(`${path}.bossId`, `引用了不存在的敌人 "${String(rec.bossId)}"`);
+    }
     out[key] = {
       id,
       name: assertL(rec.name, `${path}.name`),
       icon: assertString(rec.icon, `${path}.icon`),
       description: assertL(rec.description, `${path}.description`),
       difficulty: assertNumber(rec.difficulty, `${path}.difficulty`, { gte: 1 }),
+      size: { w: sizeW, h: sizeH },
+      enemyPool,
+      itemPool: rec.itemPool.map((iid: unknown, i: number) =>
+        assertItemId(iid, `${path}.itemPool[${i}]`, itemIds)
+      ),
+      bossId: assertString(rec.bossId, `${path}.bossId`),
+    };
+  }
+  return out;
+}
+
+export function validateLoot(
+  raw: unknown,
+  items: Record<string, ItemDef>,
+  enemies: Record<string, EnemyDef>
+): Record<string, LootTable> {
+  const root = assertRecord(raw, "loot.json");
+  const itemIds = new Set(Object.keys(items));
+  const enemyIds = new Set(Object.keys(enemies));
+  const out: Record<string, LootTable> = {};
+  for (const [key, value] of Object.entries(root)) {
+    const path = `loot.json:${key}`;
+    if (!enemyIds.has(key)) fail(path, `掉落表键 "${key}" 不是已定义的敌人`);
+    const rec = assertRecord(value, path, ["items", "gold"]);
+    if (!Array.isArray(rec.items)) fail(`${path}.items`, "应为数组");
+    if (!Array.isArray(rec.gold) || rec.gold.length !== 2) {
+      fail(`${path}.gold`, "应为 [min, max] 数组");
+    }
+    const goldMin = assertNumber(rec.gold[0], `${path}.gold[0]`, { gte: 0 });
+    const goldMax = assertNumber(rec.gold[1], `${path}.gold[1]`, { gte: goldMin });
+    out[key] = {
+      items: rec.items.map((entry, i) => {
+        const epath = `${path}.items[${i}]`;
+        const erec = assertRecord(entry, epath, ["itemId", "chance"]);
+        return {
+          itemId: assertItemId(erec.itemId, `${epath}.itemId`, itemIds),
+          chance: assertNumber(erec.chance, `${epath}.chance`, { gt: 0, lte: 1 }),
+        };
+      }),
+      gold: [goldMin, goldMax],
     };
   }
   return out;

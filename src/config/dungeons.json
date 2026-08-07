@@ -7,6 +7,13 @@
       "zh": "迷雾森林的边缘地带，哥布林在此出没。教学引导区域。",
       "en": "The misty forest fringe, home to goblins. A teaching ground."
     },
-    "difficulty": 1
+    "difficulty": 1,
+    "size": { "w": 6, "h": 6 },
+    "enemyPool": [
+      { "enemyId": "goblin", "minDepth": 0, "maxDepth": 1, "weight": 10 },
+      { "enemyId": "goblin_brute", "minDepth": 2, "maxDepth": 4, "weight": 6 }
+    ],
+    "itemPool": ["herb_bundle", "health_potion", "leather_cap", "leather_gloves", "leather_boots", "iron_sword"],
+    "bossId": "goblin_king"
   }
 }

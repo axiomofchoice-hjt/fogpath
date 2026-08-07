@@ -6,6 +6,7 @@ import { LanguageProvider } from "./i18n/LanguageContext";
 import { useLang } from "./i18n/useLang";
 import SidePanel from "./components/layout/SidePanel";
 import RoomView from "./components/room/RoomView";
+import DungeonView from "./components/dungeon/DungeonView";
 import BattleView from "./components/battle/BattleView";
 import StartPanel from "./components/start/StartPanel";
 import CharacterPanel from "./components/panels/CharacterPanel";
@@ -62,7 +63,13 @@ function AppInner() {
     if (state.screen !== "game" || state.battle) setWorldMapOpen(false);
   }, [state.screen, state.battle]);
 
-  const center = state.battle ? <BattleView /> : <RoomView mapOpen={worldMapOpen} />;
+  const center = state.battle ? (
+    <BattleView />
+  ) : state.dungeon ? (
+    <DungeonView />
+  ) : (
+    <RoomView mapOpen={worldMapOpen} />
+  );
   if (state.screen === "start" && !state.battle) return <StartPanel />;
 
   return (

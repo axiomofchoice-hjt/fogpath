@@ -1,12 +1,16 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useGame } from "../../state/useGame";
+import { dungeons as dungeonDefs } from "../../data/config";
 import { useLang } from "../../i18n/useLang";
+import { loc } from "../../i18n/translations";
 import HubMap from "./HubMap";
+import DungeonGrid from "../dungeon/DungeonGrid";
 
-/** 展开大地图（纯查看）：标题置顶 + 返回按钮，鼠标拖动平移观察全图，Esc 关闭 */
+/** 展开大地图（纯查看）：标题置顶 + 返回按钮，鼠标拖动平移观察全图，Esc 关闭。
+ *  村庄显示村庄枢纽图，地牢中显示地牢全图。 */
 function WorldMap({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { state } = useGame();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const dragRef = useRef<{ startX: number; startY: number; ox: number; oy: number } | null>(null);
 
@@ -42,10 +46,14 @@ function WorldMap({ open, onClose }: { open: boolean; onClose: () => void }) {
 
   if (!open) return null;
 
+  const dungeon = state.dungeon;
+  const dungeonDef = dungeon ? dungeonDefs[dungeon.dungeonId] : undefined;
+  const title = dungeonDef ? `${dungeonDef.icon} ${loc(dungeonDef.name, lang)}` : t("map.worldMap");
+
   return (
     <div className="fixed inset-0 z-50 bg-game-bg/95 flex flex-col">
       <div className="flex items-center justify-center py-4 relative flex-shrink-0">
-        <h2 className="text-game-gold text-lg font-mono font-bold">{t("map.worldMap")}</h2>
+        <h2 className="text-game-gold text-lg font-mono font-bold">{title}</h2>
         <button
           onClick={onClose}
           className="absolute right-4 text-[10px] font-mono px-3 py-1 rounded border border-game-border text-game-dim hover:text-game-gold hover:border-game-gold/40 transition-colors"
@@ -63,7 +71,11 @@ function WorldMap({ open, onClose }: { open: boolean; onClose: () => void }) {
           className="flex items-center justify-center min-h-full"
           style={{ transform: `translate(${offset.x}px, ${offset.y}px)` }}
         >
-          <HubMap currentRoomId={state.player.currentRoomId} large />
+          {dungeon ? (
+            <DungeonGrid dungeon={dungeon} large />
+          ) : (
+            <HubMap currentRoomId={state.player.currentRoomId} large />
+          )}
         </div>
       </div>
     </div>

@@ -141,27 +141,12 @@ function enemiesHitPlayer(
   }
 }
 
-export function initBattle(
-  scenarioId: string,
-  player: Player
-): BattleState {
-  const config = testBattleConfigs[scenarioId];
-  if (!config) {
-    throw new Error(`[battle] 未知测试场景 "${scenarioId}"（testBattleConfigs 中不存在）`);
-  }
-  // 玩家本身无属性：攻击动作全部来自装备（测试场景可直接覆盖装备）
-  const equipment = config.equipment ?? player.equipment;
-  const playerActions = equipment.flatMap((id) => {
-    if (id && !itemDefs[id]) {
-      throw new Error(`[battle] 场景 "${scenarioId}" 装备覆盖引用了不存在的物品 "${id}"`);
-    }
-    const def = id ? itemDefs[id] : undefined;
-    return def?.actions ?? [];
-  });
-  const enemies: BattleEnemy[] = config.enemies.map((id) => {
+/** 按敌人 ID 列表初始化战斗敌人（Boss 也走此路径） */
+function initEnemies(enemyIds: string[]): BattleEnemy[] {
+  return enemyIds.map((id) => {
     const def = enemyDefs[id];
     if (!def) {
-      throw new Error(`[battle] 场景 "${scenarioId}" 引用了不存在的敌人 "${id}"`);
+      throw new Error(`[battle] 引用了不存在的敌人 "${id}"`);
     }
     const first = pickPattern(def.patterns, null);
     return {
@@ -175,12 +160,30 @@ export function initBattle(
       momentum: 0,
       maxMomentum: def.momentum,
       hasAttack: false,
+      isBoss: !!def.isBoss,
       pattern: { patternId: first.id, stepIndex: 0 },
       lastPatternId: null,
       // 战斗开始：蓄势待发（模式步从第一回合开始生效）
       summary: msg("蓄势待发。", "Getting ready..."),
     };
   });
+}
+
+/** 构造战斗状态：敌人 + 装备快照（测试场景可覆盖装备） */
+function buildBattle(
+  scenarioId: string,
+  enemyIds: string[],
+  equipment: (string | null)[],
+  player: Player
+): BattleState {
+  const playerActions = equipment.flatMap((id) => {
+    if (id && !itemDefs[id]) {
+      throw new Error(`[battle] 装备覆盖引用了不存在的物品 "${id}"`);
+    }
+    const def = id ? itemDefs[id] : undefined;
+    return def?.actions ?? [];
+  });
+  const enemies = initEnemies(enemyIds);
   return {
     scenarioId,
     turn: 0,
@@ -211,6 +214,30 @@ export function initBattle(
     ],
     result: "ongoing",
   };
+}
+
+export function initBattle(
+  scenarioId: string,
+  player: Player
+): BattleState {
+  const config = testBattleConfigs[scenarioId];
+  if (!config) {
+    throw new Error(`[battle] 未知测试场景 "${scenarioId}"（testBattleConfigs 中不存在）`);
+  }
+  // 玩家本身无属性：攻击动作全部来自装备（测试场景可直接覆盖装备）
+  const equipment = config.equipment ?? player.equipment;
+  return buildBattle(scenarioId, config.enemies, equipment, player);
+}
+
+/** 地牢战斗入口：按敌人 ID 列表 + 玩家当前装备开战（GDD 3.3 进房即战） */
+export function initBattleFromEnemies(
+  enemyIds: string[],
+  player: Player
+): BattleState {
+  if (enemyIds.length === 0) {
+    throw new Error("[battle] initBattleFromEnemies 需要至少一个敌人");
+  }
+  return buildBattle("dungeon", enemyIds, player.equipment, player);
 }
 
 /**

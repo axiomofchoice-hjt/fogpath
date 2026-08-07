@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dungeons, enemyDefs, items, rooms, skills } from "./config";
+import { dungeons, enemyDefs, items, loot, rooms, skills } from "./config";
 import { testBattleConfigs } from "./battleTestConfigs";
 import { initialPlayer } from "../state/gameReducer";
 import { EQUIP_SLOT_COUNT } from "../types";
@@ -128,5 +128,30 @@ describe("地牢配置", () => {
   it("至少有一个可选地牢（森林）", () => {
     expect(dungeons.forest).toBeDefined();
     expect(dungeons.forest.difficulty).toBeGreaterThan(0);
+  });
+
+  it("地牢引用：敌人池/Boss 都在敌人表中，物品池在物品表中，森林 Boss 为哥布林王", () => {
+    for (const d of Object.values(dungeons)) {
+      expect(d.size.w * d.size.h).toBeGreaterThan(0);
+      for (const e of d.enemyPool) {
+        expect(enemyDefs[e.enemyId], `${d.id} -> ${e.enemyId}`).toBeDefined();
+      }
+      for (const id of d.itemPool) {
+        expect(items[id], `${d.id} -> ${id}`).toBeDefined();
+      }
+      expect(enemyDefs[d.bossId], `${d.id} -> ${d.bossId}`).toBeDefined();
+    }
+    expect(dungeons.forest.bossId).toBe("goblin_king");
+  });
+
+  it("每个地牢敌人池/Boss 都有掉落表", () => {
+    const ids = new Set<string>();
+    for (const d of Object.values(dungeons)) {
+      ids.add(d.bossId);
+      for (const e of d.enemyPool) ids.add(e.enemyId);
+    }
+    for (const id of ids) {
+      expect(loot[id], `敌人 ${id} 缺少掉落表`).toBeDefined();
+    }
   });
 });
