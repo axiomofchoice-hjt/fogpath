@@ -14,7 +14,7 @@
       { "enemyId": "goblin", "minDepth": 0, "maxDepth": 4, "weight": 10 },
       { "enemyId": "goblin_brute", "minDepth": 4, "maxDepth": 10, "weight": 6 }
     ],
-    "itemPool": ["herb_bundle", "health_potion", "leather_cap", "leather_gloves", "leather_boots", "iron_sword"],
+    "itemPool": ["herb_bundle", "health_potion", "apprentice_staff", "leather_cap", "leather_gloves", "leather_boots", "iron_sword"],
     "bossId": "goblin_king"
   }
 }

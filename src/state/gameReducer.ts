@@ -72,45 +72,20 @@ function patchRoom(
   );
 }
 
-function recalcStats(player: GameState["player"]): GameState["player"] {
-  const atkBonus = player.equipment.reduce(
-    (sum, id) => sum + (id ? itemDefs[id]?.atk ?? 0 : 0),
-    0
-  );
-  const defBonus = player.equipment.reduce(
-    (sum, id) => sum + (id ? itemDefs[id]?.def ?? 0 : 0),
-    0
-  );
-  const spdBonus = player.equipment.reduce(
-    (sum, id) => sum + (id ? itemDefs[id]?.spd ?? 0 : 0),
-    0
-  );
-  return {
-    ...player,
-    atk: 10 + atkBonus,
-    def: 5 + defBonus,
-    spd: 8 + spdBonus,
-  };
-}
-
 export function initialPlayer(): GameState["player"] {
-  return recalcStats({
+  return {
     hp: 100,
     maxHp: 100,
     mp: 100,
     maxMp: 100,
-    atk: 10,
-    def: 5,
-    spd: 8,
     currentRoomId: "village_square",
     inventory: [
       { itemId: "gold", quantity: 20 },
       { itemId: "health_potion", quantity: 2 },
-      { itemId: "apprentice_staff", quantity: 1 },
     ],
     equipment: ["rusty_sword", "rusty_shield", null, null, null, null],
     pickedItemIds: ["rusty_sword"],
-  });
+  };
 }
 
 export function initialGameState(): GameState {
@@ -354,12 +329,14 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (slotIndex === -1) return state;
       const equipment = [...state.player.equipment];
       equipment[slotIndex] = action.itemId;
-      const newPlayer = recalcStats({
-        ...state.player,
-        equipment,
-        inventory: removeFromInventory(state.player.inventory, action.itemId, 1),
-      });
-      return { ...state, player: newPlayer };
+      return {
+        ...state,
+        player: {
+          ...state.player,
+          equipment,
+          inventory: removeFromInventory(state.player.inventory, action.itemId, 1),
+        },
+      };
     }
 
     case "UNEQUIP": {
@@ -368,12 +345,14 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (!itemId) return state;
       const equipment = [...state.player.equipment];
       equipment[action.slotIndex] = null;
-      const newPlayer = recalcStats({
-        ...state.player,
-        equipment,
-        inventory: addToInventory(state.player.inventory, itemId, 1),
-      });
-      return { ...state, player: newPlayer };
+      return {
+        ...state,
+        player: {
+          ...state.player,
+          equipment,
+          inventory: addToInventory(state.player.inventory, itemId, 1),
+        },
+      };
     }
 
     case "USE_ITEM": {

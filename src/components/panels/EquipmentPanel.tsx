@@ -20,11 +20,6 @@ function ItemTooltip({ itemId }: { itemId: string }) {
       <div className="text-game-dim text-[10px] font-mono leading-relaxed mb-1.5">
         {loc(item.description, lang)}
       </div>
-      {item.atk != null && (
-        <div className="text-game-orange text-[10px] font-mono mt-0.5">
-          {t("stat.atk")} +{item.atk}
-        </div>
-      )}
       {item.actions?.map((act) => {
         const skill = skillDefs[act.skillId];
         if (!skill) return null;
@@ -47,11 +42,6 @@ function ItemTooltip({ itemId }: { itemId: string }) {
           <span className="text-game-text">{t("battle.guard")}</span>
           <span className="text-game-dim"> {t("battle.active")}，</span>
           <span className="text-game-gold">{t("battle.guardEffect", { pct: SHIELD_PCT })}</span>
-        </div>
-      )}
-      {item.spd != null && (
-        <div className="text-game-green text-[10px] font-mono">
-          {t("stat.spd")} +{item.spd}
         </div>
       )}
     </div>

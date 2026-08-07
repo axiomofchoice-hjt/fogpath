@@ -39,7 +39,6 @@
     "type": "equipment",
     "description": { "zh": "一把坚固的铁剑。", "en": "A sturdy iron blade." },
     "rarity": 2,
-    "atk": 7,
     "actions": [{ "skillId": "basic_attack", "damage": 12, "momentum": 6 }]
   },
   "leather_cap": {
@@ -48,8 +47,7 @@
     "icon": "\uD83C\uDFA9",
     "type": "equipment",
     "description": { "zh": "一顶简单的皮帽。", "en": "A simple leather cap." },
-    "rarity": 1,
-    "def": 2
+    "rarity": 1
   },
   "rusty_shield": {
     "id": "rusty_shield",
@@ -58,7 +56,6 @@
     "type": "equipment",
     "description": { "zh": "一面生锈但坚固的圆盾。", "en": "A rusty but sturdy round shield." },
     "rarity": 1,
-    "def": 1,
     "isShield": true
   },
   "leather_gloves": {
@@ -67,8 +64,7 @@
     "icon": "\uD83E\uDDE4",
     "type": "equipment",
     "description": { "zh": "结实的皮革手套。", "en": "Sturdy leather gloves." },
-    "rarity": 1,
-    "def": 1
+    "rarity": 1
   },
   "leather_boots": {
     "id": "leather_boots",
@@ -76,9 +72,7 @@
     "icon": "\uD83D\uDC5F",
     "type": "equipment",
     "description": { "zh": "舒适的皮革靴子。", "en": "Comfortable leather boots." },
-    "rarity": 1,
-    "def": 1,
-    "spd": 1
+    "rarity": 1
   },
   "lucky_ring": {
     "id": "lucky_ring",
@@ -86,9 +80,7 @@
     "icon": "\uD83D\uDC8D",
     "type": "equipment",
     "description": { "zh": "一枚微微闪烁的戒指。", "en": "A ring that glimmers faintly." },
-    "rarity": 3,
-    "atk": 2,
-    "def": 2
+    "rarity": 3
   },
   "health_potion": {
     "id": "health_potion",

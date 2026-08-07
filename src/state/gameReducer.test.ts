@@ -3,7 +3,7 @@ import type { GameState } from "../types";
 import { gameReducer, goldAmount, initialGameState, initialPlayer } from "./gameReducer";
 
 describe("初始状态", () => {
-  it("初始玩家：100/100，生锈剑+盾，背包 2 药水 1 木杖", () => {
+  it("初始玩家：100/100，生锈剑+盾，背包 20 金币 2 药水", () => {
     const s = initialGameState();
     expect(s.screen).toBe("start");
     expect(s.battle).toBeNull();
@@ -14,7 +14,6 @@ describe("初始状态", () => {
     expect(s.player.inventory).toEqual([
       { itemId: "gold", quantity: 20 },
       { itemId: "health_potion", quantity: 2 },
-      { itemId: "apprentice_staff", quantity: 1 },
     ]);
     expect(s.player.currentRoomId).toBe("village_square");
   });
@@ -163,10 +162,20 @@ describe("拾取与丢弃", () => {
 });
 
 describe("装备与卸下", () => {
-  it("EQUIP 从背包装入空槽并重算属性", () => {
-    const s = gameReducer(initialGameState(), { type: "EQUIP", itemId: "apprentice_staff" });
-    expect(s.player.equipment[2]).toBe("apprentice_staff");
-    expect(s.player.inventory.find((e) => e.itemId === "apprentice_staff")).toBeUndefined();
+  it("EQUIP 从背包装入空槽", () => {
+    const state = {
+      ...initialGameState(),
+      player: {
+        ...initialPlayer(),
+        inventory: [
+          { itemId: "gold", quantity: 20 },
+          { itemId: "leather_cap", quantity: 1 },
+        ],
+      },
+    };
+    const s = gameReducer(state, { type: "EQUIP", itemId: "leather_cap" });
+    expect(s.player.equipment[2]).toBe("leather_cap");
+    expect(s.player.inventory.find((e) => e.itemId === "leather_cap")).toBeUndefined();
   });
 
   it("已装备 / 非装备类型 / 未知物品不可装备", () => {
@@ -202,7 +211,7 @@ describe("装备与卸下", () => {
       type: "START_TEST_BATTLE",
       scenarioId: "test_atk_vs_atk",
     });
-    expect(gameReducer(s, { type: "EQUIP", itemId: "apprentice_staff" })).toBe(s);
+    expect(gameReducer(s, { type: "EQUIP", itemId: "leather_cap" })).toBe(s);
   });
 
   it("UNEQUIP 放回背包；空槽无效", () => {

@@ -98,7 +98,7 @@ export function validateItems(raw: unknown, skills: Record<string, SkillDef>): R
     const path = `items.json:${key}`;
     const rec = assertRecord(value, path, [
       "id", "name", "icon", "type", "description", "rarity",
-      "atk", "def", "spd", "hpRestore", "mpRestore", "isShield", "actions",
+      "hpRestore", "mpRestore", "isShield", "actions",
     ]);
     const id = assertString(rec.id, `${path}.id`);
     assertKeyMatch(key, id, path);
@@ -114,9 +114,6 @@ export function validateItems(raw: unknown, skills: Record<string, SkillDef>): R
       description: assertL(rec.description, `${path}.description`),
       rarity: assertNumber(rec.rarity, `${path}.rarity`, { gte: 1 }),
     };
-    if (rec.atk !== undefined) item.atk = assertNumber(rec.atk, `${path}.atk`, { gte: 0 });
-    if (rec.def !== undefined) item.def = assertNumber(rec.def, `${path}.def`, { gte: 0 });
-    if (rec.spd !== undefined) item.spd = assertNumber(rec.spd, `${path}.spd`, { gte: 0 });
     if (rec.hpRestore !== undefined) {
       item.hpRestore = assertNumber(rec.hpRestore, `${path}.hpRestore`, { gt: 0 });
     }

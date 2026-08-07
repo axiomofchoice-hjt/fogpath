@@ -16,9 +16,6 @@ const zh = {
 
   "stat.hp": "生命",
   "stat.mp": "法力",
-  "stat.atk": "攻击",
-  "stat.def": "防御",
-  "stat.spd": "速度",
   "stat.damage": "伤害",
   "stat.momentum": "动量",
   "stat.adventurer": "冒险者",
@@ -118,9 +115,6 @@ const en: Record<TKey, string> = {
 
   "stat.hp": "HP",
   "stat.mp": "MP",
-  "stat.atk": "ATK",
-  "stat.def": "DEF",
-  "stat.spd": "SPD",
   "stat.damage": "DMG",
   "stat.momentum": "MOM",
   "stat.adventurer": "Adventurer",

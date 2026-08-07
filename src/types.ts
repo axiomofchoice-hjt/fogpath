@@ -29,9 +29,6 @@ export interface ItemDef {
   type: ItemType;
   description: L;
   rarity: number;
-  atk?: number;
-  def?: number;
-  spd?: number;
   hpRestore?: number;
   mpRestore?: number;
   /** 盾牌：赋予防御动作（举盾减伤） */
@@ -132,9 +129,6 @@ export interface Player {
   maxHp: number;
   mp: number;
   maxMp: number;
-  atk: number;
-  def: number;
-  spd: number;
   currentRoomId: string;
   inventory: InventoryEntry[];
   /** 6 个通用装备格，值为物品 ID 或 null */
