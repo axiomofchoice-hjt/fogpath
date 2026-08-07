@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useGame } from "../../state/useGame";
-import { goldAmount } from "../../state/gameReducer";
+import { goldAmount } from "../../state/helpers";
 import { items as itemDefs, rooms as roomMap } from "../../data/config";
 import { useLang } from "../../i18n/useLang";
 import { loc } from "../../i18n/translations";

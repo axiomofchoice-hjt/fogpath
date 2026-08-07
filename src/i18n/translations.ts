@@ -105,6 +105,11 @@ const zh = {
   "battle.boss": "Boss",
   "battle.status.guard.name": "举盾",
   "battle.status.guard.desc": "减伤 {{pct}}%，直到下一次攻击前",
+
+  "error.title": "游戏出错",
+  "error.detail": "错误信息",
+  "error.reload": "刷新页面",
+  "error.reset": "重置进度",
 } as const;
 
 export type TKey = keyof typeof zh;
@@ -204,6 +209,11 @@ const en: Record<TKey, string> = {
   "battle.boss": "Boss",
   "battle.status.guard.name": "Guard",
   "battle.status.guard.desc": "Reduce damage by {{pct}}% until your next attack",
+
+  "error.title": "Something went wrong",
+  "error.detail": "Error",
+  "error.reload": "Reload",
+  "error.reset": "Reset Progress",
 };
 
 export const translations: Record<Language, Record<TKey, string>> = { zh, en };

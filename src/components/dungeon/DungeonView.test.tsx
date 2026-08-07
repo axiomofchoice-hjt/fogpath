@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderGame } from "../../test/harness";
-import { initialGameState } from "../../state/gameReducer";
+import { initialGameState } from "../../state/init";
 import type { DungeonRoom, GameState } from "../../types";
 
 /** 手工 3×3 地牢：入口 (0,0)、右侧 (1,0) 有哥布林的未探索房，玩家在入口 */

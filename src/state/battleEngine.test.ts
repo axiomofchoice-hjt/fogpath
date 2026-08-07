@@ -8,7 +8,7 @@ import {
   pickPattern,
   resolveTurn,
 } from "./battleEngine";
-import { initialPlayer } from "./gameReducer";
+import { initialPlayer } from "./init";
 
 function testPlayer(overrides: Partial<Player> = {}): Player {
   return { ...initialPlayer(), ...overrides };

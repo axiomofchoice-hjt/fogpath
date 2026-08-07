@@ -3,7 +3,7 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderGame } from "../../test/harness";
 import { initBattle, initBattleFromEnemies } from "../../state/battleEngine";
-import { initialGameState, initialPlayer } from "../../state/gameReducer";
+import { initialGameState, initialPlayer } from "../../state/init";
 import type { GameState } from "../../types";
 
 function withBattle(battle: ReturnType<typeof initBattle>): GameState {

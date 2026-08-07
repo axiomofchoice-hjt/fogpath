@@ -3,7 +3,8 @@ import { useReducer, type ReactNode } from "react";
 import { render } from "@testing-library/react";
 import { LanguageProvider } from "../i18n/LanguageContext";
 import { GameContext } from "../state/gameContextValue";
-import { gameReducer, initialGameState } from "../state/gameReducer";
+import { gameReducer } from "../state/gameReducer";
+import { initialGameState } from "../state/init";
 import type { GameState } from "../types";
 import { AppInner } from "../App";
 

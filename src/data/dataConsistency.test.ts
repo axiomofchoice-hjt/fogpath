@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { dungeons, enemyDefs, items, loot, rooms, skills } from "./config";
 import { testBattleConfigs } from "./battleTestConfigs";
-import { initialPlayer } from "../state/gameReducer";
+import { initialPlayer } from "../state/init";
 import { EQUIP_SLOT_COUNT } from "../types";
 
 describe("物品定义", () => {

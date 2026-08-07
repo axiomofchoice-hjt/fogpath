@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import type { DungeonRoom, GameState } from "../types";
-import { gameReducer, initialGameState, initialPlayer, rollLoot } from "./gameReducer";
+import { gameReducer } from "./gameReducer";
+import { initialGameState, initialPlayer } from "./init";
+import { rollLoot } from "./helpers";
 import { loot } from "../data/config";
 
 describe("rollLoot（掉落结算）", () => {

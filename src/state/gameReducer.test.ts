@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { GameState } from "../types";
-import { gameReducer, goldAmount, initialGameState, initialPlayer } from "./gameReducer";
+import { gameReducer } from "./gameReducer";
+import { initialGameState, initialPlayer } from "./init";
+import { goldAmount } from "./helpers";
 
 describe("初始状态", () => {
   it("初始玩家：100/100，生锈剑+盾，背包 20 金币 2 药水", () => {

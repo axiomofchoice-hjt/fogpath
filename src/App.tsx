@@ -12,6 +12,7 @@ import StartPanel from "./components/start/StartPanel";
 import CharacterPanel from "./components/panels/CharacterPanel";
 import EquipmentPanel from "./components/panels/EquipmentPanel";
 import WorldMap from "./components/map/WorldMap";
+import { GameErrorBoundary } from "./components/ErrorBoundary";
 
 function Header() {
   const { lang, toggleLang } = useLang();
@@ -98,7 +99,9 @@ function App() {
   return (
     <LanguageProvider>
       <GameProvider>
-        <AppInner />
+        <GameErrorBoundary>
+          <AppInner />
+        </GameErrorBoundary>
       </GameProvider>
     </LanguageProvider>
   );

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderGame } from "../../test/harness";
-import { initialGameState } from "../../state/gameReducer";
+import { initialGameState } from "../../state/init";
 import type { GameState } from "../../types";
 
 function inVillage(currentRoomId: string): GameState {
