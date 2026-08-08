@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useGame } from "../../state/useGame";
 import { goldAmount } from "../../state/helpers";
+import { saveGame } from "../../state/save";
 import { items as itemDefs, rooms as roomMap } from "../../data/config";
 import { useLang } from "../../i18n/useLang";
 import { loc } from "../../i18n/translations";
@@ -21,6 +22,7 @@ function RoomView({ mapOpen }: { mapOpen: boolean }) {
   const { t, lang } = useLang();
   const { player } = state;
   const room = roomMap[player.currentRoomId];
+  const [savedAt, setSavedAt] = useState<number | null>(null);
 
   // 村庄 WASD 移动：朝方向最近的出口移动（大地图打开时不接管）
   useEffect(() => {
@@ -66,6 +68,29 @@ function RoomView({ mapOpen }: { mapOpen: boolean }) {
           <span className="text-game-green text-[10px] font-mono bg-game-green/10 px-2 py-0.5 rounded border border-game-green/30">
             {t("room.safeRoom")}
           </span>
+        )}
+        {room.isSafeRoom && (
+          <div className="ml-auto flex items-center gap-2">
+            {savedAt !== null && (
+              <span className="text-game-dim text-[10px] font-mono">
+                {t("save.savedAt", {
+                  time: new Date(savedAt).toLocaleTimeString(
+                    lang === "zh" ? "zh-CN" : "en-US",
+                    { hour12: false }
+                  ),
+                })}
+              </span>
+            )}
+            <button
+              onClick={() => {
+                saveGame(state);
+                setSavedAt(Date.now());
+              }}
+              className="text-[10px] font-mono px-2 py-1 rounded border border-game-border text-game-dim hover:text-game-gold hover:border-game-gold/40 transition-colors"
+            >
+              {t("save.manual")}
+            </button>
+          </div>
         )}
       </div>
 

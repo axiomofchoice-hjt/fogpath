@@ -80,10 +80,18 @@ const zh = {
   "room.enterForest": "进入森林地牢",
 
   "start.enterVillage": "进入村庄",
+  "start.continue": "继续冒险",
   "start.restart": "重新开始（清空进度）",
   "start.restartConfirm": "确定要清空进度、从头开始吗？",
+  "start.savedTitle": "上次存档",
   "start.testBattles": "测试战斗",
   "start.placeholder": "规划中",
+
+  "save.manual": "保存进度",
+  "save.savedAt": "已存档 {{time}}",
+  "save.export": "导出存档",
+  "save.import": "导入存档",
+  "save.importError": "存档文件无效",
 
   "battle.title": "战斗",
   "battle.turn": "回合 {{n}}",
@@ -184,10 +192,18 @@ const en: Record<TKey, string> = {
   "room.enterForest": "Enter Forest Dungeon",
 
   "start.enterVillage": "Enter Village",
+  "start.continue": "Continue",
   "start.restart": "Restart (clear progress)",
   "start.restartConfirm": "Reset all progress and start over?",
+  "start.savedTitle": "Last Save",
   "start.testBattles": "Test Battles",
   "start.placeholder": "Planned",
+
+  "save.manual": "Save",
+  "save.savedAt": "Saved {{time}}",
+  "save.export": "Export Save",
+  "save.import": "Import Save",
+  "save.importError": "Invalid save file",
 
   "battle.title": "Battle",
   "battle.turn": "Turn {{n}}",

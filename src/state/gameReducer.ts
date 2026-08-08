@@ -8,6 +8,11 @@ import { dungeonReducer } from "./dungeonReducer";
 const reducers = [screenReducer, playerReducer, battleReducer, dungeonReducer];
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
+  if (action.type === "LOAD_SAVE") {
+    // 防御：历史/异常存档若停留在开始屏，强制恢复进游戏（存档只应在村庄生成）
+    if (action.save.screen === "start") return { ...action.save, screen: "game" };
+    return action.save;
+  }
   for (const reducer of reducers) {
     const next = reducer(state, action);
     if (next !== state) return next;

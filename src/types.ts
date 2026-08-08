@@ -282,6 +282,7 @@ export type GameAction =
   | { type: "START_GAME" }
   | { type: "BACK_TO_START" }
   | { type: "RESET_GAME" }
+  | { type: "LOAD_SAVE"; save: GameState }
   | { type: "START_TEST_BATTLE"; scenarioId: string }
   | { type: "BATTLE_ACT"; action: PlayerBattleAction }
   | { type: "EXIT_BATTLE" }

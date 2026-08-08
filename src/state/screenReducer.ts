@@ -1,5 +1,6 @@
 import type { GameAction, GameState } from "../types";
 import { initialGameState } from "./init";
+import { clearSave } from "./save";
 
 /** 屏幕切换：开始面板 / 主游戏（RESET 需无战斗） */
 export function screenReducer(state: GameState, action: GameAction): GameState {
@@ -17,6 +18,8 @@ export function screenReducer(state: GameState, action: GameAction): GameState {
 
     case "RESET_GAME": {
       if (state.battle) return state;
+      // 真正的重新开始才清档（BACK_TO_START 返回的状态可能与初始态相同，不能用状态比对判断）
+      clearSave();
       return initialGameState();
     }
 
