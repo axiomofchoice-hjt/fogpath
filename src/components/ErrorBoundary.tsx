@@ -6,6 +6,8 @@ import { translations, type Language } from "../i18n/translations";
 type ErrorBoundaryInnerProps = {
   lang: Language;
   onReset: () => void;
+  /** 战斗中 RESET_GAME 会断言失败，此时禁用重置按钮 */
+  resetDisabled: boolean;
   children: ReactNode;
 };
 
@@ -23,6 +25,12 @@ class ErrorBoundaryInner extends Component<
   componentDidCatch(error: Error, info: { componentStack?: string | null }) {
     console.error("[ErrorBoundary]", error, info.componentStack ?? "");
   }
+
+  /** 重置进度：先清空错误状态重新渲染子树（若仍崩溃则错误面板会再次出现），再派发 RESET_GAME 清档 */
+  private handleReset = () => {
+    this.setState({ error: null });
+    this.props.onReset();
+  };
 
   render() {
     if (!this.state.error) return this.props.children;
@@ -43,8 +51,10 @@ class ErrorBoundaryInner extends Component<
               {t["error.reload"]}
             </button>
             <button
-              onClick={this.props.onReset}
-              className="px-4 py-2 rounded text-xs font-mono border border-game-border text-game-dim hover:text-game-red hover:border-game-red/40 transition-colors"
+              onClick={this.handleReset}
+              disabled={this.props.resetDisabled}
+              title={this.props.resetDisabled ? t["error.resetDisabled"] : undefined}
+              className="px-4 py-2 rounded text-xs font-mono border border-game-border text-game-dim hover:text-game-red hover:border-game-red/40 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-game-dim disabled:hover:border-game-border"
             >
               {t["error.reset"]}
             </button>
@@ -57,10 +67,14 @@ class ErrorBoundaryInner extends Component<
 
 /** 包裹在 GameProvider/LanguageProvider 内使用的错误边界（重置按钮需 dispatch） */
 export function GameErrorBoundary({ children }: { children: ReactNode }) {
-  const { dispatch } = useGame();
+  const { state, dispatch } = useGame();
   const { lang } = useLang();
   return (
-    <ErrorBoundaryInner lang={lang} onReset={() => dispatch({ type: "RESET_GAME" })}>
+    <ErrorBoundaryInner
+      lang={lang}
+      resetDisabled={!!state.battle}
+      onReset={() => dispatch({ type: "RESET_GAME" })}
+    >
       {children}
     </ErrorBoundaryInner>
   );

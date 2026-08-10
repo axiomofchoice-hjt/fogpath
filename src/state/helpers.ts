@@ -6,6 +6,11 @@ export function goldAmount(player: Player): number {
   return player.inventory.find((e) => e.itemId === "gold")?.quantity ?? 0;
 }
 
+/** 不变量守卫：条件为假时断言失败（fail fast）。UI 已拦截、正常流程不可达的状态组合属调用方 bug，禁止静默掩盖 */
+export function assertInvariant(condition: unknown, message: string): asserts condition {
+  if (!condition) throw new Error(message);
+}
+
 /** 掉落结算（GDD 6）：逐条滚概率，金币随机范围入账 */
 export function rollLoot(
   enemyIds: string[],

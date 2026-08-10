@@ -61,4 +61,16 @@ describe("地牢视图", () => {
     expect(screen.getByRole("button", { name: "进入森林地牢" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "← 开始面板" })).toBeInTheDocument();
   });
+
+  it("展开世界地图时：WASD 不触发情报面板，X 不撤离", async () => {
+    const user = userEvent.setup();
+    renderGame(miniDungeon());
+    await user.click(screen.getByRole("button", { name: "展开地图" }));
+    expect(screen.getByRole("button", { name: "← 返回" })).toBeInTheDocument();
+    await user.keyboard("{d}");
+    expect(screen.queryByText("房间情报")).not.toBeInTheDocument();
+    await user.keyboard("{x}");
+    expect(screen.getByRole("heading", { name: /森林 · 入口/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "← 返回" })).toBeInTheDocument();
+  });
 });

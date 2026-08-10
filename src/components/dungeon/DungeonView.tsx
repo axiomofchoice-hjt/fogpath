@@ -31,7 +31,7 @@ function roomDescription(
 }
 
 /** 地牢视图：文字展示当前房间 + 地牢网格 + 情报面板；WASD 移动、X 撤离（GDD 4.1） */
-function DungeonView() {
+function DungeonView({ mapOpen }: { mapOpen: boolean }) {
   const { state, dispatch } = useGame();
   const { t, lang } = useLang();
   const dungeon = state.dungeon;
@@ -46,6 +46,7 @@ function DungeonView() {
     if (!dungeon) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.repeat) return;
+      if (mapOpen) return; // 展开大地图遮罩中：纯查看，不响应移动/撤离（与村庄一致）
       if (pending) return; // 情报面板打开：WASD 禁用（GDD 4.1）
       if (e.key.toLowerCase() === "x") {
         dispatch({ type: "DUNGEON_RETREAT" });
@@ -68,7 +69,7 @@ function DungeonView() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [dungeon, pending, dispatch]);
+  }, [dungeon, pending, dispatch, mapOpen]);
 
   if (!dungeon || !def) return null;
 

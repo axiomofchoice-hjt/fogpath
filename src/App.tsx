@@ -67,7 +67,7 @@ export function AppInner() {
   const center = state.battle ? (
     <BattleView />
   ) : state.dungeon ? (
-    <DungeonView />
+    <DungeonView mapOpen={worldMapOpen} />
   ) : (
     <RoomView mapOpen={worldMapOpen} />
   );

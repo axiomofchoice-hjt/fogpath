@@ -118,6 +118,7 @@ const zh = {
   "error.detail": "错误信息",
   "error.reload": "刷新页面",
   "error.reset": "重置进度",
+  "error.resetDisabled": "战斗中无法重置进度",
 } as const;
 
 export type TKey = keyof typeof zh;
@@ -230,6 +231,7 @@ const en: Record<TKey, string> = {
   "error.detail": "Error",
   "error.reload": "Reload",
   "error.reset": "Reset Progress",
+  "error.resetDisabled": "Cannot reset during battle",
 };
 
 export const translations: Record<Language, Record<TKey, string>> = { zh, en };

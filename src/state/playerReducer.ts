@@ -1,15 +1,21 @@
 import type { GameAction, GameState } from "../types";
 import { items as itemDefs, rooms as roomMap } from "../data/config";
-import { addToInventory, goldAmount, removeFromInventory } from "./helpers";
+import {
+  addToInventory,
+  assertInvariant,
+  goldAmount,
+  removeFromInventory,
+} from "./helpers";
 
 /** 玩家/村庄域：房间移动、商店、拾取/丢弃、装备、非战斗用道具 */
 export function playerReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case "MOVE_ROOM": {
-      if (state.battle) return state;
+      assertInvariant(!state.battle, "MOVE_ROOM 不能在战斗中使用");
       const room = roomMap[state.player.currentRoomId];
-      if (!room || !room.exits.includes(action.roomId)) return state;
-      if (!roomMap[action.roomId]) return state;
+      assertInvariant(!!room, "MOVE_ROOM 当前房间定义不存在");
+      assertInvariant(room.exits.includes(action.roomId), "MOVE_ROOM 目标非出口");
+      assertInvariant(!!roomMap[action.roomId], "MOVE_ROOM 目标房间定义不存在");
       return {
         ...state,
         player: { ...state.player, currentRoomId: action.roomId },
@@ -17,31 +23,32 @@ export function playerReducer(state: GameState, action: GameAction): GameState {
     }
 
     case "BUY_ITEM": {
-      if (state.battle) return state;
+      assertInvariant(!state.battle, "BUY_ITEM 不能在战斗中使用");
       const room = roomMap[state.player.currentRoomId];
       const entry = room?.shopItems?.find((s) => s.itemId === action.itemId);
-      if (!entry) return state;
+      assertInvariant(!!entry, "BUY_ITEM 商店无此货物");
       const item = itemDefs[action.itemId];
-      if (!item) return state;
+      assertInvariant(!!item, "BUY_ITEM 物品定义不存在");
       const gold = goldAmount(state.player);
-      if (gold < entry.price) return state;
+      if (gold < entry.price) return state; // 资源守卫：金币不足属合法拒绝
       return {
         ...state,
         player: {
           ...state.player,
-          inventory: [
-            ...removeFromInventory(state.player.inventory, "gold", entry.price),
-            ...addToInventory(state.player.inventory, action.itemId, 1),
-          ],
+          inventory: addToInventory(
+            removeFromInventory(state.player.inventory, "gold", entry.price),
+            action.itemId,
+            1
+          ),
         },
       };
     }
 
     case "PICKUP_ITEM": {
-      if (state.battle) return state;
+      assertInvariant(!state.battle, "PICKUP_ITEM 不能在战斗中使用");
       const item = itemDefs[action.itemId];
-      if (!item) return state;
-      if (state.player.pickedItemIds.includes(action.itemId)) return state;
+      assertInvariant(!!item, "PICKUP_ITEM 物品定义不存在");
+      if (state.player.pickedItemIds.includes(action.itemId)) return state; // 幂等守卫：已拾取
       return {
         ...state,
         player: {
@@ -53,7 +60,7 @@ export function playerReducer(state: GameState, action: GameAction): GameState {
     }
 
     case "DISCARD_ITEM": {
-      if (state.battle) return state;
+      assertInvariant(!state.battle, "DISCARD_ITEM 不能在战斗中使用");
       // 货币不可丢弃
       if (itemDefs[action.itemId]?.type === "currency") return state;
       return {
@@ -66,12 +73,12 @@ export function playerReducer(state: GameState, action: GameAction): GameState {
     }
 
     case "EQUIP": {
-      if (state.battle) return state;
+      assertInvariant(!state.battle, "EQUIP 不能在战斗中使用");
       const item = itemDefs[action.itemId];
-      if (!item || item.type !== "equipment") return state;
-      if (state.player.equipment.includes(action.itemId)) return state;
+      assertInvariant(!!item && item.type === "equipment", "EQUIP 只能装备装备类型物品");
+      if (state.player.equipment.includes(action.itemId)) return state; // 幂等守卫：已装备
       const slotIndex = state.player.equipment.indexOf(null);
-      if (slotIndex === -1) return state;
+      if (slotIndex === -1) return state; // 资源守卫：装备栏已满
       const equipment = [...state.player.equipment];
       equipment[slotIndex] = action.itemId;
       return {
@@ -85,9 +92,9 @@ export function playerReducer(state: GameState, action: GameAction): GameState {
     }
 
     case "UNEQUIP": {
-      if (state.battle) return state;
+      assertInvariant(!state.battle, "UNEQUIP 不能在战斗中使用");
       const itemId = state.player.equipment[action.slotIndex];
-      if (!itemId) return state;
+      if (!itemId) return state; // 幂等守卫：空槽
       const equipment = [...state.player.equipment];
       equipment[action.slotIndex] = null;
       return {
@@ -101,10 +108,10 @@ export function playerReducer(state: GameState, action: GameAction): GameState {
     }
 
     case "USE_ITEM": {
-      // 战斗中的使用道具由 battleReducer 处理（消耗一回合）
+      // 战斗中的使用道具由 battleReducer 处理（消耗一回合）：此处必须静默路由，不能断言
       if (state.battle) return state;
       const item = itemDefs[action.itemId];
-      if (!item || item.type !== "consumable") return state;
+      assertInvariant(!!item && item.type === "consumable", "USE_ITEM 只能使用消耗品");
       let newPlayer = { ...state.player };
       if (item.hpRestore) newPlayer.hp = Math.min(newPlayer.maxHp, newPlayer.hp + item.hpRestore);
       if (item.mpRestore) newPlayer.mp = Math.min(newPlayer.maxMp, newPlayer.mp + item.mpRestore);

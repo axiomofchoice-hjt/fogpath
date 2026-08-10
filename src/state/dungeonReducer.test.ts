@@ -96,49 +96,54 @@ describe("地牢：进入", () => {
     expect(s.dungeon!.rooms.flat().some((r) => r === null)).toBe(true);
   });
 
-  it("ENTER_DUNGEON 非入口房间/战斗中/已有地牢被拒", () => {
+  it("ENTER_DUNGEON 非入口房间/战斗中/已有地牢断言失败", () => {
     const square = { ...initialGameState(), screen: "game" as const };
-    expect(gameReducer(square, { type: "ENTER_DUNGEON", dungeonId: "forest" })).toBe(square);
+    expect(() => gameReducer(square, { type: "ENTER_DUNGEON", dungeonId: "forest" })).toThrow(
+      /ENTER_DUNGEON/
+    );
     const s = entered();
-    expect(gameReducer(s, { type: "ENTER_DUNGEON", dungeonId: "forest" })).toBe(s);
+    expect(() => gameReducer(s, { type: "ENTER_DUNGEON", dungeonId: "forest" })).toThrow(
+      /ENTER_DUNGEON/
+    );
     const inBattle = gameReducer(s, {
       type: "START_TEST_BATTLE",
       scenarioId: "test_atk_vs_atk",
     });
-    expect(gameReducer(inBattle, { type: "ENTER_DUNGEON", dungeonId: "forest" })).toBe(inBattle);
+    expect(() => gameReducer(inBattle, { type: "ENTER_DUNGEON", dungeonId: "forest" })).toThrow(
+      /ENTER_DUNGEON/
+    );
   });
 });
 
 describe("地牢：移动与情报", () => {
-  it("DUNGEON_MOVE：空房间直接移动并点亮，有敌人则待情报确认", () => {
+  it("DUNGEON_MOVE：空房间直接移动并点亮，有敌人断言失败（待情报确认）", () => {
     const s = entered();
     const nb = firstNeighbor(s)!;
     const targetRoom = s.dungeon!.rooms[nb.y][nb.x]!;
-    const next = gameReducer(s, {
-      type: "DUNGEON_MOVE",
-      dx: nb.x - s.dungeon!.playerPos.x,
-      dy: nb.y - s.dungeon!.playerPos.y,
-    });
+    const delta = { dx: nb.x - s.dungeon!.playerPos.x, dy: nb.y - s.dungeon!.playerPos.y };
     if (targetRoom.explored || targetRoom.enemyIds.length === 0) {
+      const next = gameReducer(s, { type: "DUNGEON_MOVE", ...delta });
       expect(next.dungeon!.playerPos).toEqual(nb);
       expect(next.dungeon!.rooms[nb.y][nb.x]!.explored).toBe(true);
     } else {
-      expect(next).toBe(s); // 未探索有敌人：不移动，等 DUNGEON_ENTER_TILE
+      expect(() => gameReducer(s, { type: "DUNGEON_MOVE", ...delta })).toThrow(/DUNGEON_MOVE/);
     }
   });
 
-  it("DUNGEON_MOVE：边界外/墙被拒", () => {
+  it("DUNGEON_MOVE：边界外/墙断言失败", () => {
     const s = miniDungeon();
     const d = s.dungeon!;
     expect(d.rooms[1][0]).toBeNull(); // (0,1) 是墙
-    expect(gameReducer(s, { type: "DUNGEON_MOVE", dx: 0, dy: 1 })).toBe(s); // 撞墙
-    expect(gameReducer(s, { type: "DUNGEON_MOVE", dx: -1, dy: 0 })).toBe(s); // 边界外
-    // 从右边缘 (2,0) 向右：边界外被拒
+    expect(() => gameReducer(s, { type: "DUNGEON_MOVE", dx: 0, dy: 1 })).toThrow(/DUNGEON_MOVE/);
+    expect(() => gameReducer(s, { type: "DUNGEON_MOVE", dx: -1, dy: 0 })).toThrow(/DUNGEON_MOVE/);
+    // 从右边缘 (2,0) 向右：边界外断言失败
     const atRight: GameState = { ...s, dungeon: { ...d, playerPos: { x: 2, y: 0 } } };
-    expect(gameReducer(atRight, { type: "DUNGEON_MOVE", dx: 1, dy: 0 })).toBe(atRight);
+    expect(() => gameReducer(atRight, { type: "DUNGEON_MOVE", dx: 1, dy: 0 })).toThrow(
+      /DUNGEON_MOVE/
+    );
   });
 
-  it("DUNGEON_MOVE：真实生成地牢中向墙移动被拒", () => {
+  it("DUNGEON_MOVE：真实生成地牢中向墙移动断言失败", () => {
     const s = entered();
     const d = s.dungeon!;
     // 找一个邻接墙格（null）的房间与方向
@@ -160,7 +165,9 @@ describe("地牢：移动与情报", () => {
     }
     if (!from || !dir) return; // 稀疏地图必有墙邻，理论不可能走到这里
     const at: GameState = { ...s, dungeon: { ...d, playerPos: from } };
-    expect(gameReducer(at, { type: "DUNGEON_MOVE", dx: dir.dx, dy: dir.dy })).toBe(at);
+    expect(() => gameReducer(at, { type: "DUNGEON_MOVE", dx: dir.dx, dy: dir.dy })).toThrow(
+      /DUNGEON_MOVE/
+    );
   });
 
   it("DUNGEON_ENTER_TILE：未探索有敌人 → 移动 + 开战", () => {
@@ -176,23 +183,33 @@ describe("地牢：移动与情报", () => {
     );
   });
 
-  it("DUNGEON_ENTER_TILE：非相邻/墙/已探索/无敌人被拒", () => {
+  it("DUNGEON_ENTER_TILE：非相邻/墙断言失败", () => {
     const s = entered();
-    expect(gameReducer(s, { type: "DUNGEON_ENTER_TILE", x: 3, y: 3 })).toBe(s);
-    expect(gameReducer(s, { type: "DUNGEON_ENTER_TILE", x: 1, y: 1 })).toBe(s);
+    expect(() => gameReducer(s, { type: "DUNGEON_ENTER_TILE", x: 3, y: 3 })).toThrow(
+      /DUNGEON_ENTER_TILE/
+    );
+    expect(() => gameReducer(s, { type: "DUNGEON_ENTER_TILE", x: 1, y: 1 })).toThrow(
+      /DUNGEON_ENTER_TILE/
+    );
     const m = miniDungeon();
-    expect(gameReducer(m, { type: "DUNGEON_ENTER_TILE", x: 0, y: 1 })).toBe(m); // 墙
+    expect(() => gameReducer(m, { type: "DUNGEON_ENTER_TILE", x: 0, y: 1 })).toThrow(
+      /DUNGEON_ENTER_TILE/
+    );
   });
 
-  it("地牢战斗中无法移动/拾取/撤离", () => {
+  it("地牢战斗中无法移动/拾取/撤离（断言失败）", () => {
     const s = entered();
     const target = firstEnemyNeighbor(s);
     if (!target) return;
     const inBattle = gameReducer(s, { type: "DUNGEON_ENTER_TILE", x: target.x, y: target.y });
     expect(inBattle.battle).not.toBeNull();
-    expect(gameReducer(inBattle, { type: "DUNGEON_MOVE", dx: 1, dy: 0 })).toBe(inBattle);
-    expect(gameReducer(inBattle, { type: "DUNGEON_RETREAT" })).toBe(inBattle);
-    expect(gameReducer(inBattle, { type: "DUNGEON_PICKUP", itemId: "herb_bundle" })).toBe(inBattle);
+    expect(() => gameReducer(inBattle, { type: "DUNGEON_MOVE", dx: 1, dy: 0 })).toThrow(
+      /DUNGEON_MOVE/
+    );
+    expect(() => gameReducer(inBattle, { type: "DUNGEON_RETREAT" })).toThrow(/DUNGEON_RETREAT/);
+    expect(() => gameReducer(inBattle, { type: "DUNGEON_PICKUP", itemId: "herb_bundle" })).toThrow(
+      /DUNGEON_PICKUP/
+    );
   });
 });
 
@@ -326,7 +343,9 @@ describe("地牢：拾取", () => {
     const picked = gameReducer(withItem, { type: "DUNGEON_PICKUP", itemId: "herb_bundle" });
     expect(picked.dungeon!.rooms[7][7]!.itemIds).toEqual([]);
     expect(picked.player.inventory).toContainEqual({ itemId: "herb_bundle", quantity: 1 });
-    // 不在当前格的物品不可拾取
-    expect(gameReducer(withItem, { type: "DUNGEON_PICKUP", itemId: "mana_potion" })).toBe(withItem);
+    // 不在当前格的物品断言失败
+    expect(() => gameReducer(withItem, { type: "DUNGEON_PICKUP", itemId: "mana_potion" })).toThrow(
+      /DUNGEON_PICKUP/
+    );
   });
 });

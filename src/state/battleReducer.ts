@@ -2,32 +2,39 @@ import type { GameAction, GameState } from "../types";
 import { items as itemDefs } from "../data/config";
 import { testBattleConfigs } from "../data/battleTestConfigs";
 import { initBattle, resolveTurn } from "./battleEngine";
-import { addToInventory, patchRoom, removeFromInventory, rollLoot } from "./helpers";
+import {
+  addToInventory,
+  assertInvariant,
+  patchRoom,
+  removeFromInventory,
+  rollLoot,
+} from "./helpers";
 
 /** 战斗域：测试战斗入口、出招、使用道具（战斗中）、战斗结算（地牢/测试） */
 export function battleReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case "START_TEST_BATTLE": {
-      if (state.battle) return state;
+      assertInvariant(!state.battle, "START_TEST_BATTLE 不能重复开启战斗");
       const config = testBattleConfigs[action.scenarioId];
-      if (!config) return state;
+      assertInvariant(!!config, "START_TEST_BATTLE 场景不存在");
       return { ...state, battle: initBattle(action.scenarioId, state.player) };
     }
 
     case "BATTLE_ACT": {
-      if (!state.battle) return state;
+      assertInvariant(!!state.battle, "BATTLE_ACT 无战斗进行");
       return { ...state, battle: resolveTurn(state.battle, action.action) };
     }
 
     case "USE_ITEM": {
+      // 非战斗时的使用道具由 playerReducer 处理：此处必须静默路由，不能断言
       if (!state.battle) return state;
       // 战斗中使用道具：作为战斗动作生效于战斗内属性（引擎校验并结算敌方回合）
       if (!state.player.inventory.some((e) => e.itemId === action.itemId && e.quantity > 0)) {
-        return state;
+        return state; // 资源守卫：背包数量不足
       }
       const item = itemDefs[action.itemId];
       if (!item || item.type !== "consumable" || !(item.hpRestore || item.mpRestore)) {
-        return state;
+        return state; // 数据守卫：非消耗品或无回复效果
       }
       const battle = resolveTurn(state.battle, { kind: "useItem", itemId: action.itemId });
       if (battle === state.battle) return state;
@@ -42,9 +49,9 @@ export function battleReducer(state: GameState, action: GameAction): GameState {
     }
 
     case "EXIT_BATTLE": {
-      if (!state.battle) return state;
+      assertInvariant(!!state.battle, "EXIT_BATTLE 无战斗进行");
       // 战斗未结束不可结算（UI 只在结束时显示按钮，此处防绕过）
-      if (state.battle.result === "ongoing") return state;
+      assertInvariant(state.battle.result !== "ongoing", "EXIT_BATTLE 战斗未结束不可结算");
       // 地牢战斗结算（按场景判定：测试战斗为调试通道，不触发地牢结算）
       if (state.battle.scenarioId === "dungeon" && state.dungeon) {
         const { player, battle, dungeon } = state;

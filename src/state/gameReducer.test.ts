@@ -37,12 +37,12 @@ describe("屏幕切换与重置", () => {
     expect(back.player.mp).toBe(40);
   });
 
-  it("BACK_TO_START 战斗中被拒", () => {
+  it("BACK_TO_START 战斗中断言失败", () => {
     const s = gameReducer(initialGameState(), {
       type: "START_TEST_BATTLE",
       scenarioId: "test_atk_vs_atk",
     });
-    expect(gameReducer(s, { type: "BACK_TO_START" })).toBe(s);
+    expect(() => gameReducer(s, { type: "BACK_TO_START" })).toThrow(/BACK_TO_START/);
   });
 
   it("RESET_GAME 清空进度", () => {
@@ -55,12 +55,12 @@ describe("屏幕切换与重置", () => {
     expect(reset).toEqual(initialGameState());
   });
 
-  it("RESET_GAME 战斗中被拒", () => {
+  it("RESET_GAME 战斗中断言失败（不允许静默无操作）", () => {
     const s = gameReducer(initialGameState(), {
       type: "START_TEST_BATTLE",
       scenarioId: "test_atk_vs_atk",
     });
-    expect(gameReducer(s, { type: "RESET_GAME" })).toBe(s);
+    expect(() => gameReducer(s, { type: "RESET_GAME" })).toThrow(/RESET_GAME/);
   });
 });
 
@@ -76,32 +76,34 @@ describe("测试战斗流程", () => {
     expect(s.battle?.result).toBe("ongoing");
   });
 
-  it("未知场景与战斗中的重复开启被拒", () => {
-    expect(
+  it("未知场景与战斗中的重复开启断言失败", () => {
+    expect(() =>
       gameReducer(initialGameState(), { type: "START_TEST_BATTLE", scenarioId: "nope" })
-    ).toEqual(initialGameState());
+    ).toThrow(/START_TEST_BATTLE/);
     const s = gameReducer(initialGameState(), {
       type: "START_TEST_BATTLE",
       scenarioId: "test_atk_vs_atk",
     });
-    expect(
+    expect(() =>
       gameReducer(s, { type: "START_TEST_BATTLE", scenarioId: "test_atk_vs_atk" })
-    ).toBe(s);
+    ).toThrow(/START_TEST_BATTLE/);
   });
 
-  it("无战斗时 BATTLE_ACT / EXIT_BATTLE 被拒", () => {
+  it("无战斗时 BATTLE_ACT / EXIT_BATTLE 断言失败", () => {
     const init = initialGameState();
-    expect(gameReducer(init, { type: "BATTLE_ACT", action: { kind: "rest" } })).toBe(init);
-    expect(gameReducer(init, { type: "EXIT_BATTLE" })).toBe(init);
+    expect(() => gameReducer(init, { type: "BATTLE_ACT", action: { kind: "rest" } })).toThrow(
+      /BATTLE_ACT/
+    );
+    expect(() => gameReducer(init, { type: "EXIT_BATTLE" })).toThrow(/EXIT_BATTLE/);
   });
 
-  it("EXIT_BATTLE 战斗未结束时被拒（防绕过）", () => {
+  it("EXIT_BATTLE 战斗未结束时断言失败（防绕过）", () => {
     const s = gameReducer(initialGameState(), {
       type: "START_TEST_BATTLE",
       scenarioId: "test_atk_vs_atk",
     });
     expect(s.battle?.result).toBe("ongoing");
-    expect(gameReducer(s, { type: "EXIT_BATTLE" })).toBe(s);
+    expect(() => gameReducer(s, { type: "EXIT_BATTLE" })).toThrow(/EXIT_BATTLE/);
   });
 
   it("EXIT_BATTLE 后 HP/MP 自动回满", () => {
@@ -130,14 +132,18 @@ describe("拾取与丢弃", () => {
     expect(gameReducer(s, { type: "PICKUP_ITEM", itemId: "herb_bundle" })).toBe(s);
   });
 
-  it("未知物品拾取无效；战斗中拾取被拒", () => {
+  it("未知物品拾取断言失败；战斗中拾取断言失败", () => {
     const init = initialGameState();
-    expect(gameReducer(init, { type: "PICKUP_ITEM", itemId: "nope" })).toBe(init);
+    expect(() => gameReducer(init, { type: "PICKUP_ITEM", itemId: "nope" })).toThrow(
+      /PICKUP_ITEM/
+    );
     const s = gameReducer(init, {
       type: "START_TEST_BATTLE",
       scenarioId: "test_atk_vs_atk",
     });
-    expect(gameReducer(s, { type: "PICKUP_ITEM", itemId: "herb_bundle" })).toBe(s);
+    expect(() => gameReducer(s, { type: "PICKUP_ITEM", itemId: "herb_bundle" })).toThrow(
+      /PICKUP_ITEM/
+    );
   });
 
   it("DISCARD_ITEM 按数量扣除直至移除", () => {
@@ -154,12 +160,14 @@ describe("拾取与丢弃", () => {
     expect(gameReducer(init, { type: "DISCARD_ITEM", itemId: "gold" })).toBe(init);
   });
 
-  it("战斗中丢弃被拒", () => {
+  it("战斗中丢弃断言失败", () => {
     const s = gameReducer(initialGameState(), {
       type: "START_TEST_BATTLE",
       scenarioId: "test_atk_vs_atk",
     });
-    expect(gameReducer(s, { type: "DISCARD_ITEM", itemId: "health_potion" })).toBe(s);
+    expect(() => gameReducer(s, { type: "DISCARD_ITEM", itemId: "health_potion" })).toThrow(
+      /DISCARD_ITEM/
+    );
   });
 });
 
@@ -180,11 +188,15 @@ describe("装备与卸下", () => {
     expect(s.player.inventory.find((e) => e.itemId === "leather_cap")).toBeUndefined();
   });
 
-  it("已装备 / 非装备类型 / 未知物品不可装备", () => {
+  it("已装备的物品不可重复装备（幂等静默）", () => {
     const init = initialGameState();
     expect(gameReducer(init, { type: "EQUIP", itemId: "rusty_sword" })).toBe(init);
-    expect(gameReducer(init, { type: "EQUIP", itemId: "health_potion" })).toBe(init);
-    expect(gameReducer(init, { type: "EQUIP", itemId: "nope" })).toBe(init);
+  });
+
+  it("非装备类型 / 未知物品装备断言失败", () => {
+    const init = initialGameState();
+    expect(() => gameReducer(init, { type: "EQUIP", itemId: "health_potion" })).toThrow(/EQUIP/);
+    expect(() => gameReducer(init, { type: "EQUIP", itemId: "nope" })).toThrow(/EQUIP/);
   });
 
   it("装备栏满时不可装备", () => {
@@ -208,12 +220,12 @@ describe("装备与卸下", () => {
     expect(s).toBe(state);
   });
 
-  it("战斗中装备被拒", () => {
+  it("战斗中装备断言失败", () => {
     const s = gameReducer(initialGameState(), {
       type: "START_TEST_BATTLE",
       scenarioId: "test_atk_vs_atk",
     });
-    expect(gameReducer(s, { type: "EQUIP", itemId: "leather_cap" })).toBe(s);
+    expect(() => gameReducer(s, { type: "EQUIP", itemId: "leather_cap" })).toThrow(/EQUIP/);
   });
 
   it("UNEQUIP 放回背包；空槽无效", () => {
@@ -224,12 +236,12 @@ describe("装备与卸下", () => {
     expect(gameReducer(init, { type: "UNEQUIP", slotIndex: 2 })).toBe(init);
   });
 
-  it("战斗中卸下被拒", () => {
+  it("战斗中卸下断言失败", () => {
     const s = gameReducer(initialGameState(), {
       type: "START_TEST_BATTLE",
       scenarioId: "test_atk_vs_atk",
     });
-    expect(gameReducer(s, { type: "UNEQUIP", slotIndex: 0 })).toBe(s);
+    expect(() => gameReducer(s, { type: "UNEQUIP", slotIndex: 0 })).toThrow(/UNEQUIP/);
   });
 });
 
@@ -247,10 +259,12 @@ describe("消耗品与休息", () => {
     expect(s.player.mp).toBe(100);
   });
 
-  it("装备类型 / 未知物品不可使用", () => {
+  it("装备类型 / 未知物品使用断言失败", () => {
     const init = initialGameState();
-    expect(gameReducer(init, { type: "USE_ITEM", itemId: "rusty_sword" })).toBe(init);
-    expect(gameReducer(init, { type: "USE_ITEM", itemId: "nope" })).toBe(init);
+    expect(() => gameReducer(init, { type: "USE_ITEM", itemId: "rusty_sword" })).toThrow(
+      /USE_ITEM/
+    );
+    expect(() => gameReducer(init, { type: "USE_ITEM", itemId: "nope" })).toThrow(/USE_ITEM/);
   });
 
   it("战斗中使用药水：作用于战斗内属性并扣除背包数量", () => {
@@ -295,19 +309,23 @@ describe("村庄：房间切换", () => {
     expect(goldAmount(s.player)).toBe(20);
   });
 
-  it("MOVE_ROOM：非出口 / 未知房间被拒", () => {
-    expect(gameReducer(game, { type: "MOVE_ROOM", roomId: "nope" })).toBe(game);
+  it("MOVE_ROOM：非出口 / 未知房间断言失败", () => {
+    expect(() => gameReducer(game, { type: "MOVE_ROOM", roomId: "nope" })).toThrow(/MOVE_ROOM/);
     // 商店的出口只有广场，从广场直接再进广场不是出口（广场出口不含自己）
-    expect(gameReducer(game, { type: "MOVE_ROOM", roomId: "village_square" })).toBe(game);
+    expect(() => gameReducer(game, { type: "MOVE_ROOM", roomId: "village_square" })).toThrow(
+      /MOVE_ROOM/
+    );
   });
 
-  it("MOVE_ROOM：战斗中不可移动", () => {
+  it("MOVE_ROOM：战斗中断言失败", () => {
     const s = gameReducer(game, {
       type: "START_TEST_BATTLE",
       scenarioId: "test_atk_vs_atk",
     });
     expect(s.battle).not.toBeNull();
-    expect(gameReducer(s, { type: "MOVE_ROOM", roomId: "village_shop" })).toBe(s);
+    expect(() => gameReducer(s, { type: "MOVE_ROOM", roomId: "village_shop" })).toThrow(
+      /MOVE_ROOM/
+    );
   });
 });
 
@@ -336,12 +354,27 @@ describe("村庄：商店购买", () => {
     expect(gameReducer(poor, { type: "BUY_ITEM", itemId: "health_potion" })).toBe(poor);
   });
 
-  it("BUY_ITEM：非商店货架 / 非商店房间被拒", () => {
+  it("BUY_ITEM：背包无重复条目（同一 itemId 只出现一次）", () => {
+    const s = gameReducer(shop, { type: "BUY_ITEM", itemId: "herb_bundle" });
+    const ids = s.player.inventory.map((e) => e.itemId);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(s.player.inventory).toEqual([
+      { itemId: "gold", quantity: 15 },
+      { itemId: "health_potion", quantity: 2 },
+      { itemId: "herb_bundle", quantity: 1 },
+    ]);
+  });
+
+  it("BUY_ITEM：非商店货架 / 非商店房间断言失败", () => {
     // 广场不卖东西
     const square = { ...initialGameState(), screen: "game" as const };
-    expect(gameReducer(square, { type: "BUY_ITEM", itemId: "herb_bundle" })).toBe(square);
+    expect(() => gameReducer(square, { type: "BUY_ITEM", itemId: "herb_bundle" })).toThrow(
+      /BUY_ITEM/
+    );
     // 货架上没有的物品（铁剑）不可购买
-    expect(gameReducer(shop, { type: "BUY_ITEM", itemId: "iron_sword" })).toBe(shop);
+    expect(() => gameReducer(shop, { type: "BUY_ITEM", itemId: "iron_sword" })).toThrow(
+      /BUY_ITEM/
+    );
   });
 
   it("goldAmount：初始 20，商店支付后 15", () => {
