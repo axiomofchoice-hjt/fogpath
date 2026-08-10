@@ -45,16 +45,23 @@ export function addToInventory(
   return [...inventory, { itemId, quantity: qty }];
 }
 
+/** 移除背包条目：函数名承诺移除 qty 个，无法履约（条目缺失/数量不足）即断言失败。
+ *  合法的资源拒绝由调用方守卫（规则层）处理，不得依赖本函数静默截断 */
 export function removeFromInventory(
   inventory: InventoryEntry[],
   itemId: string,
   qty: number
 ): InventoryEntry[] {
+  if (qty <= 0) return inventory;
   const idx = inventory.findIndex((e) => e.itemId === itemId);
-  if (idx < 0) return inventory;
+  assertInvariant(idx >= 0, `removeFromInventory: 背包中没有 ${itemId}`);
   const updated = [...inventory];
   const entry = updated[idx];
-  if (entry.quantity <= qty) {
+  assertInvariant(
+    entry.quantity >= qty,
+    `removeFromInventory: ${itemId} 数量不足（需 ${qty}，现有 ${entry.quantity}）`
+  );
+  if (entry.quantity === qty) {
     updated.splice(idx, 1);
   } else {
     updated[idx] = { ...entry, quantity: entry.quantity - qty };

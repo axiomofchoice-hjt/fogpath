@@ -61,8 +61,12 @@ export function playerReducer(state: GameState, action: GameAction): GameState {
 
     case "DISCARD_ITEM": {
       assertInvariant(!state.battle, "DISCARD_ITEM 不能在战斗中使用");
+      assertInvariant(!!itemDefs[action.itemId], "DISCARD_ITEM 物品定义不存在");
       // 货币不可丢弃
       if (itemDefs[action.itemId]?.type === "currency") return state;
+      if (!state.player.inventory.some((e) => e.itemId === action.itemId && e.quantity > 0)) {
+        return state; // 幂等守卫：背包中无此物品
+      }
       return {
         ...state,
         player: {
