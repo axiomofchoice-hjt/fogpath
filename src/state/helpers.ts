@@ -30,12 +30,22 @@ export function rollLoot(
   return { items, gold };
 }
 
+/** 可以执行检查：背包中该物品数量是否足够（qty 必须为正）。调用方用 if 守卫后再执行 */
+export function canRemoveFromInventory(
+  inventory: InventoryEntry[],
+  itemId: string,
+  qty: number
+): boolean {
+  return qty > 0 && inventory.some((e) => e.itemId === itemId && e.quantity >= qty);
+}
+
+/** 执行：追加 qty 个（合并或新增条目）。qty 非正一律断言失败，不静默 */
 export function addToInventory(
   inventory: InventoryEntry[],
   itemId: string,
   qty: number
 ): InventoryEntry[] {
-  if (qty <= 0) return inventory;
+  assertInvariant(qty > 0, "addToInventory: 数量必须为正");
   const idx = inventory.findIndex((e) => e.itemId === itemId);
   if (idx >= 0) {
     const updated = [...inventory];
@@ -45,14 +55,14 @@ export function addToInventory(
   return [...inventory, { itemId, quantity: qty }];
 }
 
-/** 移除背包条目：函数名承诺移除 qty 个，无法履约（条目缺失/数量不足）即断言失败。
- *  合法的资源拒绝由调用方守卫（规则层）处理，不得依赖本函数静默截断 */
+/** 执行：移除 qty 个。函数只履约不静默——qty 非正/条目缺失/数量不足一律断言失败，
+ *  合法拒绝由调用方以 canRemoveFromInventory 守卫，不得下沉到本函数吞掉 */
 export function removeFromInventory(
   inventory: InventoryEntry[],
   itemId: string,
   qty: number
 ): InventoryEntry[] {
-  if (qty <= 0) return inventory;
+  assertInvariant(qty > 0, "removeFromInventory: 数量必须为正");
   const idx = inventory.findIndex((e) => e.itemId === itemId);
   assertInvariant(idx >= 0, `removeFromInventory: 背包中没有 ${itemId}`);
   const updated = [...inventory];

@@ -6,12 +6,8 @@
 - 代码改动后请先跑 `npm run lint` 与 `npm test`（vitest），必要时 `npm run test:e2e`（Playwright，会自动启动 dev server）。
 - 验证存档等涉及 localStorage 的行为时，注意 dev 模式 StrictMode 会双执行 effect（参考 src/state/gameContext.tsx 的跳过逻辑）。
 
-## reducer 守卫原则（fail fast）
+## 工程哲学：fail fast
 
-reducer 内的守卫分为两类，新增/修改动作时必须遵守：
+默认 fail fast：无法履约的操作、不可达的状态组合、非法引用一律尽早 `throw`，禁止静默吞掉错误；错误边界兜底展示。静默只作为例外存在，且必须注释标注分类。
 
-- **不变量守卫 → 断言失败**：UI 已拦截、正常流程不可达的状态组合（战斗阶段守卫、无战斗时发战斗动作、未知物品/房间/场景引用、非出口移动、撞墙/越界、非货架购买、EXIT 未结束结算、BACK_TO_START 已在开始面板等）一律 `throw new Error(...)`，禁止静默 `return state` 掩盖调用方 bug。错误边界兜底展示。
-- **资源/幂等/路由守卫 → 静默返回**：玩家资源状态或数据合法性导致的合法拒绝（金币不足、已拾取/已装备/空槽幂等、无空装备槽、USE_ITEM 在 player/battle 两个 reducer 间的路由守卫、战斗中药水数量不足、非消耗品无回复效果）保持 `return state`，不得断言——这些是用户状态可正常触发的场景。
-- **助手函数契约 → 断言失败**：动词承诺履约的助手（如 `removeFromInventory`）无法履约（条目缺失/数量不足）时断言失败，禁止静默截断；合法的资源拒绝由调用方在规则层守卫，不得下沉到助手层吞掉。
-
-修改 reducer 时按此分类检查，测试应相应断言 `toThrow`（不变量）或 `toBe(state)`（静默）。
+- **不用和类型（Result）表达合法拒绝**：TypeScript 没有强制 no-discard（`#[must_use]` 类注解），`foo();` 可直接丢弃 `{ok:false}` 返回值，约束力不如 `throw`。合法拒绝用「谓词守卫（如 `canRemoveFromInventory`）＋ 严格执行器（无法履约即断言失败）」，调用方 bug 一律 `throw`。

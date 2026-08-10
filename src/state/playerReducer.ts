@@ -3,7 +3,7 @@ import { items as itemDefs, rooms as roomMap } from "../data/config";
 import {
   addToInventory,
   assertInvariant,
-  goldAmount,
+  canRemoveFromInventory,
   removeFromInventory,
 } from "./helpers";
 
@@ -29,8 +29,9 @@ export function playerReducer(state: GameState, action: GameAction): GameState {
       assertInvariant(!!entry, "BUY_ITEM 商店无此货物");
       const item = itemDefs[action.itemId];
       assertInvariant(!!item, "BUY_ITEM 物品定义不存在");
-      const gold = goldAmount(state.player);
-      if (gold < entry.price) return state; // 资源守卫：金币不足属合法拒绝
+      if (!canRemoveFromInventory(state.player.inventory, "gold", entry.price)) {
+        return state; // 资源守卫：金币不足
+      }
       return {
         ...state,
         player: {
@@ -64,7 +65,7 @@ export function playerReducer(state: GameState, action: GameAction): GameState {
       assertInvariant(!!itemDefs[action.itemId], "DISCARD_ITEM 物品定义不存在");
       // 货币不可丢弃
       if (itemDefs[action.itemId]?.type === "currency") return state;
-      if (!state.player.inventory.some((e) => e.itemId === action.itemId && e.quantity > 0)) {
+      if (!canRemoveFromInventory(state.player.inventory, action.itemId, 1)) {
         return state; // 幂等守卫：背包中无此物品
       }
       return {
@@ -83,6 +84,9 @@ export function playerReducer(state: GameState, action: GameAction): GameState {
       if (state.player.equipment.includes(action.itemId)) return state; // 幂等守卫：已装备
       const slotIndex = state.player.equipment.indexOf(null);
       if (slotIndex === -1) return state; // 资源守卫：装备栏已满
+      if (!canRemoveFromInventory(state.player.inventory, action.itemId, 1)) {
+        return state; // 幂等守卫：背包中无此物品
+      }
       const equipment = [...state.player.equipment];
       equipment[slotIndex] = action.itemId;
       return {
@@ -117,6 +121,9 @@ export function playerReducer(state: GameState, action: GameAction): GameState {
       const item = itemDefs[action.itemId];
       assertInvariant(!!item && item.type === "consumable", "USE_ITEM 只能使用消耗品");
       let newPlayer = { ...state.player };
+      if (!canRemoveFromInventory(newPlayer.inventory, action.itemId, 1)) {
+        return state; // 幂等守卫：背包中无此物品
+      }
       if (item.hpRestore) newPlayer.hp = Math.min(newPlayer.maxHp, newPlayer.hp + item.hpRestore);
       if (item.mpRestore) newPlayer.mp = Math.min(newPlayer.maxMp, newPlayer.mp + item.mpRestore);
       newPlayer.inventory = removeFromInventory(newPlayer.inventory, action.itemId, 1);

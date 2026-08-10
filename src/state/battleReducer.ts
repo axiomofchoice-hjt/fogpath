@@ -5,6 +5,7 @@ import { initBattle, resolveTurn } from "./battleEngine";
 import {
   addToInventory,
   assertInvariant,
+  canRemoveFromInventory,
   patchRoom,
   removeFromInventory,
   rollLoot,
@@ -29,7 +30,7 @@ export function battleReducer(state: GameState, action: GameAction): GameState {
       // 非战斗时的使用道具由 playerReducer 处理：此处必须静默路由，不能断言
       if (!state.battle) return state;
       // 战斗中使用道具：作为战斗动作生效于战斗内属性（引擎校验并结算敌方回合）
-      if (!state.player.inventory.some((e) => e.itemId === action.itemId && e.quantity > 0)) {
+      if (!canRemoveFromInventory(state.player.inventory, action.itemId, 1)) {
         return state; // 资源守卫：背包数量不足
       }
       const item = itemDefs[action.itemId];

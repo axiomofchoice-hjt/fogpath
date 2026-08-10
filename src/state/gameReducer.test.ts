@@ -199,6 +199,11 @@ describe("装备与卸下", () => {
     expect(() => gameReducer(init, { type: "EQUIP", itemId: "nope" })).toThrow(/EQUIP/);
   });
 
+  it("EQUIP：背包中无此物品静默", () => {
+    const init = initialGameState();
+    expect(gameReducer(init, { type: "EQUIP", itemId: "leather_cap" })).toBe(init);
+  });
+
   it("装备栏满时不可装备", () => {
     const fullEquipment = [
       "rusty_sword",
@@ -265,6 +270,11 @@ describe("消耗品与休息", () => {
       /USE_ITEM/
     );
     expect(() => gameReducer(init, { type: "USE_ITEM", itemId: "nope" })).toThrow(/USE_ITEM/);
+  });
+
+  it("USE_ITEM：背包中无此物品静默", () => {
+    const init = initialGameState();
+    expect(gameReducer(init, { type: "USE_ITEM", itemId: "herb_bundle" })).toBe(init);
   });
 
   it("战斗中使用药水：作用于战斗内属性并扣除背包数量", () => {
