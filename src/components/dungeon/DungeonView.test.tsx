@@ -137,10 +137,12 @@ describe("地牢视图", () => {
     expect(screen.getByRole("button", { name: "← 开始面板" })).toBeInTheDocument();
   });
 
-  it("撤离大按钮（与进入地牢同款）：点击撤离回村庄；展开地图时不可撤离不出现", async () => {
+  it("撤离大按钮（与进入地牢同款）：点击弹确认卡片，确认后撤离回村庄", async () => {
     const user = userEvent.setup();
     renderGame(miniDungeon());
     await user.click(screen.getByTestId("retreat-big"));
+    expect(screen.getByText("撤离确认")).toBeInTheDocument();
+    await user.keyboard("{Enter}");
     expect(screen.getByRole("heading", { name: "哥布林营地入口" })).toBeInTheDocument();
   });
 

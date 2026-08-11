@@ -244,12 +244,12 @@ function DungeonView({
         </div>
       )}
 
-      {/* 撤离大按钮（与村庄「进入地牢」同款）：仅在可撤离时出现（非战斗且未展开大地图） */}
+      {/* 撤离大按钮（与村庄「进入地牢」同款）：仅在可撤离时出现（非战斗且未展开大地图）；点击派发 q 键弹撤离确认 */}
       {!mapOpen && (
         <div className="mt-3">
           <button
             data-testid="retreat-big"
-            onClick={() => dispatch({ type: "DUNGEON_RETREAT" })}
+            onClick={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "q" }))}
             className="w-full px-4 py-3 rounded text-sm font-mono border border-game-gold/40 bg-game-gold/10 text-game-gold hover:bg-game-gold/20 transition-colors"
           >
             {t("dungeon.retreat")}
