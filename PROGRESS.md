@@ -65,7 +65,7 @@
 - [ ] 删除村庄的移动按钮（出口卡片列表，RoomView 的 exits 按钮区域）；移动入口保留小地图点击与底部操控栏，需同步修订 GDD 4.5/功能表
 - [ ] 删除移动操作提示小字：村庄「出口 · WASD」（RoomView）与地牢「WASD move · X retreat · confirm intel to enter」（DungeonView，dungeon.hint），相应 i18n key 一并清理
 - [ ] 进入地牢按钮改为大按钮（水平占满，w-full；RoomView 的 room.dungeonId 按钮区域）
-- [ ] 撤离按钮移到底部操控栏最右边，复用原有文案 `dungeon.retreat`（「撤离（X）」），字体大小与 WASD 键相同（ControlBar 扩展，地牢内显示；DungeonView 标题栏原撤离按钮相应移除）
+- [ ] 撤离按钮移到底部操控栏最右边，复用原有文案 `dungeon.retreat`（「撤离（X）」），字体大小与 WASD 键相同，且仅在地牢内可撤离时（非战斗）显示（ControlBar 扩展；DungeonView 标题栏原撤离按钮相应移除）
 
 ---
 
