@@ -60,7 +60,7 @@ const zh = {
   "shop.price": "{{n}} 金币",
   "shop.insufficient": "金币不足",
 
-  "dungeon.retreat": "撤离（X）",
+  "dungeon.retreat": "撤离（Q）",
   "dungeon.pickup": "拾取",
   "dungeon.intel": "房间情报",
   "dungeon.room": "房间",
@@ -174,7 +174,7 @@ const en: Record<TKey, string> = {
   "shop.price": "{{n}} gold",
   "shop.insufficient": "Not enough gold",
 
-  "dungeon.retreat": "Retreat (X)",
+  "dungeon.retreat": "Retreat (Q)",
   "dungeon.pickup": "Pick up",
   "dungeon.intel": "Room Intel",
   "dungeon.room": "Room",

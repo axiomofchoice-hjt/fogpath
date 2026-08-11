@@ -55,7 +55,7 @@ function DungeonView({
     const onKey = (e: KeyboardEvent) => {
       if (e.repeat) return;
       if (mapOpen) return; // 展开大地图遮罩中：纯查看，不响应移动/撤离（与村庄一致）
-      if (e.key.toLowerCase() === "x") {
+      if (e.key.toLowerCase() === "q") {
         dispatch({ type: "DUNGEON_RETREAT" });
         return;
       }

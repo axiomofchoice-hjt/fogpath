@@ -129,7 +129,7 @@ describe("地牢视图", () => {
     renderGame(miniDungeon());
     // 地牢中顶栏「← 开始面板」隐藏
     expect(screen.queryByRole("button", { name: "← 开始面板" })).not.toBeInTheDocument();
-    await user.keyboard("{x}");
+    await user.keyboard("{q}");
     expect(screen.getByRole("heading", { name: "哥布林营地入口" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "进入地牢" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "← 开始面板" })).toBeInTheDocument();
@@ -156,7 +156,7 @@ describe("地牢视图", () => {
     expect(screen.getByRole("button", { name: "← 返回" })).toBeInTheDocument();
     await user.keyboard("{d}");
     expect(screen.queryByText("房间情报")).not.toBeInTheDocument();
-    await user.keyboard("{x}");
+    await user.keyboard("{q}");
     expect(screen.getByRole("heading", { name: /哥布林营地 · 入口/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "← 返回" })).toBeInTheDocument();
   });
