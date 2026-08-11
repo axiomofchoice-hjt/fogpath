@@ -71,7 +71,7 @@ function DungeonGrid({ dungeon, large = false, onStep }: DungeonGridProps) {
                   key={`${rx},${ry}`}
                   type="button"
                   data-testid={`dungeon-cell-${rx}-${ry}`}
-                  onClick={() => onStep({ x: rx - playerPos.x, y: ry - playerPos.y })}
+                  onClick={() => onStep!({ x: rx - playerPos.x, y: ry - playerPos.y })}
                   className={`${cls} cursor-pointer transition-colors hover:border-game-gold/60 hover:text-game-gold`}
                 >
                   {inner}
@@ -112,7 +112,7 @@ function DungeonGrid({ dungeon, large = false, onStep }: DungeonGridProps) {
                 key={`${rx},${ry}`}
                 type="button"
                 data-testid={`dungeon-cell-${rx}-${ry}`}
-                onClick={() => onStep({ x: rx - playerPos.x, y: ry - playerPos.y })}
+                onClick={() => onStep!({ x: rx - playerPos.x, y: ry - playerPos.y })}
                 className={`${cls} cursor-pointer transition-colors hover:bg-game-gold/10 hover:border-game-gold/60`}
               >
                 {inner}

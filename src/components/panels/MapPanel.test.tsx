@@ -29,7 +29,7 @@ describe("小地图点击移动：村庄", () => {
 
   it("战斗中点击出口：不移动、不抛错", async () => {
     const user = userEvent.setup();
-    const s = {
+    const s: GameState = {
       ...initialGameState(),
       screen: "game",
       battle: initBattleFromEnemies(["goblin"], initialGameState().player),
