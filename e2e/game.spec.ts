@@ -68,8 +68,13 @@ test("地牢：情报面板与撤离", async ({ page }) => {
   await page.getByRole("button", { name: "返回 (BACKSPACE)" }).click();
   await expect(page.getByText("房间情报")).toHaveCount(0);
 
-  // X 撤离：地牢废弃回村庄入口
+  // Q 撤离：弹出撤离确认卡片（覆盖房间情报），ENTER 确认后回村庄
+  await page.keyboard.press("d");
+  await expect(page.getByText("房间情报")).toBeVisible();
   await page.keyboard.press("q");
+  await expect(page.getByText("房间情报")).toHaveCount(0);
+  await expect(page.getByText("撤离确认")).toBeVisible();
+  await page.keyboard.press("Enter");
   await expect(page.getByRole("heading", { name: "哥布林营地入口" })).toBeVisible();
   await expect(page.getByRole("button", { name: "进入地牢" })).toBeVisible();
   await expect(page.getByRole("button", { name: "← 开始面板" })).toBeVisible();

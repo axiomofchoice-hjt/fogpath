@@ -58,9 +58,11 @@ function ActionButton({
 export function ControlBar({
   mapOpen,
   pending,
+  retreatOpen,
 }: {
   mapOpen: boolean;
   pending: { x: number; y: number } | null;
+  retreatOpen: boolean;
 }) {
   const { state } = useGame();
   const { t } = useLang();
@@ -68,8 +70,9 @@ export function ControlBar({
 
   const fire = (key: string) => window.dispatchEvent(new KeyboardEvent("keydown", { key }));
 
-  // 进入/返回：地牢情报打开时（战斗中/展开地图不出现）
+  // 情报/撤离确认打开时（战斗中/展开地图不出现）
   const intelOpen = !!state.dungeon && !!pending && !state.battle && !mapOpen;
+  const confirmOpen = !!state.dungeon && retreatOpen && !state.battle && !mapOpen;
   // 进入：村庄房间有地牢入口时（仅进入，无返回）
   const villageEnter =
     !state.dungeon && !state.battle && !mapOpen && !!roomMap[state.player.currentRoomId]?.dungeonId;
@@ -79,10 +82,16 @@ export function ControlBar({
   return (
     <>
       {/* 左侧操作（仅可执行时出现）：主界面区域（左右 16rem 侧栏之间）的左边缘，calc(17rem) = 16rem 左栏 + 1rem 边距 */}
-      {(intelOpen || villageEnter) && (
+      {(intelOpen || villageEnter || confirmOpen) && (
         <div className="fixed bottom-3 left-[calc(17rem)] z-40 select-none flex gap-1.5">
-          <ActionButton testId="control-enter" label={t("control.enter")} onClick={() => fire("Enter")} />
-          {intelOpen && <ActionButton testId="control-back" label={t("control.back")} onClick={() => fire("Backspace")} />}
+          {confirmOpen ? (
+            <ActionButton testId="control-confirm" label={t("control.confirm")} onClick={() => fire("Enter")} />
+          ) : (
+            <ActionButton testId="control-enter" label={t("control.enter")} onClick={() => fire("Enter")} />
+          )}
+          {(intelOpen || confirmOpen) && (
+            <ActionButton testId="control-back" label={t("control.back")} onClick={() => fire("Backspace")} />
+          )}
         </div>
       )}
       {/* 中间 WASD：主界面区域水平中心 = 屏幕中心 */}
@@ -112,7 +121,7 @@ export function ControlBar({
       {/* 右侧撤离（仅地牢非战斗时出现）：主界面区域右边缘，calc(17rem) = 16rem 右栏 + 1rem 边距 */}
       {canRetreat && (
         <div className="fixed bottom-3 right-[calc(17rem)] z-40 select-none">
-          <ActionButton testId="control-retreat" label={t("dungeon.retreat")} onClick={() => fire("x")} />
+          <ActionButton testId="control-retreat" label={t("dungeon.retreat")} onClick={() => fire("q")} />
         </div>
       )}
     </>

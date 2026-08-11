@@ -10,9 +10,11 @@ type MapPanelProps = {
   onExpand: () => void;
   pending: { x: number; y: number } | null;
   onPendingChange: (p: { x: number; y: number } | null) => void;
+  retreatOpen: boolean;
+  onRetreatOpenChange: (open: boolean) => void;
 };
 
-function MapPanel({ onExpand, pending, onPendingChange }: MapPanelProps) {
+function MapPanel({ onExpand, pending, onPendingChange, retreatOpen, onRetreatOpenChange }: MapPanelProps) {
   const { state, dispatch } = useGame();
   const { t, lang } = useLang();
   const { player } = state;
@@ -24,12 +26,17 @@ function MapPanel({ onExpand, pending, onPendingChange }: MapPanelProps) {
     dispatch({ type: "MOVE_ROOM", roomId });
   };
 
-  // 地牢点击：与 WASD 同一判定（dungeonStep），战斗中不响应
+  // 地牢点击：与 WASD 同一判定（dungeonStep），战斗中不响应；移动会关闭撤离确认（互斥）
   const stepDir = (dir: { x: number; y: number }) => {
     if (state.battle || !state.dungeon) return;
     const step = dungeonStep(state.dungeon, dir, pending);
-    if (step.kind === "intel") onPendingChange({ x: step.x, y: step.y });
-    else if (step.kind === "move") dispatch({ type: "DUNGEON_MOVE", dx: step.dx, dy: step.dy });
+    if (step.kind === "intel") {
+      onPendingChange({ x: step.x, y: step.y });
+      if (retreatOpen) onRetreatOpenChange(false);
+    } else if (step.kind === "move") {
+      dispatch({ type: "DUNGEON_MOVE", dx: step.dx, dy: step.dy });
+      if (retreatOpen) onRetreatOpenChange(false);
+    }
   };
 
   return (

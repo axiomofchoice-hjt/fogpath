@@ -78,6 +78,12 @@ const zh = {
   "room.enterDungeon": "进入地牢",
   "control.enter": "进入 (ENTER)",
   "control.back": "返回 (BACKSPACE)",
+  "control.confirm": "确认 (ENTER)",
+
+  "retreat.title": "撤离确认",
+  "retreat.text": "撤离后本次地牢废弃，下次进入重新生成；已拾取物品与金币带回村庄，HP/MP 回满。",
+  "retreat.confirm": "确认撤离",
+  "retreat.cancel": "取消",
   "battle.move.charge": "蓄力→{{name}}",
 
   "start.enterVillage": "进入村庄",
@@ -192,6 +198,12 @@ const en: Record<TKey, string> = {
   "room.enterDungeon": "Enter Dungeon",
   "control.enter": "Enter (ENTER)",
   "control.back": "Back (BACKSPACE)",
+  "control.confirm": "Confirm (ENTER)",
+
+  "retreat.title": "Retreat Confirmation",
+  "retreat.text": "Retreating abandons this dungeon (regenerated on next entry). Picked-up items and gold return to the village; HP/MP fully restore.",
+  "retreat.confirm": "Confirm Retreat",
+  "retreat.cancel": "Cancel",
   "battle.move.charge": "Charge → {{name}}",
 
   "start.enterVillage": "Enter Village",

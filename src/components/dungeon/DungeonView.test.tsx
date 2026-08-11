@@ -124,12 +124,14 @@ describe("地牢视图", () => {
     expect(screen.queryByRole("heading", { name: "战斗" })).not.toBeInTheDocument();
   });
 
-  it("X 撤离：地牢废弃回到村庄入口，顶栏返回按钮恢复", async () => {
+  it("Q 撤离：确认卡片后撤离，地牢废弃回到村庄入口，顶栏返回按钮恢复", async () => {
     const user = userEvent.setup();
     renderGame(miniDungeon());
     // 地牢中顶栏「← 开始面板」隐藏
     expect(screen.queryByRole("button", { name: "← 开始面板" })).not.toBeInTheDocument();
     await user.keyboard("{q}");
+    expect(screen.getByText("撤离确认")).toBeInTheDocument();
+    await user.keyboard("{Enter}");
     expect(screen.getByRole("heading", { name: "哥布林营地入口" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "进入地牢" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "← 开始面板" })).toBeInTheDocument();
@@ -149,7 +151,7 @@ describe("地牢视图", () => {
     expect(screen.queryByTestId("retreat-big")).not.toBeInTheDocument();
   });
 
-  it("展开世界地图时：WASD 不触发情报面板，X 不撤离", async () => {
+  it("展开世界地图时：WASD 不触发情报面板，Q 不弹撤离确认", async () => {
     const user = userEvent.setup();
     renderGame(miniDungeon());
     await user.click(screen.getByRole("button", { name: "展开地图" }));
@@ -157,6 +159,7 @@ describe("地牢视图", () => {
     await user.keyboard("{d}");
     expect(screen.queryByText("房间情报")).not.toBeInTheDocument();
     await user.keyboard("{q}");
+    expect(screen.queryByText("撤离确认")).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /哥布林营地 · 入口/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "← 返回" })).toBeInTheDocument();
   });
@@ -179,5 +182,39 @@ describe("地牢视图", () => {
     await user.keyboard("{Enter}");
     await user.keyboard("{Backspace}");
     expect(screen.getByRole("heading", { name: /哥布林营地 · 入口/ })).toBeInTheDocument();
+  });
+
+  it("Q 键弹出撤离确认卡片（覆盖关闭房间情报）；ENTER 确认撤离", async () => {
+    const user = userEvent.setup();
+    renderGame(miniDungeon());
+    await user.keyboard("{d}");
+    expect(screen.getByText("房间情报")).toBeInTheDocument();
+    await user.keyboard("{q}");
+    expect(screen.queryByText("房间情报")).not.toBeInTheDocument();
+    expect(screen.getByText("撤离确认")).toBeInTheDocument();
+    await user.keyboard("{Enter}");
+    expect(screen.getByRole("heading", { name: "哥布林营地入口" })).toBeInTheDocument();
+  });
+
+  it("撤离确认打开时：BACKSPACE 取消；WASD 移动关闭确认并弹新情报", async () => {
+    const user = userEvent.setup();
+    renderGame(miniDungeon());
+    await user.keyboard("{q}");
+    expect(screen.getByText("撤离确认")).toBeInTheDocument();
+    await user.keyboard("{Backspace}");
+    expect(screen.queryByText("撤离确认")).not.toBeInTheDocument();
+    // 再开，然后 WASD 移动 → 确认消失、情报出现（互斥）
+    await user.keyboard("{q}");
+    await user.keyboard("{d}");
+    expect(screen.queryByText("撤离确认")).not.toBeInTheDocument();
+    expect(screen.getByText("房间情报")).toBeInTheDocument();
+  });
+
+  it("撤离确认卡片按钮：确认撤离回村庄", async () => {
+    const user = userEvent.setup();
+    renderGame(miniDungeon());
+    await user.keyboard("{q}");
+    await user.click(screen.getByTestId("retreat-confirm"));
+    expect(screen.getByRole("heading", { name: "哥布林营地入口" })).toBeInTheDocument();
   });
 });

@@ -159,6 +159,19 @@ describe("底部操控栏（进入/返回/撤离按钮）", () => {
     expect(screen.getByTestId("control-retreat")).toBeInTheDocument();
   });
 
+  it("撤离确认打开：左组变为「确认 (ENTER)」「返回 (BACKSPACE)」，点击确认撤离回村庄", async () => {
+    const user = userEvent.setup();
+    const dungeon = generateDungeon(dungeons.goblin_camp);
+    renderGame({ ...initialGameState(), screen: "game", dungeon });
+    await user.click(screen.getByTestId("control-retreat"));
+    expect(screen.queryByTestId("control-enter")).not.toBeInTheDocument();
+    const confirm = screen.getByTestId("control-confirm");
+    expect(confirm).toBeInTheDocument();
+    expect(screen.getByTestId("control-back")).toBeInTheDocument();
+    await user.click(confirm);
+    expect(screen.getByRole("heading", { name: "哥布林营地入口" })).toBeInTheDocument();
+  });
+
   it("村庄：不出现「撤离（X）」", () => {
     renderGame({ ...initialGameState(), screen: "game" });
     expect(screen.queryByTestId("control-retreat")).not.toBeInTheDocument();

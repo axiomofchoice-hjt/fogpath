@@ -45,6 +45,7 @@ export function AppInner() {
   const [activeTab, setActiveTab] = useState<PanelTab>("map");
   const [worldMapOpen, setWorldMapOpen] = useState(false);
   const [intelPending, setIntelPending] = useState<{ x: number; y: number } | null>(null);
+  const [retreatOpen, setRetreatOpen] = useState(false);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     switch (e.key.toLowerCase()) {
@@ -68,12 +69,19 @@ export function AppInner() {
 
   useEffect(() => {
     setIntelPending(null);
+    setRetreatOpen(false);
   }, [state.battle, state.dungeon]);
 
   const center = state.battle ? (
     <BattleView />
   ) : state.dungeon ? (
-    <DungeonView mapOpen={worldMapOpen} pending={intelPending} onPendingChange={setIntelPending} />
+    <DungeonView
+      mapOpen={worldMapOpen}
+      pending={intelPending}
+      onPendingChange={setIntelPending}
+      retreatOpen={retreatOpen}
+      onRetreatOpenChange={setRetreatOpen}
+    />
   ) : (
     <RoomView mapOpen={worldMapOpen} />
   );
@@ -96,9 +104,11 @@ export function AppInner() {
           onExpandMap={() => setWorldMapOpen(true)}
           pending={intelPending}
           onPendingChange={setIntelPending}
+          retreatOpen={retreatOpen}
+          onRetreatOpenChange={setRetreatOpen}
         />
       </div>
-      <ControlBar mapOpen={worldMapOpen} pending={intelPending} />
+      <ControlBar mapOpen={worldMapOpen} pending={intelPending} retreatOpen={retreatOpen} />
       <WorldMap open={worldMapOpen} onClose={() => setWorldMapOpen(false)} />
     </div>
   );

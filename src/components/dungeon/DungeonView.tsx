@@ -30,16 +30,20 @@ function roomDescription(
   return parts.join("");
 }
 
-/** 地牢视图：文字展示当前房间 + 地牢网格 + 情报面板；WASD 移动、X 撤离（GDD 4.1）
- *  pending 状态提升到 App（底部操控栏需感知情报打开以置灰） */
+/** 地牢视图：文字展示当前房间 + 地牢网格 + 情报/撤离确认卡片；WASD 移动、Q 撤离（GDD 4.1）
+ *  pending / retreatOpen 状态提升到 App（底部操控栏需感知以显示按钮） */
 function DungeonView({
   mapOpen,
   pending,
   onPendingChange,
+  retreatOpen,
+  onRetreatOpenChange,
 }: {
   mapOpen: boolean;
   pending: { x: number; y: number } | null;
   onPendingChange: (p: { x: number; y: number } | null) => void;
+  retreatOpen: boolean;
+  onRetreatOpenChange: (open: boolean) => void;
 }) {
   const { state, dispatch } = useGame();
   const { t, lang } = useLang();
@@ -48,15 +52,32 @@ function DungeonView({
 
   useEffect(() => {
     onPendingChange(null);
-  }, [state.battle, onPendingChange]);
+    onRetreatOpenChange(false);
+  }, [state.battle, onPendingChange, onRetreatOpenChange]);
 
   useEffect(() => {
     if (!dungeon) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.repeat) return;
       if (mapOpen) return; // 展开大地图遮罩中：纯查看，不响应移动/撤离（与村庄一致）
+      // Q：打开撤离确认（与情报互斥——情报随之关闭）；已打开则保持
       if (e.key.toLowerCase() === "q") {
+        e.preventDefault();
+        if (!retreatOpen) {
+          onPendingChange(null);
+          onRetreatOpenChange(true);
+        }
+        return;
+      }
+      // 撤离确认打开时：ENTER 确认撤离、BACKSPACE 取消
+      if (retreatOpen && e.key === "Enter") {
+        e.preventDefault();
         dispatch({ type: "DUNGEON_RETREAT" });
+        return;
+      }
+      if (retreatOpen && e.key === "Backspace") {
+        e.preventDefault();
+        onRetreatOpenChange(false);
         return;
       }
       // 情报打开时：ENTER 确认进入、BACKSPACE 关闭
@@ -73,6 +94,8 @@ function DungeonView({
       const dir = dirFromKey(e.key);
       if (!dir) return;
       e.preventDefault();
+      // 移动（无论去向）关闭撤离确认（互斥：移动即放弃撤离）
+      if (retreatOpen) onRetreatOpenChange(false);
       const step = dungeonStep(dungeon, dir, pending);
       if (step.kind === "blocked") return;
       if (step.kind === "intel") {
@@ -83,7 +106,7 @@ function DungeonView({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [dungeon, pending, dispatch, mapOpen, onPendingChange]);
+  }, [dungeon, pending, retreatOpen, dispatch, mapOpen, onPendingChange, onRetreatOpenChange]);
 
   if (!dungeon || !def) return null;
 
@@ -193,6 +216,29 @@ function DungeonView({
               className="px-4 py-1.5 rounded text-xs font-mono border border-game-border text-game-dim hover:text-game-text hover:border-game-gold/40 transition-colors"
             >
               {t("dungeon.cancel")}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 撤离确认卡片（GDD 4.1）：Q 键/撤离按钮打开，与情报卡片互斥；ENTER 确认、BACKSPACE 取消 */}
+      {retreatOpen && (
+        <div className="bg-game-card border border-game-gold/40 rounded p-4 mt-4 animate-fade-in">
+          <h3 className="text-game-gold text-sm font-mono font-bold mb-2">{t("retreat.title")}</h3>
+          <p className="text-game-text text-xs font-mono mb-3 leading-relaxed">{t("retreat.text")}</p>
+          <div className="flex gap-3">
+            <button
+              data-testid="retreat-confirm"
+              onClick={() => dispatch({ type: "DUNGEON_RETREAT" })}
+              className="px-4 py-1.5 rounded text-xs font-mono border border-game-gold/50 bg-game-gold/20 text-game-gold hover:bg-game-gold/30 transition-colors"
+            >
+              {t("retreat.confirm")}
+            </button>
+            <button
+              onClick={() => onRetreatOpenChange(false)}
+              className="px-4 py-1.5 rounded text-xs font-mono border border-game-border text-game-dim hover:text-game-text hover:border-game-gold/40 transition-colors"
+            >
+              {t("retreat.cancel")}
             </button>
           </div>
         </div>
