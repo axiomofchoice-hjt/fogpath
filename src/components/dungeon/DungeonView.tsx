@@ -153,40 +153,38 @@ function DungeonView({ mapOpen }: { mapOpen: boolean }) {
 
       <p className="mt-4 text-game-dim text-[10px] font-mono">{t("dungeon.hint")}</p>
 
-      {/* 情报面板（GDD 4.1）：进入未探索有敌人的房间前 */}
+      {/* 情报卡片（GDD 4.1）：进入未探索有敌人的房间前；内联卡片，WASD 仍禁用 */}
       {pending && pendingRoom && (
-        <div className="fixed inset-0 z-50 bg-game-bg/95 flex flex-col items-center justify-center gap-5">
-          <h2 className="text-game-gold text-lg font-mono font-bold">{t("dungeon.intel")}</h2>
-          <div className="bg-game-card border border-game-border rounded p-4 min-w-64">
-            <div className="text-game-text text-sm font-mono mb-2">
-              {pendingRoom.type === "boss" ? t("dungeon.bossRoom") : t("dungeon.room")}
-            </div>
-            <div className="space-y-1">
-              {pendingEnemies.map(([id, count]) => {
-                const def = enemyDefs[id];
-                if (!def) return null;
-                return (
-                  <div key={id} className="flex items-center gap-2 text-game-text text-xs font-mono">
-                    <span>{def.icon}</span>
-                    <span>{loc(def.name, lang)}</span>
-                    <span className="text-game-dim">x{count}</span>
-                  </div>
-                );
-              })}
-            </div>
+        <div className="bg-game-card border border-game-gold/40 rounded p-4 mt-4 animate-fade-in">
+          <h3 className="text-game-gold text-sm font-mono font-bold mb-2">{t("dungeon.intel")}</h3>
+          <div className="text-game-text text-xs font-mono mb-2">
+            {pendingRoom.type === "boss" ? t("dungeon.bossRoom") : t("dungeon.room")}
+          </div>
+          <div className="space-y-1 mb-3">
+            {pendingEnemies.map(([id, count]) => {
+              const def = enemyDefs[id];
+              if (!def) return null;
+              return (
+                <div key={id} className="flex items-center gap-2 text-game-text text-xs font-mono">
+                  <span>{def.icon}</span>
+                  <span>{loc(def.name, lang)}</span>
+                  <span className="text-game-dim">x{count}</span>
+                </div>
+              );
+            })}
           </div>
           <div className="flex gap-3">
             <button
               onClick={() => {
                 dispatch({ type: "DUNGEON_ENTER_TILE", x: pending.x, y: pending.y });
               }}
-              className="px-5 py-2 rounded text-xs font-mono border border-game-gold/50 bg-game-gold/20 text-game-gold hover:bg-game-gold/30 transition-colors"
+              className="px-4 py-1.5 rounded text-xs font-mono border border-game-gold/50 bg-game-gold/20 text-game-gold hover:bg-game-gold/30 transition-colors"
             >
               {t("dungeon.enterRoom")}
             </button>
             <button
               onClick={() => setPending(null)}
-              className="px-5 py-2 rounded text-xs font-mono border border-game-border text-game-dim hover:text-game-text hover:border-game-gold/40 transition-colors"
+              className="px-4 py-1.5 rounded text-xs font-mono border border-game-border text-game-dim hover:text-game-text hover:border-game-gold/40 transition-colors"
             >
               {t("dungeon.cancel")}
             </button>

@@ -22,7 +22,25 @@ export function dungeonReducer(state: GameState, action: GameAction): GameState 
         roomMap[state.player.currentRoomId]?.dungeonId === action.dungeonId,
         "ENTER_DUNGEON 需在地牢入口房间"
       );
-      return { ...state, dungeon: generateDungeon(def) };
+      const dungeon = generateDungeon(def);
+      // 入口物品自动入包（教学关背包精灵：无需点击即跟随，置 hasPet）
+      const { x, y } = dungeon.playerPos;
+      const entrance = dungeon.rooms[y][x]!;
+      let inventory = [...state.player.inventory];
+      let hasPet = state.player.hasPet;
+      for (const id of entrance.itemIds) {
+        inventory = addToInventory(inventory, id, 1);
+        if (itemDefs[id]?.type === "pet") hasPet = true;
+      }
+      const rooms =
+        entrance.itemIds.length > 0
+          ? patchRoom(dungeon, x, y, { itemIds: [] })
+          : dungeon.rooms;
+      return {
+        ...state,
+        player: { ...state.player, hasPet, inventory },
+        dungeon: { ...dungeon, rooms },
+      };
     }
 
     case "DUNGEON_MOVE": {

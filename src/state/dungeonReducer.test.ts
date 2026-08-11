@@ -352,30 +352,25 @@ describe("地牢：拾取", () => {
     );
   });
 
-  it("营地入口拾取背包精灵：入背包并置 hasPet", () => {
+  it("进入营地：入口背包精灵自动入背包并置 hasPet（无需点击）", () => {
     const s = entered();
-    // 入口地面固定放置 bag_spirit
-    expect(s.dungeon!.rooms[2][0]!.itemIds).toEqual(["bag_spirit"]);
-    expect(s.player.hasPet).toBe(false);
-    const picked = gameReducer(s, { type: "DUNGEON_PICKUP", itemId: "bag_spirit" });
-    expect(picked.dungeon!.rooms[2][0]!.itemIds).toEqual([]);
-    expect(picked.player.inventory).toContainEqual({ itemId: "bag_spirit", quantity: 1 });
-    expect(picked.player.hasPet).toBe(true);
+    expect(s.player.inventory).toContainEqual({ itemId: "bag_spirit", quantity: 1 });
+    expect(s.player.hasPet).toBe(true);
+    // 入口地面不再显示物品
+    expect(s.dungeon!.rooms[2][0]!.itemIds).toEqual([]);
   });
 
   it("撤离回村：背包精灵消失（背包移除 + hasPet 复位）", () => {
     const s = entered();
-    const withSpirit = gameReducer(s, { type: "DUNGEON_PICKUP", itemId: "bag_spirit" });
-    const retreated = gameReducer(withSpirit, { type: "DUNGEON_RETREAT" });
+    const retreated = gameReducer(s, { type: "DUNGEON_RETREAT" });
     expect(retreated.player.hasPet).toBe(false);
     expect(retreated.player.inventory.some((e) => e.itemId === "bag_spirit")).toBe(false);
   });
 
   it("死亡回村：背包精灵消失（背包移除 + hasPet 复位）", () => {
     const s = entered();
-    const withSpirit = gameReducer(s, { type: "DUNGEON_PICKUP", itemId: "bag_spirit" });
-    const target = firstEnemyNeighbor(withSpirit)!;
-    const inBattle = gameReducer(withSpirit, { type: "DUNGEON_ENTER_TILE", x: target.x, y: target.y });
+    const target = firstEnemyNeighbor(s)!;
+    const inBattle = gameReducer(s, { type: "DUNGEON_ENTER_TILE", x: target.x, y: target.y });
     const lost: GameState = {
       ...inBattle,
       battle: {

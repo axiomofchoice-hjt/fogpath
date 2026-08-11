@@ -44,6 +44,14 @@ describe("地牢视图", () => {
     expect(screen.getByText("回合 0")).toBeInTheDocument();
   });
 
+  it("情报面板为内联卡片而非全屏弹窗（无 fixed 遮罩）", async () => {
+    const user = userEvent.setup();
+    const { container } = renderGame(miniDungeon());
+    await user.keyboard("{d}");
+    expect(screen.getByText("房间情报")).toBeInTheDocument();
+    expect(container.querySelector(".fixed.inset-0")).toBeNull();
+  });
+
   it("营地房间显示向导提示卡（按 roomKey 查 guide.roomHints）", () => {
     const camp = dungeons.goblin_camp;
     const d = generateDungeon(camp);
