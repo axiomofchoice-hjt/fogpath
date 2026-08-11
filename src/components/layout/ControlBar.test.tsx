@@ -156,19 +156,19 @@ describe("底部操控栏（进入/返回/撤离按钮）", () => {
   it("地牢非战斗：出现「撤离（X）」", () => {
     const dungeon = generateDungeon(dungeons.goblin_camp);
     renderGame({ ...initialGameState(), screen: "game", dungeon });
-    expect(screen.getByRole("button", { name: "撤离（X）" })).toBeInTheDocument();
+    expect(screen.getByTestId("control-retreat")).toBeInTheDocument();
   });
 
   it("村庄：不出现「撤离（X）」", () => {
     renderGame({ ...initialGameState(), screen: "game" });
-    expect(screen.queryByRole("button", { name: "撤离（X）" })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("control-retreat")).not.toBeInTheDocument();
   });
 
   it("战斗中：进入/返回/撤离均不出现", () => {
     const battle = initBattle("test_atk_vs_atk", initialPlayer());
     renderGame({ ...initialGameState(), screen: "game", battle });
-    expect(screen.queryByRole("button", { name: "进入 (ENTER)" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "返回 (BACKSPACE)" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "撤离（X）" })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("control-enter")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("control-back")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("control-retreat")).not.toBeInTheDocument();
   });
 });

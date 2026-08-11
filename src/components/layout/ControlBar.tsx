@@ -35,13 +35,16 @@ function isDirAvailable(
 /** 操控栏小按钮（进入/返回/撤离）：与键盘同一处理逻辑（派发等效 keydown） */
 function ActionButton({
   label,
+  testId,
   onClick,
 }: {
   label: string;
+  testId: string;
   onClick: () => void;
 }) {
   return (
     <button
+      data-testid={testId}
       onClick={onClick}
       className="px-3 h-10 rounded-md border font-mono text-sm border-game-gold/40 bg-game-card text-game-text hover:bg-game-gold/20 hover:text-game-gold transition-colors"
     >
@@ -78,8 +81,8 @@ export function ControlBar({
       {/* 左侧操作（仅可执行时出现）：主界面区域（左右 16rem 侧栏之间）的左边缘，calc(17rem) = 16rem 左栏 + 1rem 边距 */}
       {(intelOpen || villageEnter) && (
         <div className="fixed bottom-3 left-[calc(17rem)] z-40 select-none flex gap-1.5">
-          <ActionButton label={t("control.enter")} onClick={() => fire("Enter")} />
-          {intelOpen && <ActionButton label={t("control.back")} onClick={() => fire("Backspace")} />}
+          <ActionButton testId="control-enter" label={t("control.enter")} onClick={() => fire("Enter")} />
+          {intelOpen && <ActionButton testId="control-back" label={t("control.back")} onClick={() => fire("Backspace")} />}
         </div>
       )}
       {/* 中间 WASD：主界面区域水平中心 = 屏幕中心 */}
@@ -109,7 +112,7 @@ export function ControlBar({
       {/* 右侧撤离（仅地牢非战斗时出现）：主界面区域右边缘，calc(17rem) = 16rem 右栏 + 1rem 边距 */}
       {canRetreat && (
         <div className="fixed bottom-3 right-[calc(17rem)] z-40 select-none">
-          <ActionButton label={t("dungeon.retreat")} onClick={() => fire("x")} />
+          <ActionButton testId="control-retreat" label={t("dungeon.retreat")} onClick={() => fire("x")} />
         </div>
       )}
     </>
