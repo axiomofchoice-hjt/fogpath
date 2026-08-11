@@ -75,14 +75,14 @@ export function ControlBar({
 
   return (
     <>
-      {/* 左侧操作（仅可执行时出现，贴屏幕左边） */}
+      {/* 左侧操作（仅可执行时出现）：主界面区域（左右 16rem 侧栏之间）的左边缘，calc(17rem) = 16rem 左栏 + 1rem 边距 */}
       {(intelOpen || villageEnter) && (
-        <div className="fixed bottom-3 left-4 z-40 select-none flex gap-1.5">
+        <div className="fixed bottom-3 left-[calc(17rem)] z-40 select-none flex gap-1.5">
           <ActionButton label={t("control.enter")} onClick={() => fire("Enter")} />
           {intelOpen && <ActionButton label={t("control.back")} onClick={() => fire("Backspace")} />}
         </div>
       )}
-      {/* 中间 WASD：屏幕正中间 */}
+      {/* 中间 WASD：主界面区域水平中心 = 屏幕中心 */}
       <div className="fixed bottom-3 left-1/2 -translate-x-1/2 z-40 select-none">
         <div className="grid grid-cols-3 gap-1.5">
           {KEYS.map(({ key, col, row }) => {
@@ -106,9 +106,9 @@ export function ControlBar({
           })}
         </div>
       </div>
-      {/* 右侧撤离（仅地牢非战斗时出现，贴屏幕右边） */}
+      {/* 右侧撤离（仅地牢非战斗时出现）：主界面区域右边缘，calc(17rem) = 16rem 右栏 + 1rem 边距 */}
       {canRetreat && (
-        <div className="fixed bottom-3 right-4 z-40 select-none">
+        <div className="fixed bottom-3 right-[calc(17rem)] z-40 select-none">
           <ActionButton label={t("dungeon.retreat")} onClick={() => fire("x")} />
         </div>
       )}
