@@ -94,6 +94,8 @@ export function AppInner() {
           activeTab={activeTab}
           onTabChange={setActiveTab}
           onExpandMap={() => setWorldMapOpen(true)}
+          pending={intelPending}
+          onPendingChange={setIntelPending}
         />
       </div>
       <ControlBar mapOpen={worldMapOpen} />

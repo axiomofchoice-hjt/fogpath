@@ -4,8 +4,15 @@ import { useLang } from "../../i18n/useLang";
 import { loc } from "../../i18n/translations";
 import HubMap from "../map/HubMap";
 import DungeonGrid from "../dungeon/DungeonGrid";
+import { dungeonStep } from "../map/nav";
 
-function MapPanel({ onExpand }: { onExpand: () => void }) {
+type MapPanelProps = {
+  onExpand: () => void;
+  pending: { x: number; y: number } | null;
+  onPendingChange: (p: { x: number; y: number } | null) => void;
+};
+
+function MapPanel({ onExpand, pending, onPendingChange }: MapPanelProps) {
   const { state, dispatch } = useGame();
   const { t, lang } = useLang();
   const { player } = state;
@@ -15,6 +22,14 @@ function MapPanel({ onExpand }: { onExpand: () => void }) {
   const moveRoom = (roomId: string) => {
     if (state.battle) return;
     dispatch({ type: "MOVE_ROOM", roomId });
+  };
+
+  // 地牢点击：与 WASD 同一判定（dungeonStep），战斗中不响应
+  const stepDir = (dir: { x: number; y: number }) => {
+    if (state.battle || !state.dungeon) return;
+    const step = dungeonStep(state.dungeon, dir, pending);
+    if (step.kind === "intel") onPendingChange({ x: step.x, y: step.y });
+    else if (step.kind === "move") dispatch({ type: "DUNGEON_MOVE", dx: step.dx, dy: step.dy });
   };
 
   return (
@@ -39,7 +54,7 @@ function MapPanel({ onExpand }: { onExpand: () => void }) {
                 {t("dungeon.room")} ({state.dungeon.playerPos.x + 1},{state.dungeon.playerPos.y + 1})
               </span>
             </div>
-            <DungeonGrid dungeon={state.dungeon} />
+            <DungeonGrid dungeon={state.dungeon} onStep={stepDir} />
           </>
         ) : (
           <>
