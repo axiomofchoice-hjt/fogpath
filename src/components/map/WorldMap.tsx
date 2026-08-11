@@ -1,23 +1,75 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useGame } from "../../state/useGame";
-import { dungeons as dungeonDefs } from "../../data/config";
+import { dungeons as dungeonDefs, rooms as roomMap } from "../../data/config";
 import { useLang } from "../../i18n/useLang";
 import { loc } from "../../i18n/translations";
 import HubMap from "./HubMap";
 import DungeonGrid from "../dungeon/DungeonGrid";
 
+/** 大地图方块尺寸（与 DungeonGrid/HubMap large 模式一致）：格宽 + 间距 */
+const DUNGEON_TILE = 48;
+const DUNGEON_GAP = 4;
+const HUB_TILE = 96;
+const HUB_GAP = 8;
+
+/** 夹紧：仅当地图大于视口时贴边（不留空白）；地图小于视口时直接取目标值（整图可见、当前房间居中） */
+function clampOffset(target: number, viewport: number, map: number): number {
+  if (map <= viewport) return target;
+  return Math.min(Math.max(target, viewport - map), 0);
+}
+
 /** 展开大地图（纯查看）：标题置顶 + 返回按钮，鼠标拖动平移观察全图，Esc 关闭。
- *  村庄显示村庄枢纽图，地牢中显示地牢全图。 */
+ *  打开时以当前房间为中心定位（地图大于视口时贴边），村庄显示村庄枢纽图，
+ *  地牢中显示地牢全图。 */
 function WorldMap({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { state } = useGame();
   const { t, lang } = useLang();
   const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ startX: number; startY: number; ox: number; oy: number } | null>(null);
 
-  // 打开瞬间重置拖动偏移：useLayoutEffect 在绘制前执行，避免闪现上次拖动结果
+  // 打开瞬间定位：当前房间居中（绘制前计算，避免闪现上次拖动结果）
   useLayoutEffect(() => {
-    if (open) setOffset({ x: 0, y: 0 });
-  }, [open]);
+    if (!open) return;
+    const el = containerRef.current;
+    if (!el) return;
+    // 目标 = 视口中心（减去容器在视口中的偏移，头部等固定 UI 不影响居中）
+    const rect = el.getBoundingClientRect();
+    const vw = el.clientWidth;
+    const vh = el.clientHeight;
+    const targetX = window.innerWidth / 2 - rect.left;
+    const targetY = window.innerHeight / 2 - rect.top;
+    if (state.dungeon) {
+      const p = state.dungeon.playerPos;
+      const { w, h } = state.dungeon.size;
+      const mapW = w * DUNGEON_TILE + (w - 1) * DUNGEON_GAP;
+      const mapH = h * DUNGEON_TILE + (h - 1) * DUNGEON_GAP;
+      const cx = p.x * (DUNGEON_TILE + DUNGEON_GAP) + DUNGEON_TILE / 2;
+      const cy = p.y * (DUNGEON_TILE + DUNGEON_GAP) + DUNGEON_TILE / 2;
+      setOffset({
+        x: clampOffset(targetX - cx, vw, mapW),
+        y: clampOffset(targetY - cy, vh, mapH),
+      });
+    } else {
+      const rooms = Object.values(roomMap);
+      const current = roomMap[state.player.currentRoomId];
+      if (!current) return;
+      const minX = Math.min(...rooms.map((r) => r.pos.x));
+      const minY = Math.min(...rooms.map((r) => r.pos.y));
+      const maxX = Math.max(...rooms.map((r) => r.pos.x));
+      const maxY = Math.max(...rooms.map((r) => r.pos.y));
+      const cols = maxX - minX + 1;
+      const rows = maxY - minY + 1;
+      const mapW = cols * HUB_TILE + (cols - 1) * HUB_GAP;
+      const mapH = rows * HUB_TILE + (rows - 1) * HUB_GAP;
+      const cx = (current.pos.x - minX) * (HUB_TILE + HUB_GAP) + HUB_TILE / 2;
+      const cy = (current.pos.y - minY) * (HUB_TILE + HUB_GAP) + HUB_TILE / 2;
+      setOffset({
+        x: clampOffset(targetX - cx, vw, mapW),
+        y: clampOffset(targetY - cy, vh, mapH),
+      });
+    }
+  }, [open, state.dungeon, state.player.currentRoomId]);
 
   useEffect(() => {
     if (!open) return;
@@ -62,13 +114,15 @@ function WorldMap({ open, onClose }: { open: boolean; onClose: () => void }) {
         </button>
       </div>
       <div
+        ref={containerRef}
         className="flex-1 overflow-hidden cursor-grab active:cursor-grabbing select-none"
         onMouseDown={(e) => {
           dragRef.current = { startX: e.clientX, startY: e.clientY, ox: offset.x, oy: offset.y };
         }}
       >
         <div
-          className="flex items-center justify-center min-h-full"
+          data-testid="world-map-canvas"
+          className="w-max"
           style={{ transform: `translate(${offset.x}px, ${offset.y}px)` }}
         >
           {dungeon ? (
