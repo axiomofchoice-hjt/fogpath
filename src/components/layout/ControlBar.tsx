@@ -74,14 +74,16 @@ export function ControlBar({
   const canRetreat = !!state.dungeon && !state.battle && !mapOpen;
 
   return (
-    <div className="fixed bottom-3 left-1/2 -translate-x-1/2 z-40 select-none">
-      <div className="flex items-center gap-4">
-        {(intelOpen || villageEnter) && (
-          <div className="flex gap-1.5">
-            <ActionButton label={t("control.enter")} onClick={() => fire("Enter")} />
-            {intelOpen && <ActionButton label={t("control.back")} onClick={() => fire("Backspace")} />}
-          </div>
-        )}
+    <>
+      {/* 左侧操作（仅可执行时出现，贴屏幕左边） */}
+      {(intelOpen || villageEnter) && (
+        <div className="fixed bottom-3 left-4 z-40 select-none flex gap-1.5">
+          <ActionButton label={t("control.enter")} onClick={() => fire("Enter")} />
+          {intelOpen && <ActionButton label={t("control.back")} onClick={() => fire("Backspace")} />}
+        </div>
+      )}
+      {/* 中间 WASD：屏幕正中间 */}
+      <div className="fixed bottom-3 left-1/2 -translate-x-1/2 z-40 select-none">
         <div className="grid grid-cols-3 gap-1.5">
           {KEYS.map(({ key, col, row }) => {
             const dir = dirFromKey(key)!;
@@ -103,8 +105,13 @@ export function ControlBar({
             );
           })}
         </div>
-        {canRetreat && <ActionButton label={t("dungeon.retreat")} onClick={() => fire("x")} />}
       </div>
-    </div>
+      {/* 右侧撤离（仅地牢非战斗时出现，贴屏幕右边） */}
+      {canRetreat && (
+        <div className="fixed bottom-3 right-4 z-40 select-none">
+          <ActionButton label={t("dungeon.retreat")} onClick={() => fire("x")} />
+        </div>
+      )}
+    </>
   );
 }
