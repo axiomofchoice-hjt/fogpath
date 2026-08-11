@@ -53,8 +53,6 @@ const zh = {
   "room.safeRoom": "安全屋",
   "room.pickup": "拾取",
   "room.notFound": "错误：房间不存在（{{id}}）",
-  "room.exits": "出口",
-  "room.enter": "进入",
 
   "shop.title": "商店",
   "shop.gold": "金币 {{n}}",
@@ -63,7 +61,6 @@ const zh = {
   "shop.insufficient": "金币不足",
 
   "dungeon.retreat": "撤离（X）",
-  "dungeon.hint": "WASD 移动 · X 撤离 · 情报面板确认后进入",
   "dungeon.pickup": "拾取",
   "dungeon.intel": "房间情报",
   "dungeon.room": "房间",
@@ -79,6 +76,8 @@ const zh = {
   "dungeon.desc.enemies": "{{names}}的身影在雾气中晃动，挡住了去路。",
   "dungeon.desc.items": "地上散落着物品。",
   "room.enterDungeon": "进入地牢",
+  "control.enter": "进入 (ENTER)",
+  "control.back": "返回 (BACKSPACE)",
   "battle.move.charge": "蓄力→{{name}}",
 
   "start.enterVillage": "进入村庄",
@@ -168,8 +167,6 @@ const en: Record<TKey, string> = {
   "room.safeRoom": "Safe Room",
   "room.pickup": "Pick up",
   "room.notFound": "Error: Room not found ({{id}})",
-  "room.exits": "Exits",
-  "room.enter": "Enter",
 
   "shop.title": "Shop",
   "shop.gold": "Gold {{n}}",
@@ -178,7 +175,6 @@ const en: Record<TKey, string> = {
   "shop.insufficient": "Not enough gold",
 
   "dungeon.retreat": "Retreat (X)",
-  "dungeon.hint": "WASD move · X retreat · confirm intel to enter",
   "dungeon.pickup": "Pick up",
   "dungeon.intel": "Room Intel",
   "dungeon.room": "Room",
@@ -194,6 +190,8 @@ const en: Record<TKey, string> = {
   "dungeon.desc.enemies": "{{names}} stir in the mist, blocking your way.",
   "dungeon.desc.items": "Something glints on the ground.",
   "room.enterDungeon": "Enter Dungeon",
+  "control.enter": "Enter (ENTER)",
+  "control.back": "Back (BACKSPACE)",
   "battle.move.charge": "Charge → {{name}}",
 
   "start.enterVillage": "Enter Village",

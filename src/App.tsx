@@ -98,7 +98,7 @@ export function AppInner() {
           onPendingChange={setIntelPending}
         />
       </div>
-      <ControlBar mapOpen={worldMapOpen} />
+      <ControlBar mapOpen={worldMapOpen} pending={intelPending} />
       <WorldMap open={worldMapOpen} onClose={() => setWorldMapOpen(false)} />
     </div>
   );
