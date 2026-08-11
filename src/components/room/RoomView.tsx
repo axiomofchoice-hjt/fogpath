@@ -9,14 +9,6 @@ import Typewriter from "./Typewriter";
 import InteractCard from "./InteractCard";
 import { dirFromKey, nearestInDir } from "../map/nav";
 
-/** 出口方向箭头（按节点坐标差） */
-function exitArrow(fromX: number, fromY: number, toX: number, toY: number): string {
-  if (toX > fromX) return "\u2192"; // →
-  if (toX < fromX) return "\u2190"; // ←
-  if (toY > fromY) return "\u2193"; // ↓
-  return "\u2191"; // ↑
-}
-
 function RoomView({ mapOpen }: { mapOpen: boolean }) {
   const { state, dispatch } = useGame();
   const { t, lang } = useLang();
@@ -29,6 +21,12 @@ function RoomView({ mapOpen }: { mapOpen: boolean }) {
     if (state.battle || mapOpen || !room) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.repeat) return;
+      // ENTER：房间有地牢入口时进入地牢（操控栏「进入 (ENTER)」同源）
+      if (e.key === "Enter" && room.dungeonId) {
+        e.preventDefault();
+        dispatch({ type: "ENTER_DUNGEON", dungeonId: room.dungeonId });
+        return;
+      }
       const dir = dirFromKey(e.key);
       if (!dir) return;
       e.preventDefault();
@@ -110,31 +108,7 @@ function RoomView({ mapOpen }: { mapOpen: boolean }) {
         </div>
       )}
 
-      {/* 出口：WASD 移动 / 点击进入 */}
-      {room.exits.length > 0 && (
-        <div className="mt-3 space-y-2">
-          <div className="text-game-dim text-[9px] font-mono uppercase tracking-wider">
-            {t("room.exits")} · WASD
-          </div>
-          {room.exits.map((rid) => {
-            const target = roomMap[rid];
-            if (!target) return null;
-            return (
-              <button
-                key={rid}
-                onClick={() => dispatch({ type: "MOVE_ROOM", roomId: rid })}
-                className="w-full text-left px-4 py-2 rounded border border-game-border bg-game-card text-game-text text-xs font-mono hover:border-game-gold/40 transition-colors flex items-center gap-3 group"
-              >
-                <span className="text-game-dim group-hover:text-game-gold transition-colors">
-                  {exitArrow(room.pos.x, room.pos.y, target.pos.x, target.pos.y)}
-                </span>
-                <span>{loc(target.name, lang)}</span>
-                <span className="ml-auto text-game-dim text-[10px]">{t("room.enter")}</span>
-              </button>
-            );
-          })}
-        </div>
-      )}
+      {/* 出口卡片已移除：村庄移动走小地图点击与底部操控栏（WASD） */}
 
       <div className="space-y-3 mt-3">
         {roomItems.map((item) => (
@@ -199,7 +173,7 @@ function RoomView({ mapOpen }: { mapOpen: boolean }) {
         <div className="mt-3">
           <button
             onClick={() => dispatch({ type: "ENTER_DUNGEON", dungeonId: room.dungeonId! })}
-            className="px-4 py-2 rounded text-xs font-mono border border-game-gold/40 bg-game-gold/10 text-game-gold hover:bg-game-gold/20 transition-colors"
+            className="w-full px-4 py-3 rounded text-sm font-mono border border-game-gold/40 bg-game-gold/10 text-game-gold hover:bg-game-gold/20 transition-colors"
           >
             {t("room.enterDungeon")}
           </button>

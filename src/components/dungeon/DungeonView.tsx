@@ -59,6 +59,17 @@ function DungeonView({
         dispatch({ type: "DUNGEON_RETREAT" });
         return;
       }
+      // 情报打开时：ENTER 确认进入、BACKSPACE 关闭
+      if (pending && e.key === "Enter") {
+        e.preventDefault();
+        dispatch({ type: "DUNGEON_ENTER_TILE", x: pending.x, y: pending.y });
+        return;
+      }
+      if (pending && e.key === "Backspace") {
+        e.preventDefault();
+        onPendingChange(null);
+        return;
+      }
       const dir = dirFromKey(e.key);
       if (!dir) return;
       e.preventDefault();
@@ -105,12 +116,6 @@ function DungeonView({
               ? t("dungeon.entranceRoom")
               : t("dungeon.room")}
         </h2>
-        <button
-          onClick={() => dispatch({ type: "DUNGEON_RETREAT" })}
-          className="ml-auto text-[10px] font-mono px-3 py-1 rounded border border-game-border text-game-dim hover:text-game-red hover:border-game-red/40 transition-colors"
-        >
-          {t("dungeon.retreat")}
-        </button>
       </div>
 
       <Typewriter text={roomDescription(currentRoom, t, lang)} speed={20} />
@@ -154,9 +159,7 @@ function DungeonView({
 
       {/* 地牢网格在右栏小地图显示，主界面纯文字 */}
 
-      <p className="mt-4 text-game-dim text-[10px] font-mono">{t("dungeon.hint")}</p>
-
-      {/* 情报卡片（GDD 4.1）：进入未探索有敌人的房间前；内联卡片，WASD 仍禁用 */}
+      {/* 情报卡片（GDD 4.1）：进入未探索有敌人的房间前；内联卡片，确认/关闭在卡片与底部操控栏均可 */}
       {pending && pendingRoom && (
         <div className="bg-game-card border border-game-gold/40 rounded p-4 mt-4 animate-fade-in">
           <h3 className="text-game-gold text-sm font-mono font-bold mb-2">{t("dungeon.intel")}</h3>

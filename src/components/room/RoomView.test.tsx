@@ -14,22 +14,28 @@ function inVillage(currentRoomId: string): GameState {
 }
 
 describe("村庄房间视图", () => {
-  it("出口按钮导航：广场 → 商店 → 广场", async () => {
-    const user = userEvent.setup();
-    renderGame(inVillage("village_square"));
-    await user.click(screen.getByRole("button", { name: /村庄商店/ }));
-    expect(screen.getByRole("heading", { name: "村庄商店" })).toBeInTheDocument();
-    expect(screen.getByText("商店")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /村庄广场/ }));
-    expect(screen.getByRole("heading", { name: "村庄广场" })).toBeInTheDocument();
-  });
-
-  it("WASD 节点导航：从广场向北进入哥布林营地入口", async () => {
+  it("WASD 节点导航：从广场向北进入哥布林营地入口，出现进入地牢大按钮", async () => {
     const user = userEvent.setup();
     renderGame(inVillage("village_square"));
     await user.keyboard("{w}");
     expect(screen.getByRole("heading", { name: "哥布林营地入口" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "进入地牢" })).toBeInTheDocument();
+    // 操控栏「进入 (ENTER)」同步出现（与地牢入口按钮并存）
+    expect(screen.getByRole("button", { name: "进入 (ENTER)" })).toBeInTheDocument();
+  });
+
+  it("村庄房间不再显示出口卡片列表", () => {
+    renderGame(inVillage("village_square"));
+    // 出口移动入口仅在小地图与操控栏：无「出口 · WASD」标题、无出口名称按钮
+    expect(screen.queryByText("出口 · WASD")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /村庄商店/ })).not.toBeInTheDocument();
+  });
+
+  it("ENTER 进入地牢（营地入口房间）", async () => {
+    const user = userEvent.setup();
+    renderGame(inVillage("goblin_camp_entrance"));
+    await user.keyboard("{Enter}");
+    expect(screen.getByRole("heading", { name: /哥布林营地 · 入口/ })).toBeInTheDocument();
   });
 
   it("商店购买：金币实时扣减，金币不足禁用购买", async () => {

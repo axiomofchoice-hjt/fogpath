@@ -146,4 +146,24 @@ describe("地牢视图", () => {
     expect(screen.getByRole("heading", { name: /哥布林营地 · 入口/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "← 返回" })).toBeInTheDocument();
   });
+
+  it("ENTER 确认情报进入、BACKSPACE 关闭情报", async () => {
+    const user = userEvent.setup();
+    renderGame(miniDungeon());
+    await user.keyboard("{d}");
+    expect(screen.getByText("房间情报")).toBeInTheDocument();
+    await user.keyboard("{Backspace}");
+    expect(screen.queryByText("房间情报")).not.toBeInTheDocument();
+    await user.keyboard("{d}");
+    await user.keyboard("{Enter}");
+    expect(screen.getByRole("heading", { name: "战斗" })).toBeInTheDocument();
+  });
+
+  it("情报未打开时 ENTER/BACKSPACE 无效", async () => {
+    const user = userEvent.setup();
+    renderGame(miniDungeon());
+    await user.keyboard("{Enter}");
+    await user.keyboard("{Backspace}");
+    expect(screen.getByRole("heading", { name: /哥布林营地 · 入口/ })).toBeInTheDocument();
+  });
 });
