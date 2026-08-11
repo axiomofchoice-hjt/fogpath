@@ -12,6 +12,7 @@ import StartPanel from "./components/start/StartPanel";
 import CharacterPanel from "./components/panels/CharacterPanel";
 import EquipmentPanel from "./components/panels/EquipmentPanel";
 import WorldMap from "./components/map/WorldMap";
+import { ControlBar } from "./components/layout/ControlBar";
 import { GameErrorBoundary } from "./components/ErrorBoundary";
 
 function Header() {
@@ -43,6 +44,7 @@ export function AppInner() {
   const { state } = useGame();
   const [activeTab, setActiveTab] = useState<PanelTab>("map");
   const [worldMapOpen, setWorldMapOpen] = useState(false);
+  const [intelPending, setIntelPending] = useState<{ x: number; y: number } | null>(null);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     switch (e.key.toLowerCase()) {
@@ -64,10 +66,14 @@ export function AppInner() {
     if (state.screen !== "game" || state.battle) setWorldMapOpen(false);
   }, [state.screen, state.battle]);
 
+  useEffect(() => {
+    setIntelPending(null);
+  }, [state.battle, state.dungeon]);
+
   const center = state.battle ? (
     <BattleView />
   ) : state.dungeon ? (
-    <DungeonView mapOpen={worldMapOpen} />
+    <DungeonView mapOpen={worldMapOpen} pending={intelPending} onPendingChange={setIntelPending} />
   ) : (
     <RoomView mapOpen={worldMapOpen} />
   );
@@ -90,6 +96,7 @@ export function AppInner() {
           onExpandMap={() => setWorldMapOpen(true)}
         />
       </div>
+      <ControlBar mapOpen={worldMapOpen} />
       <WorldMap open={worldMapOpen} onClose={() => setWorldMapOpen(false)} />
     </div>
   );

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import type { DungeonRoom } from "../../types";
 import { useGame } from "../../state/useGame";
 import { dungeons as dungeonDefs, enemyDefs, items as itemDefs } from "../../data/config";
@@ -30,24 +30,31 @@ function roomDescription(
   return parts.join("");
 }
 
-/** 地牢视图：文字展示当前房间 + 地牢网格 + 情报面板；WASD 移动、X 撤离（GDD 4.1） */
-function DungeonView({ mapOpen }: { mapOpen: boolean }) {
+/** 地牢视图：文字展示当前房间 + 地牢网格 + 情报面板；WASD 移动、X 撤离（GDD 4.1）
+ *  pending 状态提升到 App（底部操控栏需感知情报打开以置灰） */
+function DungeonView({
+  mapOpen,
+  pending,
+  onPendingChange,
+}: {
+  mapOpen: boolean;
+  pending: { x: number; y: number } | null;
+  onPendingChange: (p: { x: number; y: number } | null) => void;
+}) {
   const { state, dispatch } = useGame();
   const { t, lang } = useLang();
   const dungeon = state.dungeon;
-  const [pending, setPending] = useState<{ x: number; y: number } | null>(null);
   const def = dungeon ? dungeonDefs[dungeon.dungeonId] : undefined;
 
   useEffect(() => {
-    setPending(null);
-  }, [state.battle]);
+    onPendingChange(null);
+  }, [state.battle, onPendingChange]);
 
   useEffect(() => {
     if (!dungeon) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.repeat) return;
       if (mapOpen) return; // 展开大地图遮罩中：纯查看，不响应移动/撤离（与村庄一致）
-      if (pending) return; // 情报面板打开：WASD 禁用（GDD 4.1）
       if (e.key.toLowerCase() === "x") {
         dispatch({ type: "DUNGEON_RETREAT" });
         return;
@@ -61,15 +68,20 @@ function DungeonView({ mapOpen }: { mapOpen: boolean }) {
       if (nx < 0 || ny < 0 || nx >= dungeon.size.w || ny >= dungeon.size.h) return;
       const target = dungeon.rooms[ny][nx];
       if (!target) return; // 墙（无房间）不可通行
+      // 情报打开时仍可移动；再次按向情报中的房间 → 保持/重弹情报（进入需点按钮）
+      if (pending && nx === pending.x && ny === pending.y) {
+        onPendingChange({ x: nx, y: ny });
+        return;
+      }
       if (!target.explored && target.enemyIds.length > 0) {
-        setPending({ x: nx, y: ny });
+        onPendingChange({ x: nx, y: ny });
       } else {
         dispatch({ type: "DUNGEON_MOVE", dx: dir.x, dy: dir.y });
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [dungeon, pending, dispatch, mapOpen]);
+  }, [dungeon, pending, dispatch, mapOpen, onPendingChange]);
 
   if (!dungeon || !def) return null;
 
@@ -183,7 +195,7 @@ function DungeonView({ mapOpen }: { mapOpen: boolean }) {
               {t("dungeon.enterRoom")}
             </button>
             <button
-              onClick={() => setPending(null)}
+              onClick={() => onPendingChange(null)}
               className="px-4 py-1.5 rounded text-xs font-mono border border-game-border text-game-dim hover:text-game-text hover:border-game-gold/40 transition-colors"
             >
               {t("dungeon.cancel")}

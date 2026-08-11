@@ -82,6 +82,48 @@ describe("地牢视图", () => {
     expect(screen.getByRole("heading", { name: /哥布林营地 · 入口/ })).toBeInTheDocument();
   });
 
+  it("情报打开时 WASD 仍可移动：移入空地直接进入并关闭情报", async () => {
+    const user = userEvent.setup();
+    // 自定义：入口 (0,0)、东 (1,0) 有哥布林、南 (0,1) 空地（原为墙）
+    const s = miniDungeon();
+    s.dungeon!.rooms[0][1]!.enemyIds = ["goblin"];
+    s.dungeon!.rooms[1][0] = { type: "normal", explored: false, depth: 0, enemyIds: [], itemIds: [] };
+    renderGame(s);
+    // 先弹东侧情报
+    await user.keyboard("{d}");
+    expect(screen.getByText("房间情报")).toBeInTheDocument();
+    // 再按 S 移入南侧空地：移动 + 情报关闭
+    await user.keyboard("{s}");
+    expect(screen.queryByText("房间情报")).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /哥布林营地 · 房间/ })).toBeInTheDocument();
+  });
+
+  it("情报打开时可移向另一有敌房：切换为新房情报", async () => {
+    const user = userEvent.setup();
+    const s = miniDungeon();
+    s.dungeon!.rooms[0][1]!.enemyIds = ["goblin"];
+    s.dungeon!.rooms[1][0] = { type: "normal", explored: false, depth: 0, enemyIds: [], itemIds: [] };
+    s.dungeon!.rooms[1][1]!.enemyIds = ["goblin_brute"];
+    renderGame(s);
+    await user.keyboard("{d}");
+    expect(screen.getByText("哥布林")).toBeInTheDocument();
+    // 移入南侧空地后，再向东 → 新情报（哥布林壮汉）
+    await user.keyboard("{s}");
+    await user.keyboard("{d}");
+    expect(screen.getByText("哥布林壮汉")).toBeInTheDocument();
+  });
+
+  it("情报打开时再按原方向：保持情报不进入", async () => {
+    const user = userEvent.setup();
+    renderGame(miniDungeon());
+    await user.keyboard("{d}");
+    expect(screen.getByText("房间情报")).toBeInTheDocument();
+    // 再按 D：情报仍在，未进入战斗
+    await user.keyboard("{d}");
+    expect(screen.getByText("房间情报")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "战斗" })).not.toBeInTheDocument();
+  });
+
   it("X 撤离：地牢废弃回到村庄入口，顶栏返回按钮恢复", async () => {
     const user = userEvent.setup();
     renderGame(miniDungeon());

@@ -70,8 +70,10 @@ test("地牢：进房即战与回合推进", async ({ page }) => {
   await enterCampDungeon(page);
   await page.keyboard.press("d");
   await expect(page.getByText("房间情报")).toBeVisible();
+  // 情报打开时再按 D：情报保持（不进入）
+  await page.keyboard.press("d");
+  await expect(page.getByText("房间情报")).toBeVisible();
   await page.getByRole("button", { name: "进入", exact: true }).click();
-
   await expect(page.getByRole("heading", { name: "战斗" })).toBeVisible();
   await expect(page.getByText("回合 0", { exact: true })).toBeVisible();
   // 敌人卡显示动作集：哥布林【普通攻击】【蓄力→重击】
