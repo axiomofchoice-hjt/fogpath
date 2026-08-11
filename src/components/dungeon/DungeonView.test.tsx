@@ -135,6 +135,13 @@ describe("地牢视图", () => {
     expect(screen.getByRole("button", { name: "← 开始面板" })).toBeInTheDocument();
   });
 
+  it("撤离大按钮（与进入地牢同款）：点击撤离回村庄", async () => {
+    const user = userEvent.setup();
+    renderGame(miniDungeon());
+    await user.click(screen.getByRole("button", { name: "撤离（X）" }));
+    expect(screen.getByRole("heading", { name: "哥布林营地入口" })).toBeInTheDocument();
+  });
+
   it("展开世界地图时：WASD 不触发情报面板，X 不撤离", async () => {
     const user = userEvent.setup();
     renderGame(miniDungeon());

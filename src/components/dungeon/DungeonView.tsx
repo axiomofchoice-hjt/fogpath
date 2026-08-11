@@ -197,6 +197,16 @@ function DungeonView({
           </div>
         </div>
       )}
+
+      {/* 撤离大按钮（与村庄「进入地牢」同款）：非战斗可随时撤离 */}
+      <div className="mt-3">
+        <button
+          onClick={() => dispatch({ type: "DUNGEON_RETREAT" })}
+          className="w-full px-4 py-3 rounded text-sm font-mono border border-game-gold/40 bg-game-gold/10 text-game-gold hover:bg-game-gold/20 transition-colors"
+        >
+          {t("dungeon.retreat")}
+        </button>
+      </div>
     </main>
   );
 }
