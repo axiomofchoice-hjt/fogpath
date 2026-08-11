@@ -6,11 +6,9 @@ import { loc } from "../../i18n/translations";
 import HubMap from "./HubMap";
 import DungeonGrid from "../dungeon/DungeonGrid";
 
-/** 大地图方块尺寸（与 DungeonGrid/HubMap large 模式一致）：格宽 + 间距 */
-const DUNGEON_TILE = 48;
-const DUNGEON_GAP = 4;
-const HUB_TILE = 96;
-const HUB_GAP = 8;
+/** 展开大地图方块尺寸（与 DungeonGrid/HubMap large 模式一致）：格宽 + 间距 */
+const TILE = 48;
+const GAP = 4;
 
 /** 夹紧：仅当地图大于视口时贴边（不留空白）；地图小于视口时直接取目标值（整图可见、当前房间居中） */
 function clampOffset(target: number, viewport: number, map: number): number {
@@ -42,10 +40,10 @@ function WorldMap({ open, onClose }: { open: boolean; onClose: () => void }) {
     if (state.dungeon) {
       const p = state.dungeon.playerPos;
       const { w, h } = state.dungeon.size;
-      const mapW = w * DUNGEON_TILE + (w - 1) * DUNGEON_GAP;
-      const mapH = h * DUNGEON_TILE + (h - 1) * DUNGEON_GAP;
-      const cx = p.x * (DUNGEON_TILE + DUNGEON_GAP) + DUNGEON_TILE / 2;
-      const cy = p.y * (DUNGEON_TILE + DUNGEON_GAP) + DUNGEON_TILE / 2;
+      const mapW = w * TILE + (w - 1) * GAP;
+      const mapH = h * TILE + (h - 1) * GAP;
+      const cx = p.x * (TILE + GAP) + TILE / 2;
+      const cy = p.y * (TILE + GAP) + TILE / 2;
       setOffset({
         x: clampOffset(targetX - cx, vw, mapW),
         y: clampOffset(targetY - cy, vh, mapH),
@@ -60,10 +58,10 @@ function WorldMap({ open, onClose }: { open: boolean; onClose: () => void }) {
       const maxY = Math.max(...rooms.map((r) => r.pos.y));
       const cols = maxX - minX + 1;
       const rows = maxY - minY + 1;
-      const mapW = cols * HUB_TILE + (cols - 1) * HUB_GAP;
-      const mapH = rows * HUB_TILE + (rows - 1) * HUB_GAP;
-      const cx = (current.pos.x - minX) * (HUB_TILE + HUB_GAP) + HUB_TILE / 2;
-      const cy = (current.pos.y - minY) * (HUB_TILE + HUB_GAP) + HUB_TILE / 2;
+      const mapW = cols * TILE + (cols - 1) * GAP;
+      const mapH = rows * TILE + (rows - 1) * GAP;
+      const cx = (current.pos.x - minX) * (TILE + GAP) + TILE / 2;
+      const cy = (current.pos.y - minY) * (TILE + GAP) + TILE / 2;
       setOffset({
         x: clampOffset(targetX - cx, vw, mapW),
         y: clampOffset(targetY - cy, vh, mapH),

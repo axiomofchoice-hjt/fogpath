@@ -43,14 +43,14 @@ describe("展开大地图：当前房间居中", () => {
     expect(canvasTransform(container)).toBe("translate(384px, 256px)");
   });
 
-  it("村庄：当前房间居中（HubMap 96px 格 + 8px 间距）", () => {
+  it("村庄：当前房间居中（与地牢同尺寸 48px 格 + 4px 间距）", () => {
     const { container } = renderGame({
       ...initialGameState(),
       screen: "game",
       player: { ...initialGameState().player, currentRoomId: "village_square" },
     });
     fireEvent.click(screen.getByRole("button", { name: "展开地图" }));
-    // 村庄广场 pos (0,0)，minY=-1：格中心 = (48, 152)
-    expect(canvasTransform(container)).toBe("translate(464px, 232px)");
+    // 村庄广场 pos (0,0)，minY=-1：格中心 = (24, 76)
+    expect(canvasTransform(container)).toBe("translate(488px, 308px)");
   });
 });

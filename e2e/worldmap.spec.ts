@@ -27,7 +27,7 @@ test("展开地图：当前房间格位于视口中心，格子 48×48", async (
   expect(rect.y + rect.height / 2).toBeCloseTo(viewport.height / 2, 0);
 });
 
-test("村庄展开地图：当前房间同样居中", async ({ page }) => {
+test("村庄展开地图：当前房间居中，方块与地牢一致 48×48", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "进入村庄" }).click();
   await page.getByRole("button", { name: "展开地图" }).click();
@@ -37,6 +37,8 @@ test("村庄展开地图：当前房间同样居中", async ({ page }) => {
   const current = overlay.locator("div[title='村庄广场']");
   await expect(current).toBeVisible();
   const rect = (await current.boundingBox())!;
+  expect(rect.width).toBe(48);
+  expect(rect.height).toBe(48);
   expect(rect.x + rect.width / 2).toBeCloseTo(viewport.width / 2, 0);
   expect(rect.y + rect.height / 2).toBeCloseTo(viewport.height / 2, 0);
 });

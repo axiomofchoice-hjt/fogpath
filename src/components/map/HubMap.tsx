@@ -36,12 +36,12 @@ function HubMap({ currentRoomId, large = false }: HubMapProps) {
     }
   }
 
-  // 大地图：固定 96px 方块（避免 1fr 撑得过大）；小地图 1fr 自适应 7×7 窗口
-  const tilePx = large ? 96 : undefined;
+  // 大地图：固定 48px 方块（与地牢展开地图一致）；小地图 1fr 自适应 7×7 窗口
+  const tilePx = large ? 48 : undefined;
 
   return (
     <div
-      className={`grid select-none ${large ? "gap-2" : "gap-1 w-full"}`}
+      className={`grid select-none ${large ? "gap-1" : "gap-1 w-full"}`}
       style={{
         gridTemplateColumns: tilePx
           ? `repeat(${cols}, ${tilePx}px)`
