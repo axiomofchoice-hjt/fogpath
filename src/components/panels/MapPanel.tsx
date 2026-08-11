@@ -6,10 +6,16 @@ import HubMap from "../map/HubMap";
 import DungeonGrid from "../dungeon/DungeonGrid";
 
 function MapPanel({ onExpand }: { onExpand: () => void }) {
-  const { state } = useGame();
+  const { state, dispatch } = useGame();
   const { t, lang } = useLang();
   const { player } = state;
   const room = roomMap[player.currentRoomId];
+
+  // 战斗中不响应点击（合法拒绝：战斗时侧栏仍渲染但不可移动）
+  const moveRoom = (roomId: string) => {
+    if (state.battle) return;
+    dispatch({ type: "MOVE_ROOM", roomId });
+  };
 
   return (
     <div className="space-y-2">
@@ -41,7 +47,7 @@ function MapPanel({ onExpand }: { onExpand: () => void }) {
               {t("map.current")}
               <span className="text-game-text">{room ? loc(room.name, lang) : "?"}</span>
             </div>
-            <HubMap currentRoomId={player.currentRoomId} />
+            <HubMap currentRoomId={player.currentRoomId} onMoveRoom={moveRoom} />
             {room && (
               <div className="text-game-dim text-[10px] font-mono mt-1">
                 {t("map.area")}

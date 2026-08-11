@@ -5,14 +5,15 @@ import { loc } from "../../i18n/translations";
 export type HubMapProps = {
   currentRoomId: string;
   large?: boolean;
+  onMoveRoom?: (roomId: string) => void;
 };
 
 /** 小地图窗口半径：显示玩家周围 (2r+1)×(2r+1) = 7×7 格，玩家始终居中 */
 const MINI_RADIUS = 3;
 
-/** 村庄枢纽方块地图（纯查看，不可交互）：小地图 / 展开大地图共用（pos 为网格坐标）。
+/** 村庄枢纽方块地图（小地图可点击出口房间移动 / 展开大地图纯查看）：小地图 / 展开大地图共用（pos 为网格坐标）。
  *  小地图 7×7 窗口以玩家为中心；大地图显示全图，方块更大。 */
-function HubMap({ currentRoomId, large = false }: HubMapProps) {
+function HubMap({ currentRoomId, large = false, onMoveRoom }: HubMapProps) {
   const { lang } = useLang();
   const rooms = Object.values(roomMap);
   const current = roomMap[currentRoomId];
@@ -60,14 +61,13 @@ function HubMap({ currentRoomId, large = false }: HubMapProps) {
           );
         }
         const isCurrent = room.id === currentRoomId;
-        return (
-          <div
-            key={key}
-            title={loc(room.name, lang)}
-            className={`aspect-square flex flex-col items-center justify-center rounded-[3px] font-mono overflow-hidden ${
-              isCurrent ? "bg-game-gold/30 border-game-gold" : "bg-game-card border-game-border"
-            } border-2`}
-          >
+        // 可点击：当前房间的出口（等同 WASD 的 exits 约束；当前格自身不可点）
+        const clickable = !!onMoveRoom && !isCurrent && current.exits.includes(room.id);
+        const base =
+          "aspect-square flex flex-col items-center justify-center rounded-[3px] font-mono overflow-hidden border-2 " +
+          (isCurrent ? "bg-game-gold/30 border-game-gold" : "bg-game-card border-game-border");
+        const content = (
+          <>
             <span className={large ? "text-2xl" : "text-sm"}>
               {room.npc?.icon ?? "\uD83C\uDFD9\uFE0F"}
             </span>
@@ -80,6 +80,25 @@ function HubMap({ currentRoomId, large = false }: HubMapProps) {
                 {loc(room.name, lang)}
               </span>
             )}
+          </>
+        );
+        if (clickable) {
+          return (
+            <button
+              key={key}
+              type="button"
+              data-testid={`hub-room-${room.id}`}
+              title={loc(room.name, lang)}
+              onClick={() => onMoveRoom(room.id)}
+              className={`${base} cursor-pointer transition-colors hover:bg-game-gold/10 hover:border-game-gold/60`}
+            >
+              {content}
+            </button>
+          );
+        }
+        return (
+          <div key={key} title={loc(room.name, lang)} className={base}>
+            {content}
           </div>
         );
       })}
