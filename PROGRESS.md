@@ -63,6 +63,7 @@
 
 - [ ] 地牢进度入档：存档包含地牢布局与每个房间的状态（探索/敌人/物品/玩家位置），以及战斗中的状态（当前回合、双方 HP/MP、状态效果等）；读档后恢复地牢与战斗现场（注：与 GDD 5.1「地牢不存档」相反，需同步修订 GDD 与进度表）
 - [ ] 删除村庄的移动按钮（出口卡片列表，RoomView 的 exits 按钮区域）；移动入口保留小地图点击与底部操控栏，需同步修订 GDD 4.5/功能表
+- [ ] 删除移动操作提示小字：村庄「出口 · WASD」（RoomView）与地牢「WASD move · X retreat · confirm intel to enter」（DungeonView，dungeon.hint），相应 i18n key 一并清理
 
 ---
 
