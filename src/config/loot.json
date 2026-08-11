@@ -6,6 +6,13 @@
     ],
     "gold": [5, 15]
   },
+  "goblin_camp_watch": {
+    "items": [
+      { "itemId": "herb_bundle", "chance": 0.25 },
+      { "itemId": "gold", "chance": 0.3 }
+    ],
+    "gold": [5, 15]
+  },
   "goblin_brute": {
     "items": [
       { "itemId": "health_potion", "chance": 0.3 },

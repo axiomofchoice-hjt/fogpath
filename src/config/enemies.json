@@ -7,6 +7,10 @@
     "maxMp": 10,
     "damage": 8,
     "momentum": 4,
+    "moves": [
+      { "name": { "zh": "普通攻击", "en": "Basic Attack" }, "charge": 0 },
+      { "name": { "zh": "重击", "en": "Heavy Blow" }, "charge": 1 }
+    ],
     "patterns": [
       {
         "id": "combo",
@@ -33,6 +37,36 @@
             "damage": 20,
             "momentum": 8
           }
+        ]
+      }
+    ]
+  },
+  "goblin_camp_watch": {
+    "id": "goblin_camp_watch",
+    "name": { "zh": "哥布林", "en": "Goblin" },
+    "icon": "\uD83D\uDC7A",
+    "maxHp": 30,
+    "maxMp": 10,
+    "damage": 8,
+    "momentum": 4,
+    "moves": [
+      { "name": { "zh": "普通攻击", "en": "Basic Attack" }, "charge": 0 },
+      { "name": { "zh": "重击", "en": "Heavy Blow" }, "charge": 1 }
+    ],
+    "patterns": [
+      {
+        "id": "loop",
+        "weight": 10,
+        "steps": [
+          { "kind": "attack", "name": { "zh": "普通攻击", "en": "Basic Attack" }, "damage": 14, "momentum": 6 },
+          { "kind": "attack", "name": { "zh": "普通攻击", "en": "Basic Attack" }, "damage": 14, "momentum": 6 },
+          { "kind": "charge" },
+          { "kind": "attack", "name": { "zh": "重击", "en": "Heavy Blow" }, "damage": 20, "momentum": 8 },
+          { "kind": "charge" },
+          { "kind": "attack", "name": { "zh": "重击", "en": "Heavy Blow" }, "damage": 20, "momentum": 8 },
+          { "kind": "attack", "name": { "zh": "普通攻击", "en": "Basic Attack" }, "damage": 14, "momentum": 6 },
+          { "kind": "charge" },
+          { "kind": "attack", "name": { "zh": "重击", "en": "Heavy Blow" }, "damage": 20, "momentum": 8 }
         ]
       }
     ]

@@ -24,11 +24,12 @@ describe("村庄房间视图", () => {
     expect(screen.getByRole("heading", { name: "村庄广场" })).toBeInTheDocument();
   });
 
-  it("WASD 节点导航：从广场向北进入森林入口", async () => {
+  it("WASD 节点导航：从广场向北进入哥布林营地入口", async () => {
     const user = userEvent.setup();
     renderGame(inVillage("village_square"));
     await user.keyboard("{w}");
-    expect(screen.getByRole("heading", { name: "森林入口" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "哥布林营地入口" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "进入地牢" })).toBeInTheDocument();
   });
 
   it("商店购买：金币实时扣减，金币不足禁用购买", async () => {

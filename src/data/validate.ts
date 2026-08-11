@@ -1,4 +1,4 @@
-import type { DungeonDef, EnemyDef, ItemDef, LootTable, RoomDef, SkillDef } from "../types";
+import type { DungeonDef, DungeonRoomSpec, EnemyDef, ItemDef, LootTable, RoomDef, SkillDef } from "../types";
 
 /**
  * 轻量配置校验：JSON 数据没有编译期类型，在加载时逐字段检查，
@@ -103,7 +103,7 @@ export function validateItems(raw: unknown, skills: Record<string, SkillDef>): R
     const id = assertString(rec.id, `${path}.id`);
     assertKeyMatch(key, id, path);
     const type = assertString(rec.type, `${path}.type`);
-    if (type !== "equipment" && type !== "consumable" && type !== "currency") {
+    if (type !== "equipment" && type !== "consumable" && type !== "currency" && type !== "pet") {
       fail(`${path}.type`, `未知物品类型 "${type}"`);
     }
     const item: ItemDef = {
@@ -146,7 +146,7 @@ export function validateEnemies(raw: unknown): Record<string, EnemyDef> {
   for (const [key, value] of Object.entries(root)) {
     const path = `enemies.json:${key}`;
     const rec = assertRecord(value, path, [
-      "id", "name", "icon", "maxHp", "maxMp", "damage", "momentum", "isBoss", "patterns",
+      "id", "name", "icon", "maxHp", "maxMp", "damage", "momentum", "isBoss", "moves", "patterns",
     ]);
     const id = assertString(rec.id, `${path}.id`);
     assertKeyMatch(key, id, path);
@@ -187,6 +187,28 @@ export function validateEnemies(raw: unknown): Record<string, EnemyDef> {
         }),
       };
     });
+    // 动作集：名称必须与模式步中的攻击名一致（玩家可见信息不能超出实际行为）
+    const attackNames = new Set(
+      patterns.flatMap((p) => p.steps.flatMap((s) => (s.kind === "attack" ? [s.name.zh] : [])))
+    );
+    let moves: EnemyDef["moves"];
+    if (rec.moves !== undefined) {
+      if (!Array.isArray(rec.moves) || rec.moves.length === 0) {
+        fail(`${path}.moves`, "应为非空数组");
+      }
+      moves = rec.moves.map((m, mi) => {
+        const mpath = `${path}.moves[${mi}]`;
+        const mrec = assertRecord(m, mpath, ["name", "charge"]);
+        const name = assertL(mrec.name, `${mpath}.name`);
+        if (!attackNames.has(name.zh)) {
+          fail(`${mpath}.name`, `动作 "${name.zh}" 不在任何模式步的攻击名中`);
+        }
+        return {
+          name,
+          charge: assertNumber(mrec.charge, `${mpath}.charge`, { gte: 0 }),
+        };
+      });
+    }
     out[key] = {
       id,
       name: assertL(rec.name, `${path}.name`),
@@ -196,6 +218,7 @@ export function validateEnemies(raw: unknown): Record<string, EnemyDef> {
       damage: assertNumber(rec.damage, `${path}.damage`, { gte: 0 }),
       momentum: assertNumber(rec.momentum, `${path}.momentum`, { gte: 0 }),
       ...(rec.isBoss !== undefined ? { isBoss: assertBoolean(rec.isBoss, `${path}.isBoss`) } : {}),
+      ...(moves ? { moves } : {}),
       patterns,
     };
   }
@@ -209,7 +232,7 @@ export function validateRooms(raw: unknown, items: Record<string, ItemDef>): Rec
   for (const [key, value] of Object.entries(root)) {
     const path = `rooms.json:${key}`;
     const rec = assertRecord(value, path, [
-      "id", "name", "description", "area", "isSafeRoom", "itemIds", "exits", "pos", "npc", "shopItems",
+      "id", "name", "description", "area", "isSafeRoom", "itemIds", "exits", "pos", "npc", "shopItems", "dungeonId",
     ]);
     const id = assertString(rec.id, `${path}.id`);
     assertKeyMatch(key, id, path);
@@ -257,6 +280,7 @@ export function validateRooms(raw: unknown, items: Record<string, ItemDef>): Rec
             },
           }
         : {}),
+      ...(rec.dungeonId !== undefined ? { dungeonId: assertString(rec.dungeonId, `${path}.dungeonId`) } : {}),
       ...(shopItems ? { shopItems } : {}),
     };
   }
@@ -282,38 +306,72 @@ export function validateDungeons(
     const path = `dungeons.json:${key}`;
     const rec = assertRecord(value, path, [
       "id", "name", "icon", "description", "difficulty", "size", "roomCount",
-      "enemyPool", "itemPool", "bossId",
+      "enemyPool", "itemPool", "bossId", "layout", "rooms", "guide",
     ]);
     const id = assertString(rec.id, `${path}.id`);
     assertKeyMatch(key, id, path);
-    const sizeRec = assertRecord(rec.size, `${path}.size`, ["w", "h"]);
-    const sizeW = assertNumber(sizeRec.w, `${path}.size.w`, { gt: 0 });
-    const sizeH = assertNumber(sizeRec.h, `${path}.size.h`, { gt: 0 });
-    const roomCount = assertNumber(rec.roomCount, `${path}.roomCount`, {
-      gte: 4,
-      lte: sizeW * sizeH,
-    });
-    if (!Number.isInteger(roomCount)) fail(`${path}.roomCount`, "应为整数");
-    if (!Array.isArray(rec.enemyPool) || rec.enemyPool.length === 0) {
-      fail(`${path}.enemyPool`, "应为非空数组");
+    const bossId = assertString(rec.bossId, `${path}.bossId`);
+    if (!enemyIds.has(bossId)) fail(`${path}.bossId`, `引用了不存在的敌人 "${bossId}"`);
+
+    // 静态布局模式：layout + rooms；随机生成模式：size/roomCount/enemyPool/itemPool
+    const hasLayout = rec.layout !== undefined;
+    if (hasLayout) {
+      if (rec.rooms === undefined) fail(`${path}.rooms`, "layout 模式必须提供 rooms");
+      if (rec.size !== undefined) fail(`${path}.size`, "layout 模式不允许 size（由网格推导）");
+      if (rec.roomCount !== undefined) fail(`${path}.roomCount`, "layout 模式不允许 roomCount");
+      if (rec.enemyPool !== undefined) fail(`${path}.enemyPool`, "layout 模式不允许 enemyPool");
+      if (rec.itemPool !== undefined) fail(`${path}.itemPool`, "layout 模式不允许 itemPool");
+    } else {
+      for (const field of ["size", "roomCount", "enemyPool", "itemPool"] as const) {
+        if (rec[field] === undefined) fail(`${path}.${field}`, `随机生成模式必须提供 ${field}`);
+      }
     }
-    const enemyPool = rec.enemyPool.map((e, i) => {
-      const epath = `${path}.enemyPool[${i}]`;
-      const erec = assertRecord(e, epath, ["enemyId", "minDepth", "maxDepth", "weight"]);
-      const enemyId = assertString(erec.enemyId, `${epath}.enemyId`);
-      if (!enemyIds.has(enemyId)) fail(`${epath}.enemyId`, `引用了不存在的敌人 "${enemyId}"`);
-      const minDepth = assertNumber(erec.minDepth, `${epath}.minDepth`, { gte: 0 });
-      const maxDepth = assertNumber(erec.maxDepth, `${epath}.maxDepth`, { gte: minDepth });
-      return {
-        enemyId,
-        minDepth,
-        maxDepth,
-        weight: assertNumber(erec.weight, `${epath}.weight`, { gt: 0 }),
-      };
+
+    const layout = hasLayout ? parseLayout(rec.layout, path) : undefined;
+    const roomSpecs = hasLayout
+      ? parseRoomSpecs(rec.rooms, `${path}.rooms`, enemyIds, itemIds)
+      : undefined;
+    if (layout && roomSpecs) {
+      validateStaticDungeon(layout, roomSpecs, bossId, `${path}.layout`);
+      if (rec.guide !== undefined) {
+        validateGuide(rec.guide, layout, `${path}.guide`);
+      }
+    }
+
+    const sizeRec = rec.size === undefined ? undefined : assertRecord(rec.size, `${path}.size`, ["w", "h"]);
+    const sizeW = sizeRec === undefined ? undefined : assertNumber(sizeRec.w, `${path}.size.w`, { gt: 0 });
+    const sizeH = sizeRec === undefined ? undefined : assertNumber(sizeRec.h, `${path}.size.h`, { gt: 0 });
+    const roomCount = rec.roomCount === undefined ? undefined : assertNumber(rec.roomCount, `${path}.roomCount`, {
+      gte: 4,
+      lte: (sizeW ?? 0) * (sizeH ?? 0),
     });
-    if (!Array.isArray(rec.itemPool)) fail(`${path}.itemPool`, "应为数组");
-    if (!enemyIds.has(rec.bossId as string)) {
-      fail(`${path}.bossId`, `引用了不存在的敌人 "${String(rec.bossId)}"`);
+    if (roomCount !== undefined && !Number.isInteger(roomCount)) fail(`${path}.roomCount`, "应为整数");
+    let enemyPool: DungeonDef["enemyPool"];
+    if (rec.enemyPool !== undefined) {
+      if (!Array.isArray(rec.enemyPool) || rec.enemyPool.length === 0) {
+        fail(`${path}.enemyPool`, "应为非空数组");
+      }
+      enemyPool = rec.enemyPool.map((e, i) => {
+        const epath = `${path}.enemyPool[${i}]`;
+        const erec = assertRecord(e, epath, ["enemyId", "minDepth", "maxDepth", "weight"]);
+        const enemyId = assertString(erec.enemyId, `${epath}.enemyId`);
+        if (!enemyIds.has(enemyId)) fail(`${epath}.enemyId`, `引用了不存在的敌人 "${enemyId}"`);
+        const minDepth = assertNumber(erec.minDepth, `${epath}.minDepth`, { gte: 0 });
+        const maxDepth = assertNumber(erec.maxDepth, `${epath}.maxDepth`, { gte: minDepth });
+        return {
+          enemyId,
+          minDepth,
+          maxDepth,
+          weight: assertNumber(erec.weight, `${epath}.weight`, { gt: 0 }),
+        };
+      });
+    }
+    let itemPool: string[] | undefined;
+    if (rec.itemPool !== undefined) {
+      if (!Array.isArray(rec.itemPool)) fail(`${path}.itemPool`, "应为数组");
+      itemPool = rec.itemPool.map((iid: unknown, i: number) =>
+        assertItemId(iid, `${path}.itemPool[${i}]`, itemIds)
+      );
     }
     out[key] = {
       id,
@@ -321,14 +379,141 @@ export function validateDungeons(
       icon: assertString(rec.icon, `${path}.icon`),
       description: assertL(rec.description, `${path}.description`),
       difficulty: assertNumber(rec.difficulty, `${path}.difficulty`, { gte: 1 }),
-      size: { w: sizeW, h: sizeH },
-      roomCount,
-      enemyPool,
-      itemPool: rec.itemPool.map((iid: unknown, i: number) =>
-        assertItemId(iid, `${path}.itemPool[${i}]`, itemIds)
-      ),
-      bossId: assertString(rec.bossId, `${path}.bossId`),
+      ...(layout ? { layout } : {}),
+      ...(roomSpecs ? { rooms: roomSpecs } : {}),
+      ...(rec.guide !== undefined
+        ? {
+            guide: {
+              icon: assertString((rec.guide as AnyRecord).icon, `${path}.guide.icon`),
+              name: assertL((rec.guide as AnyRecord).name, `${path}.guide.name`),
+              roomHints: assertLMap((rec.guide as AnyRecord).roomHints, `${path}.guide.roomHints`),
+              battleHints: assertLMap((rec.guide as AnyRecord).battleHints, `${path}.guide.battleHints`),
+            },
+          }
+        : {}),
+      ...(sizeW !== undefined && sizeH !== undefined ? { size: { w: sizeW, h: sizeH } } : {}),
+      ...(roomCount !== undefined ? { roomCount } : {}),
+      ...(enemyPool ? { enemyPool } : {}),
+      ...(itemPool ? { itemPool } : {}),
+      bossId,
     };
+  }
+  return out;
+}
+
+/** 解析 layout 网格：字符串二维数组，单元格为空串或房间键 */
+function parseLayout(raw: unknown, path: string): string[][] {
+  if (!Array.isArray(raw) || raw.length === 0) {
+    fail(`${path}.layout`, "应为非空二维数组");
+  }
+  const width = (raw[0] as unknown[]).length;
+  return raw.map((row, ri) => {
+    const rpath = `${path}.layout[${ri}]`;
+    if (!Array.isArray(row) || row.length === 0) fail(rpath, "应为非空数组");
+    if (row.length !== width) fail(rpath, `行宽不一致（应为 ${width}）`);
+    return row.map((cell, ci) => {
+      if (cell === "") return "";
+      return assertString(cell, `${rpath}[${ci}]`);
+    });
+  });
+}
+
+/** 解析布局房间定义 */
+function parseRoomSpecs(
+  raw: unknown,
+  path: string,
+  enemyIds: Set<string>,
+  itemIds: Set<string>
+): Record<string, DungeonRoomSpec> {
+  const root = assertRecord(raw, path);
+  const out: Record<string, DungeonRoomSpec> = {};
+  for (const [rkey, value] of Object.entries(root)) {
+    const rpath = `${path}.${rkey}`;
+    const rec = assertRecord(value, rpath, ["type", "enemyIds", "itemIds"]);
+    const type = assertString(rec.type, `${rpath}.type`);
+    if (type !== "entrance" && type !== "normal" && type !== "boss") {
+      fail(`${rpath}.type`, `未知房间类型 "${type}"`);
+    }
+    if (!Array.isArray(rec.enemyIds)) fail(`${rpath}.enemyIds`, "应为数组");
+    if (!Array.isArray(rec.itemIds)) fail(`${rpath}.itemIds`, "应为数组");
+    out[rkey] = {
+      type,
+      enemyIds: rec.enemyIds.map((eid: unknown, i: number) =>
+        assertItemId(eid, `${rpath}.enemyIds[${i}]`, enemyIds)
+      ),
+      itemIds: rec.itemIds.map((iid: unknown, i: number) =>
+        assertItemId(iid, `${rpath}.itemIds[${i}]`, itemIds)
+      ),
+    };
+  }
+  return out;
+}
+
+/** 静态布局整体校验：单元格引用合法、唯一入口/Boss、全连通、Boss 房含 bossId */
+function validateStaticDungeon(
+  layout: string[][],
+  rooms: Record<string, DungeonRoomSpec>,
+  bossId: string,
+  path: string
+): void {
+  const height = layout.length;
+  const width = layout[0].length;
+  const cells: { key: string; x: number; y: number }[] = [];
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const cell = layout[y][x];
+      if (!cell) continue;
+      if (!rooms[cell]) fail(`${path}[${y}][${x}]`, `引用了不存在的房间定义 "${cell}"`);
+      cells.push({ key: cell, x, y });
+    }
+  }
+  if (cells.length === 0) fail(path, "布局中没有任何房间");
+  const entrances = cells.filter((c) => rooms[c.key].type === "entrance");
+  const bossRooms = cells.filter((c) => rooms[c.key].type === "boss");
+  if (entrances.length !== 1) fail(path, `必须且只能有一个入口房（现有 ${entrances.length}）`);
+  if (bossRooms.length !== 1) fail(path, `必须且只能有一个 Boss 房（现有 ${bossRooms.length}）`);
+  const bossCell = bossRooms[0];
+  if (!rooms[bossCell.key].enemyIds.includes(bossId)) {
+    fail(`${path}.rooms.${bossCell.key}.enemyIds`, `Boss 房必须包含 bossId "${bossId}"`);
+  }
+  // 全连通：从入口 BFS 必须到达所有房间（孤立/断片布局拒绝）
+  const seen = new Set<string>([`${entrances[0].x},${entrances[0].y}`]);
+  const queue: { x: number; y: number }[] = [{ x: entrances[0].x, y: entrances[0].y }];
+  for (let qi = 0; qi < queue.length; qi++) {
+    const cur = queue[qi];
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const nx = cur.x + dx;
+      const ny = cur.y + dy;
+      if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
+      if (!layout[ny][nx] || seen.has(`${nx},${ny}`)) continue;
+      seen.add(`${nx},${ny}`);
+      queue.push({ x: nx, y: ny });
+    }
+  }
+  if (seen.size !== cells.length) {
+    fail(path, `布局不连通（${cells.length - seen.size} 个房间不可达）`);
+  }
+}
+
+/** 引导提示：键必须指向布局中的房间，值为双语文本 */
+function validateGuide(raw: unknown, layout: string[][], path: string): void {
+  const rec = assertRecord(raw, path, ["icon", "name", "roomHints", "battleHints"]);
+  const keys = new Set(layout.flat());
+  keys.delete("");
+  for (const field of ["roomHints", "battleHints"] as const) {
+    const hints = assertRecord(rec[field], `${path}.${field}`);
+    for (const [rkey, value] of Object.entries(hints)) {
+      if (!keys.has(rkey)) fail(`${path}.${field}.${rkey}`, `引用了不在布局中的房间 "${rkey}"`);
+      assertL(value, `${path}.${field}.${rkey}`);
+    }
+  }
+}
+
+function assertLMap(v: unknown, path: string): Record<string, { zh: string; en: string }> {
+  const rec = assertRecord(v, path);
+  const out: Record<string, { zh: string; en: string }> = {};
+  for (const [k, value] of Object.entries(rec)) {
+    out[k] = assertL(value, `${path}.${k}`);
   }
   return out;
 }

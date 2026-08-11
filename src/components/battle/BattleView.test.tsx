@@ -48,6 +48,31 @@ describe("战斗视图", () => {
     expect(screen.getByTitle("Boss")).toBeInTheDocument();
   });
 
+  it("敌人卡显示动作集：哥布林【普通攻击】【蓄力→重击】", () => {
+    renderGame(withBattle(initBattleFromEnemies(["goblin_camp_watch"], initialPlayer())));
+    expect(screen.getByText(/【普通攻击】/)).toBeInTheDocument();
+    expect(screen.getByText(/【蓄力→重击】/)).toBeInTheDocument();
+  });
+
+  it("营地战斗中：向导战斗提示显示在敌人卡上方", () => {
+    const battle = initBattleFromEnemies(["goblin_camp_watch"], initialPlayer());
+    const state: GameState = {
+      ...withBattle(battle),
+      dungeon: {
+        dungeonId: "goblin_camp",
+        size: { w: 5, h: 3 },
+        rooms: [
+          [null, null, { type: "normal", explored: false, depth: 3, enemyIds: [], itemIds: [], roomKey: "r5" }, { type: "normal", explored: false, depth: 4, enemyIds: [], itemIds: [], roomKey: "r6" }, { type: "normal", explored: false, depth: 5, enemyIds: [], itemIds: [], roomKey: "r7" }],
+          [null, null, { type: "normal", explored: true, depth: 2, enemyIds: [], itemIds: [], roomKey: "r4" }, null, { type: "boss", explored: true, depth: 7, enemyIds: ["goblin_king"], itemIds: [], roomKey: "r8" }],
+          [{ type: "entrance", explored: true, depth: 0, enemyIds: [], itemIds: [], roomKey: "r1" }, { type: "normal", explored: true, depth: 1, enemyIds: ["goblin_camp_watch"], itemIds: [], roomKey: "r2" }, { type: "normal", explored: false, depth: 1, enemyIds: [], itemIds: [], roomKey: "r3" }, null, null],
+        ],
+        playerPos: { x: 1, y: 2 },
+      },
+    };
+    renderGame(state);
+    expect(screen.getByText(/攻击消耗 MP，休息回蓝/)).toBeInTheDocument();
+  });
+
   it("测试战斗结算按钮：返回开始面板", () => {
     const battle = initBattle("test_atk_vs_atk", initialPlayer());
     renderGame(withBattle({ ...battle, result: "victory" }));

@@ -3,7 +3,7 @@ import type { CombatStats, L, StatusId } from "../../types";
 import { useGame } from "../../state/useGame";
 import { useLang } from "../../i18n/useLang";
 import { loc, type TKey, type Params } from "../../i18n/translations";
-import { enemyDefs, items as itemDefs, skills as skillDefs } from "../../data/config";
+import { dungeons as dungeonDefs, enemyDefs, items as itemDefs, skills as skillDefs } from "../../data/config";
 import { GUARD_MP, REST_MP, SHIELD_REDUCTION } from "../../state/battleEngine";
 
 type Mode = "idle" | "target";
@@ -60,6 +60,8 @@ type CombatantCardProps = {
   dimmed?: boolean;
   /** Boss 标记（GDD 4.3：名字带标记） */
   boss?: boolean;
+  /** 敌人动作集（如「普通攻击」「蓄力→重击」），显示在名字下方 */
+  moves?: string[];
   stats: CombatStats;
   /** 当前状态（可多个，横排显示在摘要上方） */
   statuses: StatusId[];
@@ -72,6 +74,7 @@ function CombatantCard({
   borderClass,
   dimmed = false,
   boss = false,
+  moves,
   stats: { hp, maxHp, mp, maxMp, damage, maxDamage, momentum, maxMomentum, hasAttack },
   statuses,
   summary,
@@ -87,6 +90,11 @@ function CombatantCard({
             {name}
             {boss && <span className="text-game-gold ml-1" title={t("battle.boss")}>{"\uD83D\uDC51"}</span>}
           </span>
+          {moves && (
+            <span className="text-[9px] font-mono text-game-dim leading-tight text-center break-all">
+              {moves.map((m) => `【${m}】`).join("")}
+            </span>
+          )}
         </div>
         <div className="w-36 flex-shrink-0 space-y-1.5">
           <StatRow
@@ -287,6 +295,18 @@ function BattleView() {
         ? "text-game-red"
         : "text-game-text";
 
+  // 向导战斗提示（教学关）：按当前地牢房间的 roomKey 查 guide.battleHints
+  const guideHint = (() => {
+    const dungeon = state.dungeon;
+    if (!dungeon) return null;
+    const def = dungeonDefs[dungeon.dungeonId];
+    if (!def?.guide) return null;
+    const room = dungeon.rooms[dungeon.playerPos.y][dungeon.playerPos.x];
+    const hint = room?.roomKey ? def.guide.battleHints[room.roomKey] : undefined;
+    if (!hint) return null;
+    return { name: loc(def.guide.name, lang), icon: def.guide.icon, text: loc(hint, lang) };
+  })();
+
   return (
     <main className="flex-1 overflow-y-auto p-6">
       <div className="flex items-center gap-3 mb-4">
@@ -295,6 +315,17 @@ function BattleView() {
       </div>
 
       <div className="space-y-2 mb-4">
+        {guideHint && (
+          <div className="bg-game-card border border-game-blue/30 rounded p-3 animate-fade-in">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xl">{guideHint.icon}</span>
+              <span className="text-game-text text-xs font-mono font-bold">{guideHint.name}</span>
+            </div>
+            <p className="text-game-text text-xs leading-relaxed italic">
+              &ldquo;{guideHint.text}&rdquo;
+            </p>
+          </div>
+        )}
         <CombatantCard
           icon={"\uD83E\uDD38"}
           name={t("stat.adventurer")}
@@ -314,6 +345,11 @@ function BattleView() {
               borderClass={alive ? "border-game-red/40" : "border-game-border"}
               dimmed={!alive}
               boss={enemy.isBoss}
+              moves={def.moves?.map((m) =>
+                m.charge > 0
+                  ? t("battle.move.charge", { name: loc(m.name, lang) })
+                  : loc(m.name, lang)
+              )}
               stats={enemy}
               statuses={[]}
               summary={loc(enemy.summary, lang)}

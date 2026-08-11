@@ -5,9 +5,11 @@ import {
   REST_MP,
   SHIELD_REDUCTION,
   initBattle,
+  initBattleFromEnemies,
   pickPattern,
   resolveTurn,
 } from "./battleEngine";
+import { enemyDefs } from "../data/config";
 import { initialPlayer } from "./init";
 
 function testPlayer(overrides: Partial<Player> = {}): Player {
@@ -416,5 +418,47 @@ describe("resolveTurn：胜负与边界", () => {
     resolveTurn(battle, { kind: "guard" });
     resolveTurn(battle, { kind: "rest" });
     expect(battle).toEqual(snapshot);
+  });
+});
+
+describe("goblin_camp_watch（哨戒哥布林固定循环）", () => {
+  it("10 回合行为序列 = 循环① [普,普,蓄,重,蓄,重,普,蓄,重] 并回到循环起点", () => {
+    // 玩家高 HP 只休息：观察敌方固定行为，不受胜败干扰
+    const battle = initBattleFromEnemies(
+      ["goblin_camp_watch"],
+      testPlayer({ hp: 99999, maxHp: 99999 })
+    );
+    const expected: string[] = [
+      "哥布林使用了普通攻击！",
+      "哥布林使用了普通攻击！",
+      "哥布林正在蓄力…",
+      "哥布林使用了重击！",
+      "哥布林正在蓄力…",
+      "哥布林使用了重击！",
+      "哥布林使用了普通攻击！",
+      "哥布林正在蓄力…",
+      "哥布林使用了重击！",
+      "哥布林使用了普通攻击！", // 第 10 回合：回到循环起点
+    ];
+    let cur = battle;
+    const summaries: string[] = [];
+    for (let i = 0; i < 10; i++) {
+      cur = resolveTurn(cur, { kind: "rest" });
+      summaries.push(cur.enemies[0].summary.zh);
+    }
+    expect(summaries).toEqual(expected);
+    // 模式 id 不变（单模式池）：第 10 回合执行完循环第 1 步，推进后在第 2 步
+    expect(cur.enemies[0].pattern.patternId).toBe("loop");
+    expect(cur.enemies[0].pattern.stepIndex).toBe(1);
+  });
+
+  it("教学哥布林与普通哥布林动作集统一：哥布林【普通攻击】【蓄力→重击】", () => {
+    const watch = enemyDefs.goblin_camp_watch;
+    const goblin = enemyDefs.goblin;
+    expect(watch.moves).toEqual(goblin.moves);
+    expect(watch.moves).toEqual([
+      { name: { zh: "普通攻击", en: "Basic Attack" }, charge: 0 },
+      { name: { zh: "重击", en: "Heavy Blow" }, charge: 1 },
+    ]);
   });
 });

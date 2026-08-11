@@ -24,6 +24,7 @@ export function isGameState(x: unknown): x is GameState {
   if (typeof p.currentRoomId !== "string") return false;
   if (!Array.isArray(p.inventory) || !Array.isArray(p.equipment)) return false;
   if (!Array.isArray(p.pickedItemIds)) return false;
+  if (p.hasPet !== undefined && typeof p.hasPet !== "boolean") return false;
   if (s.battle !== null) {
     if (typeof s.battle !== "object" || s.battle === undefined) return false;
     const b = s.battle as Record<string, unknown>;
@@ -59,12 +60,14 @@ export function serializeSave(state: GameState): string {
   return JSON.stringify(file);
 }
 
-/** 反序列化存档（导入/读取共用）；非法返回 null */
+/** 反序列化存档（导入/读取共用）；非法返回 null；旧档缺失新字段时补默认值 */
 export function deserializeSave(text: string): GameState | null {
   try {
     const parsed: unknown = JSON.parse(text);
     if (!isSaveFile(parsed)) return null;
-    return parsed.state;
+    const state = parsed.state;
+    if (state.player.hasPet === undefined) state.player.hasPet = false;
+    return state;
   } catch {
     return null;
   }

@@ -3,6 +3,8 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderGame } from "../../test/harness";
 import { initialGameState } from "../../state/init";
+import { generateDungeon } from "../../state/dungeonGen";
+import { dungeons } from "../../data/config";
 import type { DungeonRoom, GameState } from "../../types";
 
 /** 手工 3×3 地牢：入口 (0,0)、右侧 (1,0) 有哥布林的未探索房，玩家在入口 */
@@ -25,7 +27,7 @@ function miniDungeon(): GameState {
     ...initialGameState(),
     screen: "game",
     player: { ...initialGameState().player, currentRoomId: "forest_entrance" },
-    dungeon: { dungeonId: "forest", size: { w: 3, h: 3 }, rooms, playerPos: { x: 0, y: 0 } },
+    dungeon: { dungeonId: "goblin_camp", size: { w: 3, h: 3 }, rooms, playerPos: { x: 0, y: 0 } },
   };
 }
 
@@ -42,13 +44,34 @@ describe("地牢视图", () => {
     expect(screen.getByText("回合 0")).toBeInTheDocument();
   });
 
+  it("营地房间显示向导提示卡（按 roomKey 查 guide.roomHints）", () => {
+    const camp = dungeons.goblin_camp;
+    const d = generateDungeon(camp);
+    // 玩家在哨戒房 r2
+    const state: GameState = {
+      ...miniDungeon(),
+      player: { ...miniDungeon().player },
+      dungeon: d,
+    };
+    state.dungeon = {
+      ...d,
+      playerPos: { x: 1, y: 2 },
+      rooms: d.rooms.map((row, y) =>
+        row.map((r, x) => (x === 1 && y === 2 ? { ...r!, explored: true } : r))
+      ),
+    };
+    renderGame(state);
+    expect(screen.getByText("老猎人")).toBeInTheDocument();
+    expect(screen.getByText(/进去前看清情报/)).toBeInTheDocument();
+  });
+
   it("情报面板可取消返回，不移动", async () => {
     const user = userEvent.setup();
     renderGame(miniDungeon());
     await user.keyboard("{d}");
     await user.click(screen.getByRole("button", { name: "返回" }));
     expect(screen.queryByText("房间情报")).not.toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /森林 · 入口/ })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /哥布林营地 · 入口/ })).toBeInTheDocument();
   });
 
   it("X 撤离：地牢废弃回到村庄入口，顶栏返回按钮恢复", async () => {
@@ -57,8 +80,8 @@ describe("地牢视图", () => {
     // 地牢中顶栏「← 开始面板」隐藏
     expect(screen.queryByRole("button", { name: "← 开始面板" })).not.toBeInTheDocument();
     await user.keyboard("{x}");
-    expect(screen.getByRole("heading", { name: "森林入口" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "进入森林地牢" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "哥布林营地入口" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "进入地牢" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "← 开始面板" })).toBeInTheDocument();
   });
 
@@ -70,7 +93,7 @@ describe("地牢视图", () => {
     await user.keyboard("{d}");
     expect(screen.queryByText("房间情报")).not.toBeInTheDocument();
     await user.keyboard("{x}");
-    expect(screen.getByRole("heading", { name: /森林 · 入口/ })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /哥布林营地 · 入口/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "← 返回" })).toBeInTheDocument();
   });
 });

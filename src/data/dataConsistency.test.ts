@@ -138,23 +138,67 @@ describe("地牢配置", () => {
 
   it("地牢引用：敌人池/Boss 都在敌人表中，物品池在物品表中，森林 Boss 为哥布林王", () => {
     for (const d of Object.values(dungeons)) {
-      expect(d.size.w * d.size.h).toBeGreaterThan(0);
-      for (const e of d.enemyPool) {
-        expect(enemyDefs[e.enemyId], `${d.id} -> ${e.enemyId}`).toBeDefined();
-      }
-      for (const id of d.itemPool) {
-        expect(items[id], `${d.id} -> ${id}`).toBeDefined();
+      if (d.layout) {
+        // 静态布局：房间定义引用合法（引用完整性由 validate 保证，此处抽查布局单元格）
+        for (const row of d.layout) {
+          for (const cell of row) {
+            if (cell) expect(d.rooms![cell], `${d.id} layout -> ${cell}`).toBeDefined();
+          }
+        }
+      } else {
+        expect(d.size!.w * d.size!.h).toBeGreaterThan(0);
+        for (const e of d.enemyPool!) {
+          expect(enemyDefs[e.enemyId], `${d.id} -> ${e.enemyId}`).toBeDefined();
+        }
+        for (const id of d.itemPool!) {
+          expect(items[id], `${d.id} -> ${id}`).toBeDefined();
+        }
       }
       expect(enemyDefs[d.bossId], `${d.id} -> ${d.bossId}`).toBeDefined();
     }
     expect(dungeons.forest.bossId).toBe("goblin_king");
   });
 
+  it("哥布林营地（静态教学关）：纯线布局、教学哥布林、向导提示齐全", () => {
+    const camp = dungeons.goblin_camp;
+    expect(camp).toBeDefined();
+    expect(camp.layout).toBeDefined();
+    expect(camp.guide).toBeDefined();
+    expect(camp.bossId).toBe("goblin_king");
+    // 入口唯一 + Boss 房含 bossId（validate 已保证，此处断言关键角色）
+    const cells = camp.layout!.flat().filter(Boolean);
+    const keys = new Set(cells);
+    for (const k of keys) {
+      const room = camp.rooms![k];
+      expect(room, `营地房间 ${k}`).toBeDefined();
+      if (room.type === "entrance") expect(k).toBe("r1");
+      if (room.type === "boss") expect(room.enemyIds).toContain("goblin_king");
+    }
+    // 哨戒房用教学哥布林（固定循环）
+    expect(camp.rooms!.r2.enemyIds).toEqual(["goblin_camp_watch"]);
+    expect(enemyDefs.goblin_camp_watch).toBeDefined();
+    // 向导提示：房间提示与战斗提示都指向布局中的房间
+    const guide = camp.guide!;
+    for (const k of Object.keys(guide.roomHints)) {
+      expect(keys.has(k), `roomHints ${k}`).toBe(true);
+    }
+    for (const k of Object.keys(guide.battleHints)) {
+      expect(keys.has(k), `battleHints ${k}`).toBe(true);
+    }
+  });
+
   it("每个地牢敌人池/Boss 都有掉落表", () => {
     const ids = new Set<string>();
     for (const d of Object.values(dungeons)) {
       ids.add(d.bossId);
-      for (const e of d.enemyPool) ids.add(e.enemyId);
+      if (d.layout) {
+        // 静态布局：Boss 房敌人与房间内全部敌人需有掉落表
+        for (const room of Object.values(d.rooms!)) {
+          for (const eid of room.enemyIds) ids.add(eid);
+        }
+      } else {
+        for (const e of d.enemyPool!) ids.add(e.enemyId);
+      }
     }
     for (const id of ids) {
       expect(loot[id], `敌人 ${id} 缺少掉落表`).toBeDefined();

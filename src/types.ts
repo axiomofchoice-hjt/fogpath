@@ -11,7 +11,7 @@ export interface L {
 
 // --- Items ---
 
-export type ItemType = "equipment" | "consumable" | "currency";
+export type ItemType = "equipment" | "consumable" | "currency" | "pet";
 
 export const EQUIP_SLOT_COUNT = 6;
 
@@ -64,6 +64,25 @@ export interface RoomDef {
   npc?: NPC;
   /** 商店货架：物品 + 价格（金币） */
   shopItems?: { itemId: string; price: number }[];
+  /** 地牢入口：该房间可进入的 DungeonDef.id（通用进图按钮） */
+  dungeonId?: string;
+}
+
+/** 静态布局中的房间定义（layout 模式：房间键 → 规格） */
+export interface DungeonRoomSpec {
+  type: DungeonRoomType;
+  enemyIds: string[];
+  itemIds: string[];
+}
+
+/** 引导 NPC（教学关）：单句提示，房间内与战斗中显示 */
+export interface DungeonGuide {
+  icon: string;
+  name: L;
+  /** 房间提示：按布局房间键（进入房间时显示） */
+  roomHints: Record<string, L>;
+  /** 战斗提示：按布局房间键（战斗中显示在怪物卡上方） */
+  battleHints: Record<string, L>;
 }
 
 /** 地牢入口（地图入口，GDD 3.2）：从村庄选择后进入 */
@@ -74,14 +93,20 @@ export interface DungeonDef {
   description: L;
   /** 难度范围（GDD 3.2，如森林 1-3） */
   difficulty: number;
-  /** 地牢网格边界（GDD 3.3，格内稀疏放置房间，非满格） */
-  size: { w: number; h: number };
-  /** 目标房间数（生成器软约束，可能略多/略少） */
-  roomCount: number;
-  /** 敌人池：按归一化深度（0-10）区间分布（加权随机） */
-  enemyPool: { enemyId: string; minDepth: number; maxDepth: number; weight: number }[];
-  /** 普通房物品池（按深度随机放置） */
-  itemPool: string[];
+  /** 静态手编布局：有则按布局构建（无随机），无则走随机生成 */
+  layout?: string[][];
+  /** 布局房间定义（layout 模式必需，键与 layout 单元格对应） */
+  rooms?: Record<string, DungeonRoomSpec>;
+  /** 引导 NPC 配置（教学关） */
+  guide?: DungeonGuide;
+  /** 地牢网格边界（随机生成模式必需） */
+  size?: { w: number; h: number };
+  /** 目标房间数（随机生成模式必需） */
+  roomCount?: number;
+  /** 敌人池：按归一化深度（0-10）区间分布（随机生成模式必需） */
+  enemyPool?: { enemyId: string; minDepth: number; maxDepth: number; weight: number }[];
+  /** 普通房物品池（随机生成模式必需） */
+  itemPool?: string[];
   /** Boss 敌人 ID（Boss 房位于最深处） */
   bossId: string;
 }
@@ -112,6 +137,8 @@ export interface DungeonRoom {
   enemyIds: string[];
   /** 房间物品（拾取后移除） */
   itemIds: string[];
+  /** 静态布局的房间键（layout 模式；向导提示按此查） */
+  roomKey?: string;
 }
 
 export interface DungeonState {
@@ -134,6 +161,8 @@ export interface Player {
   /** 6 个通用装备格，值为物品 ID 或 null */
   equipment: (string | null)[];
   pickedItemIds: string[];
+  /** 是否持有背包精灵（死亡时背包运回村庄；回村即消散，GDD 2.6.4） */
+  hasPet: boolean;
 }
 
 // --- Game State ---
@@ -210,6 +239,13 @@ export interface AttackPattern {
   steps: PatternStep[];
 }
 
+/** 敌人展示动作集：一个动作项（如「蓄力→重击」= 1 格蓄力 + 攻击） */
+export interface EnemyMove {
+  name: L;
+  /** 前置蓄力格数（0 = 直接攻击） */
+  charge: number;
+}
+
 export interface EnemyDef {
   id: string;
   name: L;
@@ -220,6 +256,8 @@ export interface EnemyDef {
   momentum: number;
   /** Boss 标记（Boss 房、掉落表区分；强化模板见 GDD 2.4.6） */
   isBoss?: boolean;
+  /** 玩家可见动作集（战斗卡片显示；所有哥布林变种统一以掩盖类型差异） */
+  moves?: EnemyMove[];
   /** 攻击模式池（固定序列，随机选取） */
   patterns: AttackPattern[];
 }

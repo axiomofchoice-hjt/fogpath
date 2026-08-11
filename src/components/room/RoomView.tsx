@@ -195,13 +195,13 @@ function RoomView({ mapOpen }: { mapOpen: boolean }) {
         </div>
       )}
 
-      {room.id === "forest_entrance" && (
+      {room.dungeonId && (
         <div className="mt-3">
           <button
-            onClick={() => dispatch({ type: "ENTER_DUNGEON", dungeonId: "forest" })}
+            onClick={() => dispatch({ type: "ENTER_DUNGEON", dungeonId: room.dungeonId! })}
             className="px-4 py-2 rounded text-xs font-mono border border-game-gold/40 bg-game-gold/10 text-game-gold hover:bg-game-gold/20 transition-colors"
           >
-            {t("room.enterForest")}
+            {t("room.enterDungeon")}
           </button>
         </div>
       )}

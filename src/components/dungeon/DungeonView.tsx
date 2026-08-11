@@ -75,6 +75,13 @@ function DungeonView({ mapOpen }: { mapOpen: boolean }) {
 
   const { rooms, playerPos } = dungeon;
   const currentRoom = rooms[playerPos.y][playerPos.x]!;
+  // 向导房间提示（教学关）：按当前房间 roomKey 查 guide.roomHints
+  const guideHint = (() => {
+    if (!def.guide || !currentRoom.roomKey) return null;
+    const hint = def.guide.roomHints[currentRoom.roomKey];
+    if (!hint) return null;
+    return { name: loc(def.guide.name, lang), icon: def.guide.icon, text: loc(hint, lang) };
+  })();
   const pendingRoom = pending ? rooms[pending.y][pending.x] : null;
   // 情报面板敌人：按种类聚合（同种多只显示 xN）
   const pendingEnemies = pendingRoom
@@ -104,6 +111,19 @@ function DungeonView({ mapOpen }: { mapOpen: boolean }) {
       </div>
 
       <Typewriter text={roomDescription(currentRoom, t, lang)} speed={20} />
+
+      {/* 向导提示卡（教学关，复用村庄 NPC 卡片样式） */}
+      {guideHint && (
+        <div className="bg-game-card border border-game-blue/30 rounded p-3 mb-3 animate-fade-in">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xl">{guideHint.icon}</span>
+            <span className="text-game-text text-xs font-mono font-bold">{guideHint.name}</span>
+          </div>
+          <p className="text-game-text text-xs leading-relaxed italic">
+            &ldquo;{guideHint.text}&rdquo;
+          </p>
+        </div>
+      )}
 
       {/* 当前格拾取 */}
       {currentRoom.itemIds.length > 0 && (

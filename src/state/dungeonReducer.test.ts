@@ -28,12 +28,12 @@ function startAtEntrance(): GameState {
   return {
     ...initialGameState(),
     screen: "game",
-    player: { ...initialPlayer(), currentRoomId: "forest_entrance" },
+    player: { ...initialPlayer(), currentRoomId: "goblin_camp_entrance" },
   };
 }
 
 function entered(): GameState {
-  return gameReducer(startAtEntrance(), { type: "ENTER_DUNGEON", dungeonId: "forest" });
+  return gameReducer(startAtEntrance(), { type: "ENTER_DUNGEON", dungeonId: "goblin_camp" });
 }
 
 const NEIGHBORS = [[1, 0], [0, 1], [-1, 0], [0, -1]] as const;
@@ -85,31 +85,34 @@ function miniDungeon(): GameState {
 }
 
 describe("地牢：进入", () => {
-  it("ENTER_DUNGEON 在入口房间生成稀疏大图", () => {
+  it("ENTER_DUNGEON 在入口房间进入哥布林营地（静态布局）", () => {
     const s = entered();
     expect(s.dungeon).not.toBeNull();
-    expect(s.dungeon!.dungeonId).toBe("forest");
-    expect(s.dungeon!.size).toEqual({ w: 15, h: 15 });
-    expect(s.dungeon!.playerPos).toEqual({ x: 7, y: 7 });
-    expect(s.dungeon!.rooms[7][7]!.type).toBe("entrance");
-    // 稀疏：网格中存在墙（null）
-    expect(s.dungeon!.rooms.flat().some((r) => r === null)).toBe(true);
+    expect(s.dungeon!.dungeonId).toBe("goblin_camp");
+    expect(s.dungeon!.size).toEqual({ w: 5, h: 3 });
+    expect(s.dungeon!.playerPos).toEqual({ x: 0, y: 2 });
+    expect(s.dungeon!.rooms[2][0]!.type).toBe("entrance");
+    // 静态营地：8 房全连通、入口已探索、哨戒房有教学哥布林
+    const rooms = s.dungeon!.rooms.flat().filter(Boolean);
+    expect(rooms).toHaveLength(8);
+    expect(s.dungeon!.rooms[2][0]!.explored).toBe(true);
+    expect(s.dungeon!.rooms[2][1]!.enemyIds).toEqual(["goblin_camp_watch"]);
   });
 
   it("ENTER_DUNGEON 非入口房间/战斗中/已有地牢断言失败", () => {
     const square = { ...initialGameState(), screen: "game" as const };
-    expect(() => gameReducer(square, { type: "ENTER_DUNGEON", dungeonId: "forest" })).toThrow(
+    expect(() => gameReducer(square, { type: "ENTER_DUNGEON", dungeonId: "goblin_camp" })).toThrow(
       /ENTER_DUNGEON/
     );
     const s = entered();
-    expect(() => gameReducer(s, { type: "ENTER_DUNGEON", dungeonId: "forest" })).toThrow(
+    expect(() => gameReducer(s, { type: "ENTER_DUNGEON", dungeonId: "goblin_camp" })).toThrow(
       /ENTER_DUNGEON/
     );
     const inBattle = gameReducer(s, {
       type: "START_TEST_BATTLE",
       scenarioId: "test_atk_vs_atk",
     });
-    expect(() => gameReducer(inBattle, { type: "ENTER_DUNGEON", dungeonId: "forest" })).toThrow(
+    expect(() => gameReducer(inBattle, { type: "ENTER_DUNGEON", dungeonId: "goblin_camp" })).toThrow(
       /ENTER_DUNGEON/
     );
   });
@@ -320,7 +323,7 @@ describe("地牢：战斗结算", () => {
     };
     const retreated = gameReducer(inDungeon, { type: "DUNGEON_RETREAT" });
     expect(retreated.dungeon).toBeNull();
-    expect(retreated.player.currentRoomId).toBe("forest_entrance");
+    expect(retreated.player.currentRoomId).toBe("goblin_camp_entrance");
     expect(retreated.player.hp).toBe(retreated.player.maxHp);
     expect(retreated.player.mp).toBe(retreated.player.maxMp);
   });
@@ -330,22 +333,60 @@ describe("地牢：拾取", () => {
   it("DUNGEON_PICKUP：当前格物品入背包并移除", () => {
     const s = entered();
     const d = s.dungeon!;
-    // 入口无物品，直接构造
+    // 入口在 (0,2)：覆盖其物品为 herb_bundle
     const withItem: GameState = {
       ...s,
       dungeon: {
         ...d,
         rooms: d.rooms.map((row, y) =>
-          row.map((r, x) => (x === 7 && y === 7 ? { ...r!, itemIds: ["herb_bundle"] } : r))
+          row.map((r, x) => (x === 0 && y === 2 ? { ...r!, itemIds: ["herb_bundle"] } : r))
         ),
       },
     };
     const picked = gameReducer(withItem, { type: "DUNGEON_PICKUP", itemId: "herb_bundle" });
-    expect(picked.dungeon!.rooms[7][7]!.itemIds).toEqual([]);
+    expect(picked.dungeon!.rooms[2][0]!.itemIds).toEqual([]);
     expect(picked.player.inventory).toContainEqual({ itemId: "herb_bundle", quantity: 1 });
     // 不在当前格的物品断言失败
     expect(() => gameReducer(withItem, { type: "DUNGEON_PICKUP", itemId: "mana_potion" })).toThrow(
       /DUNGEON_PICKUP/
     );
+  });
+
+  it("营地入口拾取背包精灵：入背包并置 hasPet", () => {
+    const s = entered();
+    // 入口地面固定放置 bag_spirit
+    expect(s.dungeon!.rooms[2][0]!.itemIds).toEqual(["bag_spirit"]);
+    expect(s.player.hasPet).toBe(false);
+    const picked = gameReducer(s, { type: "DUNGEON_PICKUP", itemId: "bag_spirit" });
+    expect(picked.dungeon!.rooms[2][0]!.itemIds).toEqual([]);
+    expect(picked.player.inventory).toContainEqual({ itemId: "bag_spirit", quantity: 1 });
+    expect(picked.player.hasPet).toBe(true);
+  });
+
+  it("撤离回村：背包精灵消失（背包移除 + hasPet 复位）", () => {
+    const s = entered();
+    const withSpirit = gameReducer(s, { type: "DUNGEON_PICKUP", itemId: "bag_spirit" });
+    const retreated = gameReducer(withSpirit, { type: "DUNGEON_RETREAT" });
+    expect(retreated.player.hasPet).toBe(false);
+    expect(retreated.player.inventory.some((e) => e.itemId === "bag_spirit")).toBe(false);
+  });
+
+  it("死亡回村：背包精灵消失（背包移除 + hasPet 复位）", () => {
+    const s = entered();
+    const withSpirit = gameReducer(s, { type: "DUNGEON_PICKUP", itemId: "bag_spirit" });
+    const target = firstEnemyNeighbor(withSpirit)!;
+    const inBattle = gameReducer(withSpirit, { type: "DUNGEON_ENTER_TILE", x: target.x, y: target.y });
+    const lost: GameState = {
+      ...inBattle,
+      battle: {
+        ...inBattle.battle!,
+        result: "defeat",
+        playerStats: { ...inBattle.battle!.playerStats, hp: 0 },
+      },
+    };
+    const exited = gameReducer(lost, { type: "EXIT_BATTLE" });
+    expect(exited.dungeon).toBeNull();
+    expect(exited.player.hasPet).toBe(false);
+    expect(exited.player.inventory.some((e) => e.itemId === "bag_spirit")).toBe(false);
   });
 });

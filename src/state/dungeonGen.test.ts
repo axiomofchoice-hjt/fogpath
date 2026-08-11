@@ -120,6 +120,55 @@ function metrics(d: DungeonState): {
   return { count, branched, maxDepth, boss };
 }
 
+describe("generateDungeon（静态手编布局：哥布林营地）", () => {
+  const camp = dungeons.goblin_camp;
+
+  it("按 layout 构建：8 房纯线、入口已探索、Boss 房在最深处", () => {
+    const d = generateDungeon(camp);
+    expect(d.size).toEqual({ w: 5, h: 3 });
+    // 右右上上右右下：r1(0,2) → r8(4,1)，入口在 (0,2)
+    expect(d.playerPos).toEqual({ x: 0, y: 2 });
+    expect(countRooms(d)).toBe(8);
+    expect(reachableCount(d)).toBe(8);
+    const entrance = d.rooms[2][0]!;
+    expect(entrance.type).toBe("entrance");
+    expect(entrance.explored).toBe(true);
+    // 纯线：每房度数 ≤ 2，恰有两个端点（入口与 Boss 房）
+    const degrees = [0, 1, 2].flatMap((y) =>
+      [0, 1, 2, 3, 4].map((x) => ({ x, y, deg: degreeOf(d, x, y) }))
+    ).filter((p) => d.rooms[p.y][p.x]);
+    expect(degrees.every((p) => p.deg <= 2)).toBe(true);
+    expect(degrees.filter((p) => p.deg === 1)).toHaveLength(2);
+    // 深度 0..7（纯线 BFS 距离）
+    const depths = [0, 1, 2].flatMap((y) => [0, 1, 2, 3, 4].map((x) => d.rooms[y][x]?.depth ?? -1));
+    expect(Math.max(...depths)).toBe(7);
+    // Boss 房在 (4,1)
+    const boss = d.rooms[1][4]!;
+    expect(boss.type).toBe("boss");
+    expect(boss.enemyIds).toEqual(["goblin_king"]);
+  });
+
+  it("静态房间内容来自 rooms 定义：敌人/物品/roomKey 逐房正确", () => {
+    const d = generateDungeon(camp);
+    const at = (x: number, y: number) => d.rooms[y][x]!;
+    expect(at(0, 2).roomKey).toBe("r1");
+    expect(at(0, 2).itemIds).toEqual(["bag_spirit"]);
+    expect(at(1, 2).roomKey).toBe("r2");
+    expect(at(1, 2).enemyIds).toEqual(["goblin_camp_watch"]);
+    expect(at(2, 2).itemIds).toEqual(["health_potion", "mana_potion"]);
+    expect(at(2, 0).roomKey).toBe("r5");
+    expect(at(3, 0).roomKey).toBe("r6");
+    expect(at(4, 0).roomKey).toBe("r7");
+    expect(at(4, 1).roomKey).toBe("r8");
+    expect(at(4, 1).itemIds).toEqual(["iron_sword", "health_potion"]);
+    // 墙格为 null
+    expect(d.rooms[0][0]).toBeNull();
+    expect(d.rooms[1][0]).toBeNull();
+    expect(d.rooms[1][3]).toBeNull();
+    expect(d.rooms[2][3]).toBeNull();
+  });
+});
+
 describe("generateDungeon（以撒式稀疏生成）", () => {
   it("尺寸与入口正确：居中、已探索、无敌人/物品", () => {
     const d = generateDungeon(forest, seeded(42));
@@ -138,8 +187,8 @@ describe("generateDungeon（以撒式稀疏生成）", () => {
     for (const row of d.rooms) for (const r of row) if (!r) nulls++;
     expect(nulls).toBeGreaterThan(0);
     const n = countRooms(d);
-    expect(n).toBeGreaterThanOrEqual(forest.roomCount - 3);
-    expect(n).toBeLessThanOrEqual(forest.roomCount + 10);
+    expect(n).toBeGreaterThanOrEqual(forest.roomCount! - 3);
+    expect(n).toBeLessThanOrEqual(forest.roomCount! + 10);
   });
 
   it("全连通：所有房间可从入口到达", () => {
@@ -192,7 +241,7 @@ describe("generateDungeon（以撒式稀疏生成）", () => {
         if (!r || r.type !== "normal") continue;
         const norm = Math.floor((r.depth * 10) / bossDepth);
         for (const id of r.enemyIds) {
-          const pool = forest.enemyPool.find((e) => e.enemyId === id)!;
+          const pool = forest.enemyPool!.find((e) => e.enemyId === id)!;
           expect(norm, `${id} @ norm ${norm}`).toBeGreaterThanOrEqual(pool.minDepth);
           expect(norm, `${id} @ norm ${norm}`).toBeLessThanOrEqual(pool.maxDepth);
         }
@@ -221,8 +270,8 @@ describe("generateDungeon（多种子不变量，防回归）", () => {
       const { count, branched, maxDepth, boss } = metrics(d);
 
       // 房数在目标附近（软约束）
-      expect(count, `${label} 房数`).toBeGreaterThanOrEqual(forest.roomCount - 3);
-      expect(count, `${label} 房数`).toBeLessThanOrEqual(forest.roomCount + 10);
+      expect(count, `${label} 房数`).toBeGreaterThanOrEqual(forest.roomCount! - 3);
+      expect(count, `${label} 房数`).toBeLessThanOrEqual(forest.roomCount! + 10);
       // 稀疏：存在墙格
       expect(d.rooms.flat().some((r) => r === null), `${label} 稀疏`).toBe(true);
       // 全连通
@@ -255,7 +304,7 @@ describe("generateDungeon（多种子不变量，防回归）", () => {
           if (!r || r.type !== "normal") continue;
           const norm = Math.floor((r.depth * 10) / maxDepth);
           for (const id of r.enemyIds) {
-            const pool = forest.enemyPool.find((e) => e.enemyId === id)!;
+            const pool = forest.enemyPool!.find((e) => e.enemyId === id)!;
             expect(norm, `${label} 敌人 ${id} @${norm}`).toBeGreaterThanOrEqual(pool.minDepth);
             expect(norm, `${label} 敌人 ${id} @${norm}`).toBeLessThanOrEqual(pool.maxDepth);
           }

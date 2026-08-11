@@ -9,6 +9,7 @@ import {
   patchRoom,
   removeFromInventory,
   rollLoot,
+  stripPackSpirit,
 } from "./helpers";
 
 /** 战斗域：测试战斗入口、出招、使用道具（战斗中）、战斗结算（地牢/测试） */
@@ -80,15 +81,15 @@ export function battleReducer(state: GameState, action: GameAction): GameState {
             dungeon: { ...dungeon, rooms },
           };
         }
-        // 败北：死亡结算——装备全丢、背包保留、地牢废弃回村庄（HP/MP 回满）
+        // 败北：死亡结算——装备全丢、背包保留、地牢废弃回村庄（HP/MP 回满）；背包精灵消散
         return {
           ...state,
-          player: {
+          player: stripPackSpirit({
             ...player,
             hp: player.maxHp,
             mp: player.maxMp,
             equipment: player.equipment.map(() => null),
-          },
+          }),
           battle: null,
           dungeon: null,
         };

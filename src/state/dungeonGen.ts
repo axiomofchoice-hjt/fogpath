@@ -1,4 +1,5 @@
 import type { DungeonDef, DungeonRoom, DungeonState } from "../types";
+import { assertInvariant } from "./helpers";
 
 /** 随机源（可注入便于测试） */
 export type Rng = () => number;
@@ -47,6 +48,69 @@ function emptyRoom(type: DungeonRoom["type"], explored: boolean): DungeonRoom {
 }
 
 /**
+ * 静态手编布局构建（GDD 3.3 教学关）：
+ * - 解析 layout 网格：单元格为房间键或空串（墙）
+ * - 房间内容直接来自 def.rooms（敌人/物品固定，无随机）
+ * - BFS 深度、入口已探索、房间 stamp roomKey（向导提示按此查）
+ */
+function buildStaticDungeon(def: DungeonDef): DungeonState {
+  const layout = def.layout;
+  const roomSpecs = def.rooms;
+  assertInvariant(layout && roomSpecs, "静态布局需要 layout 与 rooms");
+  const h = layout.length;
+  const w = layout[0].length;
+  const rooms: (DungeonRoom | null)[][] = layout.map((row, y) =>
+    row.map((cell, x) => {
+      if (!cell) return null;
+      const spec = roomSpecs[cell];
+      assertInvariant(!!spec, `layout[${y}][${x}] 引用了不存在的房间定义 "${cell}"`);
+      return {
+        type: spec.type,
+        explored: false,
+        depth: 0,
+        enemyIds: [...spec.enemyIds],
+        itemIds: [...spec.itemIds],
+        roomKey: cell,
+      };
+    })
+  );
+
+  // 入口：唯一 entrance 房
+  const entrancePos = (() => {
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        if (rooms[y][x]?.type === "entrance") return { x, y };
+      }
+    }
+    throw new Error("[dungeonGen] 静态布局缺少入口房");
+  })();
+  rooms[entrancePos.y][entrancePos.x]!.explored = true;
+
+  // BFS 深度（从入口的最短步数）
+  const queue = [{ ...entrancePos }];
+  const seen = new Set([`${entrancePos.x},${entrancePos.y}`]);
+  for (let qi = 0; qi < queue.length; qi++) {
+    const cur = queue[qi];
+    for (const d of DIRS) {
+      const nx = cur.x + d.x;
+      const ny = cur.y + d.y;
+      if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+      if (!rooms[ny][nx] || seen.has(`${nx},${ny}`)) continue;
+      rooms[ny][nx]!.depth = rooms[cur.y][cur.x]!.depth + 1;
+      seen.add(`${nx},${ny}`);
+      queue.push({ x: nx, y: ny });
+    }
+  }
+
+  return {
+    dungeonId: def.id,
+    size: { w, h },
+    rooms,
+    playerPos: { ...entrancePos },
+  };
+}
+
+/**
  * 地牢生成（GDD 3.3 以撒式简化版）：
  * - N×M 稀疏网格：房间只占据部分格（null = 墙，不可通行），入口居中
  * - 锚点 + MST + 走廊：锚点散布网格（最小间距），曼哈顿最小生成树连成骨架；
@@ -56,9 +120,19 @@ function emptyRoom(type: DungeonRoom["type"], explored: boolean): DungeonRoom {
  * - 侧枝：从随机房间长出 1-3 格链（n==1 规则，死路分支）；必要时强制一个三岔节点
  * - 深度 = BFS 距离；Boss 房位于最远节点（平手取邻居最少的叶节点）
  * - 敌人池按归一化深度 0-10 加权分布（配置区间不随地图尺寸失效）
+ * - 静态手编地图（def.layout）直接构建，不走随机
  */
 export function generateDungeon(def: DungeonDef, rng: Rng = Math.random): DungeonState {
-  const { w, h } = def.size;
+  if (def.layout) return buildStaticDungeon(def);
+  const size = def.size;
+  const roomCount = def.roomCount;
+  const enemyPool = def.enemyPool;
+  const itemPool = def.itemPool;
+  assertInvariant(
+    size && roomCount && enemyPool && itemPool,
+    "随机生成需要 size/roomCount/enemyPool/itemPool（静态地图请配置 layout）"
+  );
+  const { w, h } = size;
   const rooms: (DungeonRoom | null)[][] = Array.from({ length: h }, () =>
     Array.from({ length: w }, () => null)
   );
@@ -145,7 +219,7 @@ export function generateDungeon(def: DungeonDef, rng: Rng = Math.random): Dungeo
 
   // 4. 侧枝：从随机已有房间长出 1-3 格链（n==1 规则，死路分支）填充至目标房间数
   let branchTries = 0;
-  while (placed.length < def.roomCount && branchTries < MAX_BRANCH_TRIES) {
+  while (placed.length < roomCount && branchTries < MAX_BRANCH_TRIES) {
     branchTries++;
     const root = pickOne(placed, rng);
     const len = 1 + Math.floor(rng() * 3); // 分支长度 1-3 格
@@ -226,7 +300,7 @@ export function generateDungeon(def: DungeonDef, rng: Rng = Math.random): Dungeo
     const enemyChance =
       depth === 0 ? 0.15 : depth <= 2 ? 0.4 : depth <= 5 ? 0.55 : 0.7;
     if (rng() < enemyChance) {
-      const candidates = def.enemyPool.filter(
+      const candidates = enemyPool.filter(
         (e) => depth >= e.minDepth && depth <= e.maxDepth
       );
       const picked =
@@ -242,14 +316,14 @@ export function generateDungeon(def: DungeonDef, rng: Rng = Math.random): Dungeo
         }
       }
     }
-    if (rng() < 0.3 && def.itemPool.length > 0) {
-      rooms[room.y][room.x]!.itemIds.push(pickOne(def.itemPool, rng));
+    if (rng() < 0.3 && itemPool.length > 0) {
+      rooms[room.y][room.x]!.itemIds.push(pickOne(itemPool, rng));
     }
   }
 
   // Boss 房宝箱：固定 2 件物品池物品
-  for (let i = 0; i < 2 && def.itemPool.length > 0; i++) {
-    rooms[bossPos.y][bossPos.x]!.itemIds.push(pickOne(def.itemPool, rng));
+  for (let i = 0; i < 2 && itemPool.length > 0; i++) {
+    rooms[bossPos.y][bossPos.x]!.itemIds.push(pickOne(itemPool, rng));
   }
 
   return {

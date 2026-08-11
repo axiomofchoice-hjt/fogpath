@@ -16,5 +16,59 @@
     ],
     "itemPool": ["herb_bundle", "health_potion", "apprentice_staff", "leather_cap", "leather_gloves", "leather_boots", "iron_sword"],
     "bossId": "goblin_king"
+  },
+  "goblin_camp": {
+    "id": "goblin_camp",
+    "name": { "zh": "哥布林营地", "en": "Goblin Camp" },
+    "icon": "\uD83C\uDFD5\uFE0F",
+    "description": {
+      "zh": "村庄北面的哥布林营地，哥布林王盘踞于此。教学引导区域。",
+      "en": "A goblin camp north of the village, ruled by the Goblin King. A teaching ground."
+    },
+    "difficulty": 1,
+    "layout": [
+      ["", "", "r5", "r6", "r7"],
+      ["", "", "r4", "", "r8"],
+      ["r1", "r2", "r3", "", ""]
+    ],
+    "rooms": {
+      "r1": { "type": "entrance", "enemyIds": [], "itemIds": ["bag_spirit"] },
+      "r2": { "type": "normal", "enemyIds": ["goblin_camp_watch"], "itemIds": [] },
+      "r3": { "type": "normal", "enemyIds": [], "itemIds": ["health_potion", "mana_potion"] },
+      "r4": { "type": "normal", "enemyIds": [], "itemIds": [] },
+      "r5": { "type": "normal", "enemyIds": [], "itemIds": [] },
+      "r6": { "type": "normal", "enemyIds": [], "itemIds": [] },
+      "r7": { "type": "normal", "enemyIds": [], "itemIds": [] },
+      "r8": { "type": "boss", "enemyIds": ["goblin_king"], "itemIds": ["iron_sword", "health_potion"] }
+    },
+    "guide": {
+      "icon": "\uD83C\uDFF9\uFE0F",
+      "name": { "zh": "老猎人", "en": "Old Hunter" },
+      "roomHints": {
+        "r1": {
+          "zh": "跟踪这群哥布林一路到这里——它们在村北扎了营。带上这背包精灵：就算死在地牢里，它也会把包里的东西驮回村庄；但穿在身上的装备救不回来。记住，一旦回到村庄，它就会消散。随时按 X 撤离。",
+          "en": "I've tracked these goblins all the way here — they've camped north of the village. Take this pack spirit: even if you die in the dungeon, it will carry your bag back to the village; but the equipment on your back is lost. Remember, it fades away once you return to the village. You can retreat with X at any time."
+        },
+        "r2": {
+          "zh": "进去前看清情报：里面有哥布林。比动量，谁高谁打中——它蓄力后那一击，别硬接。",
+          "en": "Read the intel before entering: there's a goblin inside. Compare momentum — whoever has more hits. When it charges, the next blow is heavy; don't take it head-on."
+        },
+        "r3": {
+          "zh": "药水在战斗里点一下就用掉了，占一回合，但关键时刻能救命。",
+          "en": "Potions are used in one click during battle, costing a turn — but they can save your life at the right moment."
+        },
+        "r8": {
+          "zh": "哥布林王在里头。打完这里，森林的路就开了。",
+          "en": "The Goblin King is inside. Defeat him and the road to the forest will open."
+        }
+      },
+      "battleHints": {
+        "r2": {
+          "zh": "攻击消耗 MP，休息回蓝。它正在蓄力——下一击很重，可以举盾减伤。",
+          "en": "Attacks cost MP; rest to recover. It's charging — the next blow is heavy. Raise your shield to cut the damage."
+        }
+      }
+    },
+    "bossId": "goblin_king"
   }
 }

@@ -114,6 +114,22 @@ describe("serializeSave / deserializeSave 导出导入", () => {
     expect(deserializeSave("garbage")).toBeNull();
     expect(deserializeSave("")).toBeNull();
   });
+
+  it("旧档缺 hasPet：可加载并补默认 false", () => {
+    const s = villageState();
+    const player = s.player as unknown as Record<string, unknown>;
+    delete player.hasPet;
+    const oldText = JSON.stringify({ version: SAVE_VERSION, savedAt: 1, state: s });
+    expect(isGameState(s)).toBe(true);
+    const loaded = deserializeSave(oldText);
+    expect(loaded).not.toBeNull();
+    expect(loaded!.player.hasPet).toBe(false);
+  });
+
+  it("hasPet 非布尔值拒绝", () => {
+    const s = { ...villageState(), player: { ...villageState().player, hasPet: "yes" } };
+    expect(isGameState(s)).toBe(false);
+  });
 });
 
 describe("isGameState 守卫", () => {

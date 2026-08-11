@@ -13,6 +13,7 @@ export function initialPlayer(): Player {
     ],
     equipment: ["rusty_sword", "rusty_shield", null, null, null, null],
     pickedItemIds: ["rusty_sword"],
+    hasPet: false,
   };
 }
 

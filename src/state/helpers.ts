@@ -1,6 +1,9 @@
 import type { DungeonRoom, DungeonState, InventoryEntry, Player } from "../types";
 import { loot as lootDefs } from "../data/config";
 
+/** 背包精灵物品 ID（营地入口拾取；回村即消散） */
+export const PACK_SPIRIT_ID = "bag_spirit";
+
 /** 背包中的金币数量（金币为货币物品，拾取自动入账） */
 export function goldAmount(player: Player): number {
   return player.inventory.find((e) => e.itemId === "gold")?.quantity ?? 0;
@@ -89,4 +92,12 @@ export function patchRoom(
   return dungeon.rooms.map((row, yy) =>
     row.map((r, xx) => (xx === x && yy === y ? { ...r!, ...patch } : r))
   );
+}
+
+/** 回村消散：移除背包精灵并复位 hasPet（未持有精灵时幂等，不断言） */
+export function stripPackSpirit(player: Player): Player {
+  const inventory = canRemoveFromInventory(player.inventory, PACK_SPIRIT_ID, 1)
+    ? removeFromInventory(player.inventory, PACK_SPIRIT_ID, 1)
+    : player.inventory;
+  return { ...player, hasPet: false, inventory };
 }

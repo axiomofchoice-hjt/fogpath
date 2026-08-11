@@ -82,6 +82,17 @@
     "description": { "zh": "一枚微微闪烁的戒指。", "en": "A ring that glimmers faintly." },
     "rarity": 3
   },
+  "bag_spirit": {
+    "id": "bag_spirit",
+    "name": { "zh": "背包精灵", "en": "Pack Spirit" },
+    "icon": "\uD83E\uDDDA",
+    "type": "pet",
+    "description": {
+      "zh": "守护背包的林地精灵。死亡时把背包运回村庄，但穿在身上的装备不保；一旦回到村庄，它便消散。",
+      "en": "A forest spirit that guards your pack. On death it carries your bag back to the village, but equipped items are lost. It fades away once you return to the village."
+    },
+    "rarity": 1
+  },
   "health_potion": {
     "id": "health_potion",
     "name": { "zh": "治疗药水", "en": "Health Potion" },

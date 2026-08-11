@@ -1,20 +1,27 @@
 import type { GameAction, GameState } from "../types";
-import { dungeons as dungeonDefs } from "../data/config";
+import { dungeons as dungeonDefs, items as itemDefs, rooms as roomMap } from "../data/config";
 import { initBattleFromEnemies } from "./battleEngine";
 import { generateDungeon } from "./dungeonGen";
-import { addToInventory, assertInvariant, patchRoom } from "./helpers";
+import { addToInventory, assertInvariant, patchRoom, stripPackSpirit } from "./helpers";
+
+/** 该地牢的村庄入口房间（RoomDef.dungeonId 指向地牢） */
+function entranceRoomId(dungeonId: string): string {
+  const entry = Object.values(roomMap).find((r) => r.dungeonId === dungeonId);
+  assertInvariant(!!entry, `地牢 "${dungeonId}" 没有配置村庄入口房间`);
+  return entry.id;
+}
 
 /** 地牢域：进入、移动、进房开战、拾取、撤离 */
 export function dungeonReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case "ENTER_DUNGEON": {
       assertInvariant(!state.battle && !state.dungeon, "ENTER_DUNGEON 已在战斗或地牢中");
-      assertInvariant(
-        state.player.currentRoomId === "forest_entrance",
-        "ENTER_DUNGEON 需在森林入口房间"
-      );
       const def = dungeonDefs[action.dungeonId];
       assertInvariant(!!def, "ENTER_DUNGEON 地牢配置不存在");
+      assertInvariant(
+        roomMap[state.player.currentRoomId]?.dungeonId === action.dungeonId,
+        "ENTER_DUNGEON 需在地牢入口房间"
+      );
       return { ...state, dungeon: generateDungeon(def) };
     }
 
@@ -70,10 +77,13 @@ export function dungeonReducer(state: GameState, action: GameAction): GameState 
       const rooms = patchRoom(dungeon, dungeon.playerPos.x, dungeon.playerPos.y, {
         itemIds: room.itemIds.filter((id) => id !== action.itemId),
       });
+      const item = itemDefs[action.itemId];
       return {
         ...state,
         player: {
           ...state.player,
+          // 拾取宠物：置 hasPet（死亡时背包运回村庄，GDD 2.6.4）
+          hasPet: state.player.hasPet || item?.type === "pet",
           inventory: addToInventory(state.player.inventory, action.itemId, 1),
         },
         dungeon: { ...dungeon, rooms },
@@ -82,15 +92,15 @@ export function dungeonReducer(state: GameState, action: GameAction): GameState 
 
     case "DUNGEON_RETREAT": {
       assertInvariant(!state.battle && !!state.dungeon, "DUNGEON_RETREAT 需在地牢且非战斗中");
-      // 撤离：地牢废弃，回村庄，HP/MP 回满
+      // 撤离：地牢废弃，回入口房间，HP/MP 回满；背包精灵消散
       return {
         ...state,
-        player: {
+        player: stripPackSpirit({
           ...state.player,
           hp: state.player.maxHp,
           mp: state.player.maxMp,
-          currentRoomId: "forest_entrance",
-        },
+          currentRoomId: entranceRoomId(state.dungeon.dungeonId),
+        }),
         dungeon: null,
       };
     }

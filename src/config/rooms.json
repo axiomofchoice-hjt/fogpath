@@ -9,7 +9,7 @@
     "area": { "zh": "村庄周边", "en": "Village Outskirts" },
     "isSafeRoom": true,
     "itemIds": ["herb_bundle"],
-    "exits": ["village_shop", "forest_entrance"],
+    "exits": ["village_shop", "goblin_camp_entrance"],
     "pos": { "x": 0, "y": 0 },
     "npc": {
       "name": { "zh": "老汤姆", "en": "Elder Tom" },
@@ -62,17 +62,18 @@
       { "itemId": "mana_potion", "price": 8 }
     ]
   },
-  "forest_entrance": {
-    "id": "forest_entrance",
-    "name": { "zh": "森林入口", "en": "Forest Entrance" },
+  "goblin_camp_entrance": {
+    "id": "goblin_camp_entrance",
+    "name": { "zh": "哥布林营地入口", "en": "Goblin Camp Entrance" },
     "description": {
-      "zh": "村庄北缘的迷雾森林入口。林间雾气翻涌，一块歪斜的木牌上写着「前方危险」。准备好后，从这里进入森林地牢。",
-      "en": "The misty forest edge at the village's northern border. Fog churns between the trees; a crooked wooden sign reads \u201cDanger ahead\u201d. Enter the forest dungeon from here when ready."
+      "zh": "村庄北缘的密林边。林间飘着篝火烟味，远处传来哥布林嘈杂的叫嚷声。一块歪斜的木牌写着「哥布林营地——危险」。准备好后，从这里进入营地。",
+      "en": "The wooded edge at the village's northern border. Smoke from campfires drifts through the trees, and goblin clamor echoes in the distance. A crooked sign reads \u201cGoblin Camp — Danger\u201d. Enter the camp from here when ready."
     },
     "area": { "zh": "森林边缘", "en": "Forest Edge" },
     "isSafeRoom": true,
     "itemIds": [],
     "exits": ["village_square"],
-    "pos": { "x": 0, "y": -1 }
+    "pos": { "x": 0, "y": -1 },
+    "dungeonId": "goblin_camp"
   }
 }
