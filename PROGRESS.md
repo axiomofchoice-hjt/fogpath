@@ -66,6 +66,7 @@
 - [ ] 删除移动操作提示小字：村庄「出口 · WASD」（RoomView）与地牢「WASD move · X retreat · confirm intel to enter」（DungeonView，dungeon.hint），相应 i18n key 一并清理
 - [ ] 进入地牢按钮改为大按钮（水平占满，w-full；RoomView 的 room.dungeonId 按钮区域）
 - [ ] 撤离按钮移到底部操控栏最右边，复用原有文案 `dungeon.retreat`（「撤离（X）」），字体大小与 WASD 键相同，且仅在地牢内可撤离时（非战斗）显示（ControlBar 扩展；DungeonView 标题栏原撤离按钮相应移除）
+- [ ] 操控栏最左边新增横向「进入 (ENTER)」「返回 (BACKSPACE)」两个按钮，与 WASD 同字号，仅在可执行时出现：地牢情报卡片打开时出现（进入=进入该房开战，返回=关闭情报，支持 ENTER/BACKSPACE 快捷键）；村庄房间有地牢入口时只出现「进入 (ENTER)」（点击/ENTER 进入地牢）。原情报卡片按钮与 RoomView 进入地牢按钮相应移除
 
 ---
 
