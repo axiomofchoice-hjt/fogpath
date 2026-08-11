@@ -1,4 +1,6 @@
 import { rooms as roomMap } from "../../data/config";
+import type { DungeonState } from "../../types";
+import { assertInvariant } from "../../state/helpers";
 
 /** 方向键 → 坐标方向 */
 export function dirFromKey(key: string): { x: number; y: number } | null {
@@ -38,4 +40,34 @@ export function nearestInDir(
     }
   }
   return best;
+}
+
+export type DungeonStep =
+  | { kind: "blocked" }
+  | { kind: "intel"; x: number; y: number }
+  | { kind: "move"; dx: number; dy: number };
+
+/** 地牢移动判定（小地图点击与 WASD 共用）：越界/墙 blocked、未探索有敌人或 pending 重弹 intel、否则 move */
+export function dungeonStep(
+  dungeon: DungeonState,
+  dir: { x: number; y: number },
+  pending: { x: number; y: number } | null
+): DungeonStep {
+  assertInvariant(
+    Math.abs(dir.x) + Math.abs(dir.y) === 1,
+    "dungeonStep: 方向必须是正交单位步"
+  );
+  const { playerPos, size, rooms } = dungeon;
+  const nx = playerPos.x + dir.x;
+  const ny = playerPos.y + dir.y;
+  if (nx < 0 || ny < 0 || nx >= size.w || ny >= size.h) return { kind: "blocked" };
+  const target = rooms[ny][nx];
+  if (!target) return { kind: "blocked" };
+  if (pending && nx === pending.x && ny === pending.y) {
+    return { kind: "intel", x: nx, y: ny };
+  }
+  if (!target.explored && target.enemyIds.length > 0) {
+    return { kind: "intel", x: nx, y: ny };
+  }
+  return { kind: "move", dx: dir.x, dy: dir.y };
 }

@@ -4,7 +4,7 @@ import { useGame } from "../../state/useGame";
 import { dungeons as dungeonDefs, enemyDefs, items as itemDefs } from "../../data/config";
 import { useLang } from "../../i18n/useLang";
 import { loc, type Params, type TKey } from "../../i18n/translations";
-import { dirFromKey } from "../map/nav";
+import { dirFromKey, dungeonStep } from "../map/nav";
 import Typewriter from "../room/Typewriter";
 
 /** 当前房间的文字描述：类型底文 + 敌人/物品补充 */
@@ -62,21 +62,12 @@ function DungeonView({
       const dir = dirFromKey(e.key);
       if (!dir) return;
       e.preventDefault();
-      const { playerPos } = dungeon;
-      const nx = playerPos.x + dir.x;
-      const ny = playerPos.y + dir.y;
-      if (nx < 0 || ny < 0 || nx >= dungeon.size.w || ny >= dungeon.size.h) return;
-      const target = dungeon.rooms[ny][nx];
-      if (!target) return; // 墙（无房间）不可通行
-      // 情报打开时仍可移动；再次按向情报中的房间 → 保持/重弹情报（进入需点按钮）
-      if (pending && nx === pending.x && ny === pending.y) {
-        onPendingChange({ x: nx, y: ny });
-        return;
-      }
-      if (!target.explored && target.enemyIds.length > 0) {
-        onPendingChange({ x: nx, y: ny });
+      const step = dungeonStep(dungeon, dir, pending);
+      if (step.kind === "blocked") return;
+      if (step.kind === "intel") {
+        onPendingChange({ x: step.x, y: step.y });
       } else {
-        dispatch({ type: "DUNGEON_MOVE", dx: dir.x, dy: dir.y });
+        dispatch({ type: "DUNGEON_MOVE", dx: step.dx, dy: step.dy });
       }
     };
     window.addEventListener("keydown", onKey);
