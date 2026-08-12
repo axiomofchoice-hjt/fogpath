@@ -10,7 +10,7 @@ async function enterCampDungeon(page: Page) {
   await page.goto("/");
   await page.getByRole("button", { name: "进入村庄" }).click();
   await page.keyboard.press("w");
-  await page.getByRole("button", { name: "进入地牢" }).click();
+  await page.getByRole("button", { name: "进入地牢 (↵)" }).click();
 }
 
 /** 通过底部操控栏的「↵」按钮进入地牢 */
@@ -18,7 +18,7 @@ async function enterCampDungeonViaControl(page: Page) {
   await page.goto("/");
   await page.getByRole("button", { name: "进入村庄" }).click();
   await page.keyboard.press("w");
-  await page.getByRole("button", { name: "↵" }).click();
+  await page.getByTestId("control-enter").click();
 }
 
 test("村庄导航与商店", async ({ page }) => {
@@ -65,7 +65,7 @@ test("地牢：情报面板与撤离", async ({ page }) => {
   await expect(page.getByText("房间情报")).toBeVisible();
   await expect(page.getByText("哥布林", { exact: true })).toBeVisible();
   // 操控栏「←」关闭情报
-  await page.getByRole("button", { name: "←" }).click();
+  await page.getByTestId("control-back").click();
   await expect(page.getByText("房间情报")).toHaveCount(0);
 
   // Q 撤离：弹出撤离确认卡片（覆盖房间情报），ENTER 确认后回村庄
@@ -76,7 +76,7 @@ test("地牢：情报面板与撤离", async ({ page }) => {
   await expect(page.getByText("撤离确认")).toBeVisible();
   await page.keyboard.press("Enter");
   await expect(page.getByRole("heading", { name: "哥布林营地入口" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "进入地牢" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "进入地牢 (↵)" })).toBeVisible();
   await expect(page.getByRole("button", { name: "← 开始面板" })).toBeVisible();
 });
 
@@ -88,7 +88,7 @@ test("地牢：进房即战与回合推进", async ({ page }) => {
   await page.keyboard.press("d");
   await expect(page.getByText("房间情报")).toBeVisible();
   // 操控栏「↵」确认进入
-  await page.getByRole("button", { name: "↵" }).click();
+  await page.getByTestId("control-enter").click();
   await expect(page.getByRole("heading", { name: "战斗" })).toBeVisible();
   await expect(page.getByText("回合 0", { exact: true })).toBeVisible();
   // 敌人卡显示动作集：哥布林【普通攻击】【蓄力→重击】

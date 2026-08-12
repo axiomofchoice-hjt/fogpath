@@ -9,7 +9,7 @@ async function enterCampDungeon(page: import("@playwright/test").Page) {
   await page.goto("/");
   await page.getByRole("button", { name: "进入村庄" }).click();
   await page.keyboard.press("w");
-  await page.getByRole("button", { name: "进入地牢" }).click();
+  await page.getByRole("button", { name: "进入地牢 (↵)" }).click();
 }
 
 test("展开地图：当前房间格位于视口中心，格子 48×48", async ({ page }) => {

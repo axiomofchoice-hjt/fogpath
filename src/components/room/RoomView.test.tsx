@@ -19,7 +19,7 @@ describe("村庄房间视图", () => {
     renderGame(inVillage("village_square"));
     await user.keyboard("{w}");
     expect(screen.getByRole("heading", { name: "哥布林营地入口" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "进入地牢" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "进入地牢 (↵)" })).toBeInTheDocument();
     // 操控栏「↵」同步出现（与地牢入口按钮并存）
     expect(screen.getByRole("button", { name: "↵" })).toBeInTheDocument();
   });

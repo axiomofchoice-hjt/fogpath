@@ -133,7 +133,7 @@ describe("地牢视图", () => {
     expect(screen.getByText("撤离确认")).toBeInTheDocument();
     await user.keyboard("{Enter}");
     expect(screen.getByRole("heading", { name: "哥布林营地入口" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "进入地牢" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "进入地牢 (↵)" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "← 开始面板" })).toBeInTheDocument();
   });
 
