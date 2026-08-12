@@ -7,10 +7,10 @@ export const testScenarioGroups: TestScenarioGroup[] = [
     scenarios: [
       {
         id: "test_atk_vs_atk",
-        name: { zh: "攻击 vs 攻击（动量大者生效）", en: "Attack vs Attack (higher Momentum wins)" },
+        name: { zh: "攻击 vs 攻击（伤害高者生效）", en: "Attack vs Attack (higher Damage wins)" },
         description: {
-          zh: "攻击对撞：动量较大的一方生效，动量相等双方无效。",
-          en: "Attack vs attack: the side with higher Momentum takes effect; equal Momentum cancels both.",
+          zh: "攻击对撞：伤害较高的一方生效，伤害相等双方无效。",
+          en: "Attack vs attack: the side with higher Damage takes effect; equal Damage cancels both.",
         },
       },
       {
@@ -31,10 +31,10 @@ export const testScenarioGroups: TestScenarioGroup[] = [
       },
       {
         id: "test_clash_loss",
-        name: { zh: "动量压制（攻击被格挡）", en: "Momentum Suppression (deflected)" },
+        name: { zh: "伤害压制（攻击被格挡）", en: "Damage Suppression (deflected)" },
         description: {
-          zh: "敌方动量高于玩家时攻击被格挡，敌方反击命中。",
-          en: "When the enemy's Momentum exceeds yours, your attack is deflected and they counter.",
+          zh: "敌方伤害高于玩家攻击时攻击被格挡，敌方反击命中。",
+          en: "When the enemy's Damage exceeds your attack, your attack is deflected and they counter.",
         },
       },
     ],
@@ -61,8 +61,8 @@ export const testScenarioGroups: TestScenarioGroup[] = [
         id: "test_goblins_x3",
         name: { zh: "哥布林 ×3", en: "Goblins ×3" },
         description: {
-          zh: "整体判定：玩家攻击的动量须大于所有怪的攻击动量；防御/休息时全体怪同时攻击。",
-          en: "Group check: player attack Momentum must exceed all enemies' Momentum; all enemies strike when you guard or rest.",
+          zh: "整体判定：玩家攻击伤害须大于所有攻击怪的最高伤害；防御/休息时全体怪同时攻击。",
+          en: "Group check: player attack Damage must exceed the highest Damage among attacking enemies; all enemies strike when you guard or rest.",
         },
       },
     ],
@@ -97,8 +97,8 @@ export const testScenarioGroups: TestScenarioGroup[] = [
         id: "test_blind",
         name: { zh: "致盲", en: "Blind" },
         description: {
-          zh: "目标下一回合的攻击无法命中目标（不造成伤害），但动量的格挡对撞作用仍生效。",
-          en: "Target's attacks cannot hit next turn (no damage), but momentum blocking still works.",
+          zh: "目标下一回合的攻击无法命中目标（不造成伤害），但仍参与对撞压制（伤害比较）。",
+          en: "Target's attacks cannot hit next turn (no damage), but still participate in damage comparison.",
         },
       },
       {
