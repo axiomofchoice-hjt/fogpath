@@ -132,7 +132,7 @@ function DungeonView({ mapOpen, intel }: { mapOpen: boolean; intel: IntelState }
             <span className="text-xl">{guideHint.icon}</span>
             <span className="text-game-text text-xs font-mono font-bold">{guideHint.name}</span>
           </div>
-          <p className="text-game-text text-xs leading-relaxed italic">
+          <p className="text-game-text text-xs leading-relaxed">
             &ldquo;{guideHint.text}&rdquo;
           </p>
         </div>

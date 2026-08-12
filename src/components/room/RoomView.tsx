@@ -98,7 +98,7 @@ function RoomView({ mapOpen }: { mapOpen: boolean }) {
               {loc(room.npc.name, lang)}
             </span>
           </div>
-          <p className="text-game-text text-xs leading-relaxed italic">
+          <p className="text-game-text text-xs leading-relaxed">
             &ldquo;{loc(room.npc.dialogue[0], lang)}&rdquo;
           </p>
         </div>
