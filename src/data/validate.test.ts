@@ -5,11 +5,11 @@ import { validateDungeons, validateEnemies, validateItems, validateLoot, validat
 /** 静态布局测试用敌人表：boss 必含（bossId 校验最先触发） */
 const ENEMIES: Record<string, EnemyDef> = {
   boss: {
-    id: "boss", name: { zh: "a", en: "b" }, icon: "x", maxHp: 10, maxMp: 0, damage: 1, momentum: 1, isBoss: true,
+    id: "boss", name: { zh: "a", en: "b" }, icon: "x", maxHp: 10, maxMp: 0, damage: 1, isBoss: true,
     patterns: [{ id: "p", weight: 1, steps: [{ kind: "charge" }] }],
   },
   goblin: {
-    id: "goblin", name: { zh: "a", en: "b" }, icon: "x", maxHp: 10, maxMp: 0, damage: 1, momentum: 1,
+    id: "goblin", name: { zh: "a", en: "b" }, icon: "x", maxHp: 10, maxMp: 0, damage: 1,
     patterns: [{ id: "p", weight: 1, steps: [{ kind: "charge" }] }],
   },
 };
@@ -30,7 +30,7 @@ describe("配置校验", () => {
   it("非法物品：技能引用不存在被拒绝", () => {
     expect(() =>
       validateItems(
-        { sword: { id: "sword", name: { zh: "a", en: "b" }, icon: "x", type: "equipment", description: { zh: "a", en: "b" }, rarity: 1, actions: [{ skillId: "nope", damage: 1, momentum: 1 }] } },
+        { sword: { id: "sword", name: { zh: "a", en: "b" }, icon: "x", type: "equipment", description: { zh: "a", en: "b" }, rarity: 1, actions: [{ skillId: "nope", damage: 1 }] } },
         {},
       ),
     ).toThrow(/不存在的技能/);
@@ -47,14 +47,14 @@ describe("配置校验", () => {
 
   it("非法敌人：空模式数组被拒绝", () => {
     expect(() =>
-      validateEnemies({ goblin: { id: "goblin", name: { zh: "a", en: "b" }, icon: "x", maxHp: 10, maxMp: 0, damage: 1, momentum: 1, patterns: [] } }),
+      validateEnemies({ goblin: { id: "goblin", name: { zh: "a", en: "b" }, icon: "x", maxHp: 10, maxMp: 0, damage: 1, patterns: [] } }),
     ).toThrow(/patterns/);
   });
 
   it("非法敌人：未知步骤类型被拒绝", () => {
     expect(() =>
       validateEnemies({
-        goblin: { id: "goblin", name: { zh: "a", en: "b" }, icon: "x", maxHp: 10, maxMp: 0, damage: 1, momentum: 1, patterns: [{ id: "p", weight: 1, steps: [{ kind: "teleport" }] }] },
+        goblin: { id: "goblin", name: { zh: "a", en: "b" }, icon: "x", maxHp: 10, maxMp: 0, damage: 1, patterns: [{ id: "p", weight: 1, steps: [{ kind: "teleport" }] }] },
       }),
     ).toThrow(/未知步骤类型/);
   });
@@ -62,7 +62,7 @@ describe("配置校验", () => {
   it("非法敌人：攻击步骤数值为零被拒绝", () => {
     expect(() =>
       validateEnemies({
-        goblin: { id: "goblin", name: { zh: "a", en: "b" }, icon: "x", maxHp: 10, maxMp: 0, damage: 1, momentum: 1, patterns: [{ id: "p", weight: 1, steps: [{ kind: "attack", name: { zh: "a", en: "b" }, damage: 0, momentum: 1 }] }] },
+        goblin: { id: "goblin", name: { zh: "a", en: "b" }, icon: "x", maxHp: 10, maxMp: 0, damage: 1, patterns: [{ id: "p", weight: 1, steps: [{ kind: "attack", name: { zh: "a", en: "b" }, damage: 0 }] }] },
       }),
     ).toThrow(/大于 0/);
   });
@@ -86,7 +86,7 @@ describe("配置校验", () => {
   });
 
   it("Boss 标记（isBoss）合法", () => {
-    const out = validateEnemies({ goblin: { id: "goblin", name: { zh: "a", en: "b" }, icon: "x", maxHp: 10, maxMp: 0, damage: 1, momentum: 1, isBoss: true, patterns: [{ id: "p", weight: 1, steps: [{ kind: "charge" }] }] } });
+    const out = validateEnemies({ goblin: { id: "goblin", name: { zh: "a", en: "b" }, icon: "x", maxHp: 10, maxMp: 0, damage: 1, isBoss: true, patterns: [{ id: "p", weight: 1, steps: [{ kind: "charge" }] }] } });
     expect(out.goblin.isBoss).toBe(true);
   });
 
@@ -98,7 +98,7 @@ describe("配置校验", () => {
 
   it("蓄力步携带攻击数值被拒绝", () => {
     expect(() =>
-      validateEnemies({ goblin: { id: "goblin", name: { zh: "a", en: "b" }, icon: "x", maxHp: 10, maxMp: 0, damage: 1, momentum: 1, patterns: [{ id: "p", weight: 1, steps: [{ kind: "charge", damage: 5 }] }] } }),
+      validateEnemies({ goblin: { id: "goblin", name: { zh: "a", en: "b" }, icon: "x", maxHp: 10, maxMp: 0, damage: 1, patterns: [{ id: "p", weight: 1, steps: [{ kind: "charge", damage: 5 }] }] } }),
     ).toThrow(/蓄力步不允许额外字段/);
   });
 
@@ -106,7 +106,7 @@ describe("配置校验", () => {
     expect(() =>
       validateDungeons(
         { forest: { id: "forest", name: { zh: "a", en: "b" }, icon: "x", description: { zh: "a", en: "b" }, difficulty: 1, size: { w: 6, h: 6 }, roomCount: 8, enemyPool: [], itemPool: [], bossId: "b" } },
-        { b: { id: "b", name: { zh: "a", en: "b" }, icon: "x", maxHp: 1, maxMp: 0, damage: 1, momentum: 1, patterns: [] } },
+        { b: { id: "b", name: { zh: "a", en: "b" }, icon: "x", maxHp: 1, maxMp: 0, damage: 1, patterns: [] } },
         {},
       ),
     ).toThrow(/enemyPool/);
@@ -117,7 +117,7 @@ describe("配置校验", () => {
       validateLoot(
         { goblin: { items: [{ itemId: "ghost", chance: 0.5 }], gold: [0, 5] } },
         {},
-        { goblin: { id: "goblin", name: { zh: "a", en: "b" }, icon: "x", maxHp: 1, maxMp: 0, damage: 1, momentum: 1, patterns: [] } },
+        { goblin: { id: "goblin", name: { zh: "a", en: "b" }, icon: "x", maxHp: 1, maxMp: 0, damage: 1, patterns: [] } },
       ),
     ).toThrow(/不存在的物品/);
   });
@@ -128,18 +128,18 @@ describe("配置校验", () => {
 
   it("合法数据通过", () => {
     const skills = validateSkills({ hit: { id: "hit", name: { zh: "a", en: "b" }, icon: "x", type: "physical", mpCost: 1 } });
-    const items = validateItems({ sword: { id: "sword", name: { zh: "a", en: "b" }, icon: "x", type: "equipment", description: { zh: "a", en: "b" }, rarity: 1, actions: [{ skillId: "hit", damage: 1, momentum: 1 }] } }, skills);
-    validateEnemies({ goblin: { id: "goblin", name: { zh: "a", en: "b" }, icon: "x", maxHp: 10, maxMp: 0, damage: 1, momentum: 1, patterns: [{ id: "p", weight: 1, steps: [{ kind: "charge" }, { kind: "attack", name: { zh: "a", en: "b" }, damage: 1, momentum: 1 }] }] } });
+    const items = validateItems({ sword: { id: "sword", name: { zh: "a", en: "b" }, icon: "x", type: "equipment", description: { zh: "a", en: "b" }, rarity: 1, actions: [{ skillId: "hit", damage: 1 }] } }, skills);
+    validateEnemies({ goblin: { id: "goblin", name: { zh: "a", en: "b" }, icon: "x", maxHp: 10, maxMp: 0, damage: 1, patterns: [{ id: "p", weight: 1, steps: [{ kind: "charge" }, { kind: "attack", name: { zh: "a", en: "b" }, damage: 1 }] }] } });
     validateRooms({ room: { id: "room", name: { zh: "a", en: "b" }, description: { zh: "a", en: "b" }, area: { zh: "a", en: "b" }, isSafeRoom: true, itemIds: ["sword"], exits: [], pos: { x: 0, y: 0 }, npc: { name: { zh: "a", en: "b" }, icon: "x", dialogue: [{ zh: "a", en: "b" }] } } }, items);
-    const enemies = validateEnemies({ goblin: { id: "goblin", name: { zh: "a", en: "b" }, icon: "x", maxHp: 10, maxMp: 0, damage: 1, momentum: 1, patterns: [{ id: "p", weight: 1, steps: [{ kind: "charge" }] }] } });
+    const enemies = validateEnemies({ goblin: { id: "goblin", name: { zh: "a", en: "b" }, icon: "x", maxHp: 10, maxMp: 0, damage: 1, patterns: [{ id: "p", weight: 1, steps: [{ kind: "charge" }] }] } });
     validateDungeons({ forest: { id: "forest", name: { zh: "a", en: "b" }, icon: "x", description: { zh: "a", en: "b" }, difficulty: 1, size: { w: 6, h: 6 }, roomCount: 8, enemyPool: [{ enemyId: "goblin", minDepth: 0, maxDepth: 2, weight: 1 }], itemPool: ["sword"], bossId: "goblin" } }, enemies, items);
     validateLoot({ goblin: { items: [{ itemId: "sword", chance: 0.5 }], gold: [1, 5] } }, items, enemies);
   });
 
   it("静态布局地牢：合法数据通过（layout/rooms/guide）", () => {
     const enemies = validateEnemies({
-      goblin: { id: "goblin", name: { zh: "a", en: "b" }, icon: "x", maxHp: 10, maxMp: 0, damage: 1, momentum: 1, patterns: [{ id: "p", weight: 1, steps: [{ kind: "attack", name: { zh: "a", en: "b" }, damage: 1, momentum: 1 }] }] },
-      boss: { id: "boss", name: { zh: "a", en: "b" }, icon: "x", maxHp: 10, maxMp: 0, damage: 1, momentum: 1, isBoss: true, patterns: [{ id: "p", weight: 1, steps: [{ kind: "charge" }] }] },
+      goblin: { id: "goblin", name: { zh: "a", en: "b" }, icon: "x", maxHp: 10, maxMp: 0, damage: 1, patterns: [{ id: "p", weight: 1, steps: [{ kind: "attack", name: { zh: "a", en: "b" }, damage: 1 }] }] },
+      boss: { id: "boss", name: { zh: "a", en: "b" }, icon: "x", maxHp: 10, maxMp: 0, damage: 1, isBoss: true, patterns: [{ id: "p", weight: 1, steps: [{ kind: "charge" }] }] },
     });
     const items = validateItems({}, {});
     const out = validateDungeons({
@@ -277,7 +277,7 @@ describe("配置校验", () => {
     expect(() =>
       validateEnemies({
         goblin: {
-          id: "goblin", name: { zh: "a", en: "b" }, icon: "x", maxHp: 10, maxMp: 0, damage: 1, momentum: 1,
+          id: "goblin", name: { zh: "a", en: "b" }, icon: "x", maxHp: 10, maxMp: 0, damage: 1,
           moves: [{ name: { zh: "闪电", en: "Bolt" }, charge: 0 }],
           patterns: [{ id: "p", weight: 1, steps: [{ kind: "charge" }] }],
         },

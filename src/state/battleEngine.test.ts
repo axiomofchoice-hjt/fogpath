@@ -39,14 +39,13 @@ describe("initBattle", () => {
   it("默认装备提供普通攻击动作，识别盾牌减伤", () => {
     const battle = initBattle("test_atk_vs_atk", testPlayer());
     expect(battle.playerActions).toEqual([
-      { skillId: "basic_attack", damage: 10, momentum: 5 },
+      { skillId: "basic_attack", damage: 10 },
     ]);
     expect(battle.guardReduction).toBe(SHIELD_REDUCTION);
     expect(battle.playerStats).toMatchObject({
       hp: 100,
       mp: 100,
       damage: 0,
-      momentum: 0,
       hasAttack: false,
     });
     expect(battle.turn).toBe(0);
@@ -77,7 +76,6 @@ describe("initBattle", () => {
         hp: 30,
         hasAttack: false,
         maxDamage: 8,
-        maxMomentum: 4,
         pattern: { stepIndex: 0 },
         lastPatternId: null,
       });
@@ -104,7 +102,7 @@ describe("pickPattern（模式选取与防重复）", () => {
 });
 
 describe("resolveTurn：蓄力回合", () => {
-  it("蓄力回合：敌人无攻击属性，玩家全额命中、动量不消耗", () => {
+  it("蓄力回合：敌人无攻击属性，玩家全额命中", () => {
     const battle = setPattern(initBattle("test_atk_vs_atk", testPlayer()), 0, "combo");
     const next = resolveTurn(battle, {
       kind: "attack",
@@ -113,9 +111,8 @@ describe("resolveTurn：蓄力回合", () => {
     });
     expect(next.enemies[0].hp).toBe(20); // 全额 10
     expect(next.playerStats.hp).toBe(100); // 蓄力不反击
-    expect(next.playerStats.momentum).toBe(5); // 无对撞，动量保留
     expect(next.playerStats.damage).toBe(10);
-    expect(next.enemies[0]).toMatchObject({ momentum: 0, damage: 0, hasAttack: false });
+    expect(next.enemies[0]).toMatchObject({ damage: 0, hasAttack: false });
   });
 
   it("蓄力不可打断：蓄力回合被命中，下回合蓄力技照常释放", () => {
@@ -133,21 +130,62 @@ describe("resolveTurn：蓄力回合", () => {
 });
 
 describe("resolveTurn：蓄力技", () => {
-  it("连击蓄力技（14/6）：压制玩家 5 动量，攻击被全数格挡", () => {
+  it("连击蓄力技（14）：压制玩家攻击，玩家被全数格挡", () => {
+    const battle = setPattern(initBattle("test_atk_vs_atk", testPlayer()), 0, "combo", 1);
+    const next = resolveTurn(battle, {
+      kind: "attack",
+      skillId: "basic_attack",
+      targetIndex: 0,
+    }); // 10 vs 14 → 被格挡
+    expect(next.enemies[0].hp).toBe(30);
+    expect(next.playerStats.hp).toBe(100 - 14); // 怪全额命中
+    expect(next.playerStats).toMatchObject({ damage: 0 });
+    // 敌方为赢家：伤害显示满值 14
+    expect(next.enemies[0]).toMatchObject({ damage: 14 });
+  });
+
+  it("重击（20）：压制玩家攻击，全额命中", () => {
+    const battle = setPattern(initBattle("test_atk_vs_atk", testPlayer()), 0, "heavy", 2);
+    const next = resolveTurn(battle, {
+      kind: "attack",
+      skillId: "basic_attack",
+      targetIndex: 0,
+    }); // 10 vs 20 → 被格挡
+    expect(next.enemies[0].hp).toBe(30);
+    expect(next.playerStats.hp).toBe(100 - 20); // 重击 20 全额命中
+    expect(next.enemies[0]).toMatchObject({ damage: 20 });
+    expect(next.enemies[0].summary.zh).toContain("重击");
+  });
+});
+
+describe("resolveTurn：对撞（伤害比较）", () => {
+  it("伤害高者生效：玩家全额命中（蓄力怪无攻击，无对撞）", () => {
+    const battle = setPattern(initBattle("test_atk_vs_atk", testPlayer()), 0, "combo");
+    const next = resolveTurn(battle, {
+      kind: "attack",
+      skillId: "basic_attack",
+      targetIndex: 0,
+    }); // 10 vs 蓄力(无攻击) → 必中
+    expect(next.enemies[0].hp).toBe(20);
+    expect(next.playerStats.hp).toBe(100);
+    expect(next.playerStats.damage).toBe(10);
+    expect(next.enemies[0]).toMatchObject({ damage: 0, hasAttack: false });
+  });
+
+  it("伤害被压制：攻击被全数格挡，敌方反击命中（10 vs 蓄力技 14）", () => {
     const battle = setPattern(initBattle("test_atk_vs_atk", testPlayer()), 0, "combo", 1);
     const next = resolveTurn(battle, {
       kind: "attack",
       skillId: "basic_attack",
       targetIndex: 0,
     });
-    expect(next.enemies[0].hp).toBe(30);
-    expect(next.playerStats.hp).toBe(100 - 14); // 缠斗胜出，全额命中
-    expect(next.playerStats).toMatchObject({ momentum: 0, damage: 0 });
-    // 敌方为赢家：动量 6-5=1，伤害显示满值 14
-    expect(next.enemies[0]).toMatchObject({ momentum: 1, damage: 14 });
+    expect(next.enemies[0].hp).toBe(30); // 玩家攻击被格挡
+    expect(next.playerStats.hp).toBe(100 - 14); // 怪命中
+    expect(next.playerStats).toMatchObject({ damage: 0 });
+    expect(next.enemies[0]).toMatchObject({ damage: 14 });
   });
 
-  it("重击（20/8）：高动量压制并反制玩家防御线", () => {
+  it("重击（20）：压制玩家攻击，全额命中", () => {
     const battle = setPattern(initBattle("test_atk_vs_atk", testPlayer()), 0, "heavy", 2);
     const next = resolveTurn(battle, {
       kind: "attack",
@@ -155,50 +193,39 @@ describe("resolveTurn：蓄力技", () => {
       targetIndex: 0,
     });
     expect(next.enemies[0].hp).toBe(30);
-    expect(next.playerStats.hp).toBe(100 - 20); // 重击 20 全额命中
-    expect(next.enemies[0]).toMatchObject({ momentum: 3, damage: 20 });
+    expect(next.playerStats.hp).toBe(100 - 20);
+    expect(next.enemies[0]).toMatchObject({ damage: 20 });
     expect(next.enemies[0].summary.zh).toContain("重击");
   });
-});
 
-describe("resolveTurn：对撞", () => {
-  it("动量大者生效：全额命中", () => {
-    const battle = setPattern(initBattle("test_magic_trio", testPlayer()), 0, "combo", 1);
-    const next = resolveTurn(battle, {
-      kind: "attack",
-      skillId: "rock_bolt",
-      targetIndex: 0,
-    }); // 8/7 vs 14/6
-    expect(next.playerStats.mp).toBe(100 - 8);
-    expect(next.enemies[0].hp).toBe(22); // 全额 8
-    expect(next.playerStats).toMatchObject({ momentum: 1, damage: 8 });
-    expect(next.enemies[0]).toMatchObject({ momentum: 0, damage: 0 });
-  });
-
-  it("动量相等：双方攻击均被格挡", () => {
-    const battle = setPattern(initBattle("test_magic_trio", testPlayer()), 0, "combo", 1);
-    const next = resolveTurn(battle, {
-      kind: "attack",
-      skillId: "lightning",
-      targetIndex: 0,
-    }); // 9/6 vs 14/6
-    expect(next.enemies[0].hp).toBe(30);
-    expect(next.playerStats).toMatchObject({ momentum: 0, damage: 0 });
-    expect(next.enemies[0]).toMatchObject({ momentum: 0, damage: 0 });
-    expect(next.log.some((l) => l.zh.includes("格挡"))).toBe(true);
-  });
-
-  it("动量被压制：攻击被全数格挡，敌方反击", () => {
+  it("伤害压制（壮汉 12）：玩家 10 被格挡，反击 12", () => {
     const battle = setPattern(initBattle("test_clash_loss", testPlayer()), 0, "press");
     const next = resolveTurn(battle, {
       kind: "attack",
       skillId: "basic_attack",
       targetIndex: 0,
-    }); // 10/5 vs 12/7
+    }); // 10 vs 12 → 被格挡
     expect(next.enemies[0].hp).toBe(45);
-    expect(next.playerStats.hp).toBe(88); // 壮汉 12 全额命中
-    expect(next.playerStats).toMatchObject({ momentum: 0, damage: 0 });
-    expect(next.enemies[0]).toMatchObject({ momentum: 2, damage: 12 });
+    expect(next.playerStats.hp).toBe(88);
+    expect(next.playerStats).toMatchObject({ damage: 0 });
+    expect(next.enemies[0]).toMatchObject({ damage: 12 });
+  });
+
+  it("伤害相等：双方攻击均被格挡（铁剑 12 vs 壮汉 12）", () => {
+    const player = testPlayer({
+      equipment: ["iron_sword", "rusty_shield", null, null, null, null],
+    });
+    const battle = setPattern(initBattle("test_clash_loss", player), 0, "press");
+    const next = resolveTurn(battle, {
+      kind: "attack",
+      skillId: "basic_attack",
+      targetIndex: 0,
+    });
+    expect(next.enemies[0].hp).toBe(45);
+    expect(next.playerStats.hp).toBe(100);
+    expect(next.playerStats).toMatchObject({ damage: 0 });
+    expect(next.enemies[0]).toMatchObject({ damage: 0 });
+    expect(next.log.some((l) => l.zh.includes("格挡"))).toBe(true);
   });
 });
 
@@ -244,7 +271,7 @@ describe("resolveTurn：防御与休息", () => {
     expect(next.playerStats.hp).toBe(100 - 14);
     expect(next.playerStats.mp).toBe(100);
     expect(next.playerSummary.zh).toContain(`恢复了 ${REST_MP} 点 MP`);
-    expect(next.playerStats).toMatchObject({ damage: 0, momentum: 0, hasAttack: false });
+    expect(next.playerStats).toMatchObject({ damage: 0, hasAttack: false });
   });
 });
 
@@ -285,39 +312,76 @@ describe("resolveTurn：使用道具", () => {
 });
 
 describe("resolveTurn：多怪", () => {
-  it("整体判定：动量须大于所有攻击步的怪，被压制则全数格挡", () => {
+  it("整体判定：玩家伤害须大于所有攻击怪的最高伤害，被压制则全数格挡", () => {
     const battle = initBattle("test_goblins_x3", testPlayer());
     const forced = battle.enemies.map((e) => ({
       ...e,
       pattern: { patternId: "combo", stepIndex: 1 },
       lastPatternId: null,
-    }));
+    })); // 三只攻击 14
     const next = resolveTurn({ ...battle, enemies: forced }, {
       kind: "attack",
       skillId: "basic_attack",
       targetIndex: 1,
-    }); // 5 vs max 6 → 被压制
+    }); // 10 vs max 14 → 被压制
     expect(next.enemies[1].hp).toBe(30);
     expect(next.playerStats.hp).toBe(100 - 14 * 3); // 三只哥布林全额命中
-    expect(next.playerStats).toMatchObject({ momentum: 0, damage: 0 });
+    expect(next.playerStats).toMatchObject({ damage: 0 });
   });
 
-  it("只算攻击步的怪参与对撞与反击", () => {
+  it("逐怪单独判定：伤害 ≤ 玩家伤害的怪被格挡（含平局），高于玩家才命中", () => {
+    const player = testPlayer({
+      equipment: ["iron_sword", "rusty_shield", null, null, null, null],
+    });
+    const battle = initBattle("test_goblins_x3", player);
+    const forced = [
+      { ...battle.enemies[0], defId: "goblin", pattern: { patternId: "combo", stepIndex: 1 }, lastPatternId: null },        // 攻击 14
+      { ...battle.enemies[1], defId: "goblin_brute", pattern: { patternId: "press", stepIndex: 0 }, lastPatternId: null },  // 攻击 12
+      { ...battle.enemies[2], defId: "goblin", pattern: { patternId: "combo", stepIndex: 0 }, lastPatternId: null },        // 蓄力
+    ];
+    const next = resolveTurn({ ...battle, enemies: forced }, {
+      kind: "attack",
+      skillId: "basic_attack",
+      targetIndex: 0,
+    }); // 12 vs max 14 → 玩家被格挡；逐怪：14>12 命中、12==12 平局被格挡
+    expect(next.playerStats.hp).toBe(100 - 14);
+    expect(next.enemies[0].hp).toBe(30); // 玩家攻击被格挡，未命中
+    expect(next.enemies[1].damage).toBe(0); // 平局怪伤害显示 0（被格挡）
+    expect(next.enemies[2].hp).toBe(30); // 蓄力怪不参与
+  });
+
+  it("只算攻击步的怪参与判定与反击，蓄力怪不攻击", () => {
     const battle = initBattle("test_goblins_x3", testPlayer());
     const forced = battle.enemies.map((e, i) => ({
       ...e,
       pattern:
         i === 0
           ? { patternId: "combo", stepIndex: 0 } // 蓄力
-          : { patternId: "heavy", stepIndex: 2 }, // 重击 20/8
+          : { patternId: "heavy", stepIndex: 2 }, // 重击 20
       lastPatternId: null,
     }));
     const next = resolveTurn({ ...battle, enemies: forced }, {
       kind: "attack",
       skillId: "basic_attack",
       targetIndex: 0,
-    }); // 对撞只看重击怪动量 8 → 被压制
+    }); // 10 vs max 20 → 被压制
     expect(next.playerStats.hp).toBe(100 - 20 * 2); // 两只重击怪各全额命中 20
+  });
+
+  it("全部蓄力：玩家必中目标，无怪反击", () => {
+    const battle = initBattle("test_goblins_x3", testPlayer());
+    const charging = battle.enemies.map((e) => ({
+      ...e,
+      pattern: { patternId: "combo", stepIndex: 0 },
+      lastPatternId: null,
+    }));
+    const next = resolveTurn({ ...battle, enemies: charging }, {
+      kind: "attack",
+      skillId: "basic_attack",
+      targetIndex: 1,
+    });
+    expect(next.enemies[1].hp).toBe(20);
+    expect(next.playerStats.hp).toBe(100);
   });
 
   it("休息/防御时全体攻击步的怪同时攻击，蓄力怪不攻击", () => {

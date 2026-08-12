@@ -6,7 +6,7 @@
     "maxHp": 30,
     "maxMp": 10,
     "damage": 8,
-    "momentum": 4,
+
     "moves": [
       { "name": { "zh": "普通攻击", "en": "Basic Attack" }, "charge": 0 },
       { "name": { "zh": "重击", "en": "Heavy Blow" }, "charge": 1 }
@@ -20,8 +20,7 @@
           {
             "kind": "attack",
             "name": { "zh": "普通攻击", "en": "Basic Attack" },
-            "damage": 14,
-            "momentum": 6
+            "damage": 14
           }
         ]
       },
@@ -34,8 +33,7 @@
           {
             "kind": "attack",
             "name": { "zh": "重击", "en": "Heavy Blow" },
-            "damage": 20,
-            "momentum": 8
+            "damage": 20
           }
         ]
       }
@@ -48,7 +46,7 @@
     "maxHp": 30,
     "maxMp": 10,
     "damage": 8,
-    "momentum": 4,
+
     "moves": [
       { "name": { "zh": "普通攻击", "en": "Basic Attack" }, "charge": 0 },
       { "name": { "zh": "重击", "en": "Heavy Blow" }, "charge": 1 }
@@ -58,15 +56,15 @@
         "id": "loop",
         "weight": 10,
         "steps": [
-          { "kind": "attack", "name": { "zh": "普通攻击", "en": "Basic Attack" }, "damage": 14, "momentum": 6 },
-          { "kind": "attack", "name": { "zh": "普通攻击", "en": "Basic Attack" }, "damage": 14, "momentum": 6 },
+          { "kind": "attack", "name": { "zh": "普通攻击", "en": "Basic Attack" }, "damage": 14 },
+          { "kind": "attack", "name": { "zh": "普通攻击", "en": "Basic Attack" }, "damage": 14 },
           { "kind": "charge" },
-          { "kind": "attack", "name": { "zh": "重击", "en": "Heavy Blow" }, "damage": 20, "momentum": 8 },
+          { "kind": "attack", "name": { "zh": "重击", "en": "Heavy Blow" }, "damage": 20 },
           { "kind": "charge" },
-          { "kind": "attack", "name": { "zh": "重击", "en": "Heavy Blow" }, "damage": 20, "momentum": 8 },
-          { "kind": "attack", "name": { "zh": "普通攻击", "en": "Basic Attack" }, "damage": 14, "momentum": 6 },
+          { "kind": "attack", "name": { "zh": "重击", "en": "Heavy Blow" }, "damage": 20 },
+          { "kind": "attack", "name": { "zh": "普通攻击", "en": "Basic Attack" }, "damage": 14 },
           { "kind": "charge" },
-          { "kind": "attack", "name": { "zh": "重击", "en": "Heavy Blow" }, "damage": 20, "momentum": 8 }
+          { "kind": "attack", "name": { "zh": "重击", "en": "Heavy Blow" }, "damage": 20 }
         ]
       }
     ]
@@ -78,7 +76,7 @@
     "maxHp": 45,
     "maxMp": 10,
     "damage": 12,
-    "momentum": 7,
+
     "patterns": [
       {
         "id": "press",
@@ -87,14 +85,12 @@
           {
             "kind": "attack",
             "name": { "zh": "普通攻击", "en": "Basic Attack" },
-            "damage": 12,
-            "momentum": 7
+            "damage": 12
           },
           {
             "kind": "attack",
             "name": { "zh": "普通攻击", "en": "Basic Attack" },
-            "damage": 12,
-            "momentum": 7
+            "damage": 12
           }
         ]
       },
@@ -107,8 +103,7 @@
           {
             "kind": "attack",
             "name": { "zh": "重击", "en": "Heavy Blow" },
-            "damage": 30,
-            "momentum": 12
+            "damage": 30
           }
         ]
       }
@@ -121,7 +116,7 @@
     "maxHp": 80,
     "maxMp": 20,
     "damage": 16,
-    "momentum": 9,
+
     "isBoss": true,
     "patterns": [
       {
@@ -132,14 +127,12 @@
           {
             "kind": "attack",
             "name": { "zh": "王冠突刺", "en": "Crown Thrust" },
-            "damage": 24,
-            "momentum": 10
+            "damage": 24
           },
           {
             "kind": "attack",
             "name": { "zh": "王冠突刺", "en": "Crown Thrust" },
-            "damage": 24,
-            "momentum": 10
+            "damage": 24
           }
         ]
       },
@@ -152,8 +145,7 @@
           {
             "kind": "attack",
             "name": { "zh": "王之重击", "en": "King's Crush" },
-            "damage": 42,
-            "momentum": 14
+            "damage": 42
           }
         ]
       }

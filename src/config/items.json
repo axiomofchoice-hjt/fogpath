@@ -14,7 +14,7 @@
     "type": "equipment",
     "description": { "zh": "一把磨损但尚能一战的剑。", "en": "A worn but serviceable blade." },
     "rarity": 1,
-    "actions": [{ "skillId": "basic_attack", "damage": 10, "momentum": 5 }]
+    "actions": [{ "skillId": "basic_attack", "damage": 10 }]
   },
   "apprentice_staff": {
     "id": "apprentice_staff",
@@ -27,9 +27,9 @@
     },
     "rarity": 2,
     "actions": [
-      { "skillId": "fireball", "damage": 11, "momentum": 5 },
-      { "skillId": "lightning", "damage": 9, "momentum": 6 },
-      { "skillId": "rock_bolt", "damage": 8, "momentum": 7 }
+      { "skillId": "fireball", "damage": 11 },
+      { "skillId": "lightning", "damage": 9 },
+      { "skillId": "rock_bolt", "damage": 8 }
     ]
   },
   "iron_sword": {
@@ -39,7 +39,7 @@
     "type": "equipment",
     "description": { "zh": "一把坚固的铁剑。", "en": "A sturdy iron blade." },
     "rarity": 2,
-    "actions": [{ "skillId": "basic_attack", "damage": 12, "momentum": 6 }]
+    "actions": [{ "skillId": "basic_attack", "damage": 12 }]
   },
   "leather_cap": {
     "id": "leather_cap",

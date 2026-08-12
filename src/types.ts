@@ -15,11 +15,10 @@ export type ItemType = "equipment" | "consumable" | "currency" | "pet";
 
 export const EQUIP_SLOT_COUNT = 6;
 
-/** 装备提供的攻击动作：引用技能，自带伤害/动量（玩家本身无属性） */
+/** 装备提供的攻击动作：引用技能，自带伤害（玩家本身无属性） */
 export interface ItemAction {
   skillId: string;
   damage: number;
-  momentum: number;
 }
 
 export interface ItemDef {
@@ -167,21 +166,17 @@ export interface Player {
 
 // --- Game State ---
 
-/** 战斗单位的属性槽（玩家与敌人同形；伤害/动量每回合重置） */
+/** 战斗单位的属性槽（玩家与敌人同形；伤害每回合重置） */
 export interface CombatStats {
   hp: number;
   maxHp: number;
   mp: number;
   maxMp: number;
-  /** 伤害资源：对撞后减少，归零时攻击无效 */
+  /** 本回合攻击动作的伤害值（由所选动作决定；防御/休息回合为 0，被格挡显示 0） */
   damage: number;
   /** 本回合攻击动作的伤害满值（由所选动作决定；防御/休息回合为 0） */
   maxDamage: number;
-  /** 动量资源：对撞后减少，归零时伤害变灰（攻击无法命中） */
-  momentum: number;
-  /** 本回合攻击动作的动量满值（由所选动作决定；防御/休息回合为 0） */
-  maxMomentum: number;
-  /** 本回合动作是否带攻击属性（防御/休息/未出手时为 false，显示 0/0） */
+  /** 本回合动作是否带攻击属性（防御/休息/未出手时为 false，显示 0） */
   hasAttack: boolean;
 }
 
@@ -189,11 +184,11 @@ export interface CombatStats {
 export interface BattleState {
   scenarioId: string;
   turn: number;
-  /** 玩家属性槽（HP/MP/伤害/动量） */
+  /** 玩家属性槽（HP/MP/伤害） */
   playerStats: CombatStats;
   /** 玩家本回合动作摘要（双语） */
   playerSummary: L;
-  /** 装备提供的攻击动作快照（技能 + 伤害/动量） */
+  /** 装备提供的攻击动作快照（技能 + 伤害） */
   playerActions: ItemAction[];
   /** 进战斗时的装备快照（供 UI 显示来源；测试场景可覆盖） */
   equipment: (string | null)[];
@@ -229,7 +224,7 @@ export interface SkillDef {
 /** 模式步：蓄力回合（不攻击）或攻击步（蓄力技，显式数值） */
 export type PatternStep =
   | { kind: "charge" }
-  | { kind: "attack"; name: L; damage: number; momentum: number };
+  | { kind: "attack"; name: L; damage: number };
 
 /** 敌人攻击模式：固定动作序列，模式内部完全确定（GDD 2.4.9） */
 export interface AttackPattern {
@@ -253,7 +248,6 @@ export interface EnemyDef {
   maxHp: number;
   maxMp: number;
   damage: number;
-  momentum: number;
   /** Boss 标记（Boss 房、掉落表区分；强化模板见 GDD 2.4.6） */
   isBoss?: boolean;
   /** 玩家可见动作集（战斗卡片显示；所有哥布林变种统一以掩盖类型差异） */
@@ -270,9 +264,7 @@ export interface BattleEnemy {
   maxMp: number;
   damage: number;
   maxDamage: number;
-  momentum: number;
-  maxMomentum: number;
-  /** 本回合动作是否带攻击属性（蓄力/未出手时为 false，显示 0/0） */
+  /** 本回合动作是否带攻击属性（蓄力/未出手时为 false，显示 0） */
   hasAttack: boolean;
   /** Boss 标记（战斗界面显示徽标） */
   isBoss: boolean;

@@ -127,11 +127,10 @@ export function validateItems(raw: unknown, skills: Record<string, SkillDef>): R
       }
       item.actions = rec.actions.map((a, i) => {
         const apath = `${path}.actions[${i}]`;
-        const arec = assertRecord(a, apath, ["skillId", "damage", "momentum"]);
+        const arec = assertRecord(a, apath, ["skillId", "damage"]);
         return {
           skillId: assertSkillId(arec.skillId, `${apath}.skillId`, skillIds),
           damage: assertNumber(arec.damage, `${apath}.damage`, { gt: 0 }),
-          momentum: assertNumber(arec.momentum, `${apath}.momentum`, { gt: 0 }),
         };
       });
     }
@@ -146,7 +145,7 @@ export function validateEnemies(raw: unknown): Record<string, EnemyDef> {
   for (const [key, value] of Object.entries(root)) {
     const path = `enemies.json:${key}`;
     const rec = assertRecord(value, path, [
-      "id", "name", "icon", "maxHp", "maxMp", "damage", "momentum", "isBoss", "moves", "patterns",
+      "id", "name", "icon", "maxHp", "maxMp", "damage", "isBoss", "moves", "patterns",
     ]);
     const id = assertString(rec.id, `${path}.id`);
     assertKeyMatch(key, id, path);
@@ -168,7 +167,7 @@ export function validateEnemies(raw: unknown): Record<string, EnemyDef> {
         weight: assertNumber(prec.weight, `${ppath}.weight`, { gt: 0 }),
         steps: prec.steps.map((s, si) => {
           const spath = `${ppath}.steps[${si}]`;
-          const srec = assertRecord(s, spath, ["kind", "name", "damage", "momentum"]);
+          const srec = assertRecord(s, spath, ["kind", "name", "damage"]);
           const kind = assertString(srec.kind, `${spath}.kind`);
           if (kind === "charge") {
             const extra = Object.keys(srec).filter((k) => k !== "kind");
@@ -180,7 +179,6 @@ export function validateEnemies(raw: unknown): Record<string, EnemyDef> {
               kind: "attack" as const,
               name: assertL(srec.name, `${spath}.name`),
               damage: assertNumber(srec.damage, `${spath}.damage`, { gt: 0 }),
-              momentum: assertNumber(srec.momentum, `${spath}.momentum`, { gt: 0 }),
             };
           }
           fail(spath, `未知步骤类型 "${kind}"`);
@@ -216,7 +214,6 @@ export function validateEnemies(raw: unknown): Record<string, EnemyDef> {
       maxHp: assertNumber(rec.maxHp, `${path}.maxHp`, { gt: 0 }),
       maxMp: assertNumber(rec.maxMp, `${path}.maxMp`, { gte: 0 }),
       damage: assertNumber(rec.damage, `${path}.damage`, { gte: 0 }),
-      momentum: assertNumber(rec.momentum, `${path}.momentum`, { gte: 0 }),
       ...(rec.isBoss !== undefined ? { isBoss: assertBoolean(rec.isBoss, `${path}.isBoss`) } : {}),
       ...(moves ? { moves } : {}),
       patterns,

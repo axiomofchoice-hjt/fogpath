@@ -48,7 +48,6 @@ describe("敌人定义", () => {
         for (const step of pattern.steps) {
           if (step.kind === "attack") {
             expect(step.damage, `${def.id}:${pattern.id}`).toBeGreaterThan(0);
-            expect(step.momentum, `${def.id}:${pattern.id}`).toBeGreaterThan(0);
           }
         }
       }
