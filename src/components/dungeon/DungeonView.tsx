@@ -4,8 +4,10 @@ import { useGame } from "../../state/useGame";
 import { dungeons as dungeonDefs, enemyDefs, items as itemDefs } from "../../data/config";
 import { useLang } from "../../i18n/useLang";
 import { loc, type Params, type TKey } from "../../i18n/translations";
-import { dirFromKey, dungeonStep } from "../map/nav";
+import { dirFromKey } from "../map/nav";
 import Typewriter from "../room/Typewriter";
+import { controlBack, controlEnter, controlMoveDir, controlRetreat, type IntelState } from "../control/controlActions";
+import { GoldWideButton } from "../ui/buttons";
 
 /** 当前房间的文字描述：类型底文 + 敌人/物品补充（分隔符按语言：zh 顿号/句号，en 逗号/空格） */
 function roomDescription(
@@ -32,29 +34,19 @@ function roomDescription(
 }
 
 /** 地牢视图：文字展示当前房间 + 地牢网格 + 情报/撤离确认卡片；WASD 移动、Q 撤离（GDD 4.1）
- *  pending / retreatOpen 状态提升到 App（底部操控栏需感知以显示按钮） */
-function DungeonView({
-  mapOpen,
-  pending,
-  onPendingChange,
-  retreatOpen,
-  onRetreatOpenChange,
-}: {
-  mapOpen: boolean;
-  pending: { x: number; y: number } | null;
-  onPendingChange: (p: { x: number; y: number } | null) => void;
-  retreatOpen: boolean;
-  onRetreatOpenChange: (open: boolean) => void;
-}) {
+ *  intel 状态提升到 App（底部操控栏需感知以显示按钮） */
+function DungeonView({ mapOpen, intel }: { mapOpen: boolean; intel: IntelState }) {
   const { state, dispatch } = useGame();
   const { t, lang } = useLang();
   const dungeon = state.dungeon;
   const def = dungeon ? dungeonDefs[dungeon.dungeonId] : undefined;
+  const { pending, retreatOpen, onPendingChange, onRetreatOpenChange } = intel;
 
+  // 进战斗/地牢变化（移动/拾取等）时关闭情报与撤离确认（原 App 层 effect 合并于此）
   useEffect(() => {
     onPendingChange(null);
     onRetreatOpenChange(false);
-  }, [state.battle, onPendingChange, onRetreatOpenChange]);
+  }, [state.battle, dungeon, onPendingChange, onRetreatOpenChange]);
 
   useEffect(() => {
     if (!dungeon) return;
@@ -64,50 +56,39 @@ function DungeonView({
       // Q：打开撤离确认（与情报互斥——情报随之关闭）；已打开则保持
       if (e.key.toLowerCase() === "q") {
         e.preventDefault();
-        if (!retreatOpen) {
-          onPendingChange(null);
-          onRetreatOpenChange(true);
-        }
+        controlRetreat(intel);
         return;
       }
       // 撤离确认打开时：ENTER 确认撤离、BACKSPACE 取消
       if (retreatOpen && e.key === "Enter") {
         e.preventDefault();
-        dispatch({ type: "DUNGEON_RETREAT" });
+        controlEnter(state, intel, dispatch);
         return;
       }
       if (retreatOpen && e.key === "Backspace") {
         e.preventDefault();
-        onRetreatOpenChange(false);
+        controlBack(intel);
         return;
       }
       // 情报打开时：ENTER 确认进入、BACKSPACE 关闭
       if (pending && e.key === "Enter") {
         e.preventDefault();
-        dispatch({ type: "DUNGEON_ENTER_TILE", x: pending.x, y: pending.y });
+        controlEnter(state, intel, dispatch);
         return;
       }
       if (pending && e.key === "Backspace") {
         e.preventDefault();
-        onPendingChange(null);
+        controlBack(intel);
         return;
       }
       const dir = dirFromKey(e.key);
       if (!dir) return;
       e.preventDefault();
-      // 移动（无论去向）关闭撤离确认（互斥：移动即放弃撤离）
-      if (retreatOpen) onRetreatOpenChange(false);
-      const step = dungeonStep(dungeon, dir, pending);
-      if (step.kind === "blocked") return;
-      if (step.kind === "intel") {
-        onPendingChange({ x: step.x, y: step.y });
-      } else {
-        dispatch({ type: "DUNGEON_MOVE", dx: step.dx, dy: step.dy });
-      }
+      controlMoveDir(state, dir, intel, dispatch);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [dungeon, pending, retreatOpen, dispatch, mapOpen, onPendingChange, onRetreatOpenChange]);
+  }, [dungeon, pending, retreatOpen, intel, dispatch, state, mapOpen]);
 
   if (!dungeon || !def) return null;
 
@@ -245,16 +226,15 @@ function DungeonView({
         </div>
       )}
 
-      {/* 撤离大按钮（与村庄「进入地牢」同款）：仅在可撤离时出现（非战斗且未展开大地图）；点击派发 q 键弹撤离确认 */}
+      {/* 撤离大按钮（与村庄「进入地牢」同款）：仅在可撤离时出现（非战斗且未展开大地图）；与 Q 键同源 */}
       {!mapOpen && (
         <div className="mt-3">
-          <button
+          <GoldWideButton
             data-testid="retreat-big"
-            onClick={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "q" }))}
-            className="w-full px-4 py-3 rounded text-sm font-mono border border-game-gold/40 bg-game-gold/10 text-game-gold hover:bg-game-gold/20 transition-colors"
+            onClick={() => controlRetreat(intel)}
           >
             {t("dungeon.retreat")}
-          </button>
+          </GoldWideButton>
         </div>
       )}
     </main>

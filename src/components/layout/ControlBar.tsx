@@ -3,6 +3,7 @@ import { rooms as roomMap } from "../../data/config";
 import { useLang } from "../../i18n/useLang";
 import { dirFromKey, nearestInDir } from "../map/nav";
 import type { GameState } from "../../types";
+import { controlBack, controlEnter, controlMoveDir, controlRetreat, type IntelState } from "../control/controlActions";
 
 /** 方向键布局：W 上、A/S/D 下排，与方向键一致 */
 const KEYS = [
@@ -53,26 +54,22 @@ function ActionButton({
   );
 }
 
-/** 底部操控栏：固定定位不受主界面滚动影响，点击派发与键盘一致的 keydown。
+/** 底部操控栏：固定定位不受主界面滚动影响，按钮与键盘同源（controlActions 共享行为）。
  *  左侧进入/返回（可执行时出现）、中间 WASD、右侧撤离（仅地牢非战斗时出现）。 */
 export function ControlBar({
   mapOpen,
-  pending,
-  retreatOpen,
+  intel,
 }: {
   mapOpen: boolean;
-  pending: { x: number; y: number } | null;
-  retreatOpen: boolean;
+  intel: IntelState;
 }) {
-  const { state } = useGame();
+  const { state, dispatch } = useGame();
   const { t } = useLang();
   if (state.screen !== "game") return null;
 
-  const fire = (key: string) => window.dispatchEvent(new KeyboardEvent("keydown", { key }));
-
   // 情报/撤离确认打开时（战斗中/展开地图不出现）
-  const intelOpen = !!state.dungeon && !!pending && !state.battle && !mapOpen;
-  const confirmOpen = !!state.dungeon && retreatOpen && !state.battle && !mapOpen;
+  const intelOpen = !!state.dungeon && !!intel.pending && !state.battle && !mapOpen;
+  const confirmOpen = !!state.dungeon && intel.retreatOpen && !state.battle && !mapOpen;
   // 进入：村庄房间有地牢入口时（仅进入，无返回）
   const villageEnter =
     !state.dungeon && !state.battle && !mapOpen && !!roomMap[state.player.currentRoomId]?.dungeonId;
@@ -89,12 +86,12 @@ export function ControlBar({
           {(intelOpen || villageEnter || confirmOpen) && (
             <>
               {confirmOpen ? (
-                <ActionButton testId="control-confirm" label={t("control.confirm")} onClick={() => fire("Enter")} />
+                <ActionButton testId="control-confirm" label={t("control.confirm")} onClick={() => controlEnter(state, intel, dispatch)} />
               ) : (
-                <ActionButton testId="control-enter" label={t("control.enter")} onClick={() => fire("Enter")} />
+                <ActionButton testId="control-enter" label={t("control.enter")} onClick={() => controlEnter(state, intel, dispatch)} />
               )}
               {(intelOpen || confirmOpen) && (
-                <ActionButton testId="control-back" label={t("control.back")} onClick={() => fire("Backspace")} />
+                <ActionButton testId="control-back" label={t("control.back")} onClick={() => controlBack(intel)} />
               )}
             </>
           )}
@@ -107,7 +104,7 @@ export function ControlBar({
             return (
               <button
                 key={key}
-                onClick={() => fire(key)}
+                onClick={() => controlMoveDir(state, dir, intel, dispatch)}
                 disabled={disabled}
                 style={{ gridColumn: col + 1, gridRow: row + 1 }}
                 className={`w-10 h-10 rounded-md border font-mono text-sm transition-colors ${
@@ -124,7 +121,7 @@ export function ControlBar({
         {/* 右侧撤离（仅地牢非战斗时出现） */}
         <div className="justify-self-end">
           {canRetreat && (
-            <ActionButton testId="control-retreat" label={t("control.retreat")} onClick={() => fire("q")} />
+            <ActionButton testId="control-retreat" label={t("control.retreat")} onClick={() => controlRetreat(intel)} />
           )}
         </div>
       </div>

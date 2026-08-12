@@ -4,39 +4,29 @@ import { useLang } from "../../i18n/useLang";
 import { loc } from "../../i18n/translations";
 import HubMap from "../map/HubMap";
 import DungeonGrid from "../dungeon/DungeonGrid";
-import { dungeonStep } from "../map/nav";
+import { MiniOutlineButton } from "../ui/buttons";
+import { controlMoveDir, type IntelState } from "../control/controlActions";
 
 type MapPanelProps = {
   onExpand: () => void;
-  pending: { x: number; y: number } | null;
-  onPendingChange: (p: { x: number; y: number } | null) => void;
-  retreatOpen: boolean;
-  onRetreatOpenChange: (open: boolean) => void;
+  intel: IntelState;
 };
 
-function MapPanel({ onExpand, pending, onPendingChange, retreatOpen, onRetreatOpenChange }: MapPanelProps) {
+function MapPanel({ onExpand, intel }: MapPanelProps) {
   const { state, dispatch } = useGame();
   const { t, lang } = useLang();
   const { player } = state;
   const room = roomMap[player.currentRoomId];
 
-  // 战斗中不响应点击（合法拒绝：战斗时侧栏仍渲染但不可移动）
+  // 小地图点击移动：与 WASD/键盘同一判定（controlMoveDir 共享）；战斗中不响应
   const moveRoom = (roomId: string) => {
     if (state.battle) return;
     dispatch({ type: "MOVE_ROOM", roomId });
   };
 
-  // 地牢点击：与 WASD 同一判定（dungeonStep），战斗中不响应；移动会关闭撤离确认（互斥）
+  // 地牢点击：与 WASD 同一判定（controlMoveDir），战斗中不响应；移动会关闭撤离确认（互斥）
   const stepDir = (dir: { x: number; y: number }) => {
-    if (state.battle || !state.dungeon) return;
-    const step = dungeonStep(state.dungeon, dir, pending);
-    if (step.kind === "intel") {
-      onPendingChange({ x: step.x, y: step.y });
-      if (retreatOpen) onRetreatOpenChange(false);
-    } else if (step.kind === "move") {
-      dispatch({ type: "DUNGEON_MOVE", dx: step.dx, dy: step.dy });
-      if (retreatOpen) onRetreatOpenChange(false);
-    }
+    controlMoveDir(state, dir, intel, dispatch);
   };
 
   return (
@@ -45,12 +35,9 @@ function MapPanel({ onExpand, pending, onPendingChange, retreatOpen, onRetreatOp
         <h3 className="text-game-gold text-xs font-mono font-bold">
           {state.dungeon ? t("dungeon.grid") : t("map.minimap")}
         </h3>
-        <button
-          onClick={onExpand}
-          className="text-[9px] font-mono px-2 py-0.5 rounded border border-game-border text-game-dim hover:text-game-gold hover:border-game-gold/40 transition-colors"
-        >
+        <MiniOutlineButton onClick={onExpand}>
           {t("map.expand")}
-        </button>
+        </MiniOutlineButton>
       </div>
       <div className="bg-game-card border border-game-border rounded p-3">
         {state.dungeon ? (

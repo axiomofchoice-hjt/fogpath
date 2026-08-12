@@ -1,5 +1,11 @@
 export type PanelTab = "map" | "inventory";
 
+/** 侧栏 Tab 快捷键映射（App keydown 与 TabBar 显示共用，勿双处维护） */
+export const PANEL_TABS: { id: PanelTab; shortcut: string }[] = [
+  { id: "map", shortcut: "m" },
+  { id: "inventory", shortcut: "e" },
+];
+
 /** 游戏屏幕：开始面板 / 主游戏（村庄与地牢） */
 export type Screen = "start" | "game";
 

@@ -1,15 +1,13 @@
 import { rooms as roomMap } from "../../data/config";
 import { useLang } from "../../i18n/useLang";
 import { loc } from "../../i18n/translations";
+import { EMPTY_CELL_CLS, MINI_RADIUS, TILE } from "./layoutConstants";
 
 export type HubMapProps = {
   currentRoomId: string;
   large?: boolean;
   onMoveRoom?: (roomId: string) => void;
 };
-
-/** 小地图窗口半径：显示玩家周围 (2r+1)×(2r+1) = 7×7 格，玩家始终居中 */
-const MINI_RADIUS = 3;
 
 /** 村庄枢纽方块地图（小地图可点击出口房间移动 / 展开大地图纯查看）：小地图 / 展开大地图共用（pos 为网格坐标）。
  *  小地图 7×7 窗口以玩家为中心；大地图显示全图，方块更大。 */
@@ -37,8 +35,8 @@ function HubMap({ currentRoomId, large = false, onMoveRoom }: HubMapProps) {
     }
   }
 
-  // 大地图：固定 48px 方块（与地牢展开地图一致）；小地图 1fr 自适应 7×7 窗口
-  const tilePx = large ? 48 : undefined;
+  // 大地图：固定 TILE px 方块（与地牢展开地图一致）；小地图 1fr 自适应 7×7 窗口
+  const tilePx = large ? TILE : undefined;
 
   return (
     <div
@@ -53,12 +51,7 @@ function HubMap({ currentRoomId, large = false, onMoveRoom }: HubMapProps) {
         const key = `${x},${y}`;
         if (!room) {
           // 空位：可见的淡色方块铺底，保持棋盘感
-          return (
-            <div
-              key={key}
-              className="aspect-square rounded-[3px] border border-game-border/70 bg-game-panel/60"
-            />
-          );
+          return <div key={key} className={EMPTY_CELL_CLS} />;
         }
         const isCurrent = room.id === currentRoomId;
         // 可点击：当前房间的出口（等同 WASD 的 exits 约束；当前格自身不可点）

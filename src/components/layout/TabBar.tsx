@@ -1,4 +1,5 @@
 import type { PanelTab } from "../../types";
+import { PANEL_TABS } from "../../types";
 import { useLang } from "../../i18n/useLang";
 
 type TabBarProps = {
@@ -9,14 +10,9 @@ type TabBarProps = {
 function TabBar({ activeTab, onTabChange }: TabBarProps) {
   const { t } = useLang();
 
-  const tabs: { id: PanelTab; label: string; shortcut: string }[] = [
-    { id: "map", label: t("tab.map"), shortcut: "M" },
-    { id: "inventory", label: t("tab.inventory"), shortcut: "E" },
-  ];
-
   return (
     <div className="flex gap-1 mb-3">
-      {tabs.map((tab) => (
+      {PANEL_TABS.map((tab) => (
         <button
           key={tab.id}
           onClick={() => onTabChange(tab.id)}
@@ -26,7 +22,7 @@ function TabBar({ activeTab, onTabChange }: TabBarProps) {
               : "text-game-dim border-game-border hover:text-game-text hover:bg-game-card/50"
           }`}
         >
-          {tab.label} ({tab.shortcut})
+          {t(`tab.${tab.id}`)} ({tab.shortcut.toUpperCase()})
         </button>
       ))}
     </div>

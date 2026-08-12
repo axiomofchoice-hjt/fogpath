@@ -5,10 +5,8 @@ import { useLang } from "../../i18n/useLang";
 import { loc } from "../../i18n/translations";
 import HubMap from "./HubMap";
 import DungeonGrid from "../dungeon/DungeonGrid";
-
-/** 展开大地图方块尺寸（与 DungeonGrid/HubMap large 模式一致）：格宽 + 间距 */
-const TILE = 48;
-const GAP = 4;
+import { MiniOutlineButton } from "../ui/buttons";
+import { GAP, TILE } from "./layoutConstants";
 
 /** 夹紧：仅当地图大于视口时贴边（不留空白）；地图小于视口时直接取目标值（整图可见、当前房间居中） */
 function clampOffset(target: number, viewport: number, map: number): number {
@@ -104,12 +102,9 @@ function WorldMap({ open, onClose }: { open: boolean; onClose: () => void }) {
     <div className="fixed inset-0 z-50 bg-game-bg/95 flex flex-col">
       <div className="flex items-center justify-center py-4 relative flex-shrink-0">
         <h2 className="text-game-gold text-lg font-mono font-bold">{title}</h2>
-        <button
-          onClick={onClose}
-          className="absolute right-4 text-[10px] font-mono px-3 py-1 rounded border border-game-border text-game-dim hover:text-game-gold hover:border-game-gold/40 transition-colors"
-        >
+        <MiniOutlineButton className="absolute right-4" onClick={onClose}>
           {"\u2190"} {t("map.back")}
-        </button>
+        </MiniOutlineButton>
       </div>
       <div
         ref={containerRef}

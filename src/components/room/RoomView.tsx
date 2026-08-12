@@ -7,7 +7,9 @@ import { useLang } from "../../i18n/useLang";
 import { loc } from "../../i18n/translations";
 import Typewriter from "./Typewriter";
 import InteractCard from "./InteractCard";
-import { dirFromKey, nearestInDir } from "../map/nav";
+import { dirFromKey } from "../map/nav";
+import { controlEnter, controlMoveDir } from "../control/controlActions";
+import { GoldWideButton } from "../ui/buttons";
 
 function RoomView({ mapOpen }: { mapOpen: boolean }) {
   const { state, dispatch } = useGame();
@@ -30,20 +32,17 @@ function RoomView({ mapOpen }: { mapOpen: boolean }) {
       // ENTER：房间有地牢入口时进入地牢（操控栏「↵」同源）
       if (e.key === "Enter" && room.dungeonId) {
         e.preventDefault();
-        dispatch({ type: "ENTER_DUNGEON", dungeonId: room.dungeonId });
+        controlEnter(state, null, dispatch);
         return;
       }
       const dir = dirFromKey(e.key);
       if (!dir) return;
       e.preventDefault();
-      const next = nearestInDir(room.id, dir);
-      if (next && room.exits.includes(next)) {
-        dispatch({ type: "MOVE_ROOM", roomId: next });
-      }
+      controlMoveDir(state, dir, null, dispatch);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [state.battle, mapOpen, room, dispatch]);
+  }, [state.battle, mapOpen, room, state, dispatch]);
 
   if (!room) {
     return (
@@ -168,12 +167,11 @@ function RoomView({ mapOpen }: { mapOpen: boolean }) {
 
       {room.dungeonId && (
         <div className="mt-3">
-          <button
+          <GoldWideButton
             onClick={() => dispatch({ type: "ENTER_DUNGEON", dungeonId: room.dungeonId! })}
-            className="w-full px-4 py-3 rounded text-sm font-mono border border-game-gold/40 bg-game-gold/10 text-game-gold hover:bg-game-gold/20 transition-colors"
           >
             {t("room.enterDungeon")}
-          </button>
+          </GoldWideButton>
         </div>
       )}
     </main>

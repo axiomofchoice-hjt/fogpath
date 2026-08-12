@@ -1,5 +1,6 @@
 import type { DungeonState } from "../../types";
 import { enemyDefs, items as itemDefs } from "../../data/config";
+import { EMPTY_CELL_CLS, MINI_RADIUS, TILE } from "../map/layoutConstants";
 
 type DungeonGridProps = {
   dungeon: DungeonState;
@@ -7,13 +8,10 @@ type DungeonGridProps = {
   onStep?: (dir: { x: number; y: number }) => void;
 };
 
-/** 小地图窗口半径：显示玩家周围 (2r+1)×(2r+1) = 7×7 格，玩家始终居中（与村庄小地图一致） */
-const MINI_RADIUS = 3;
-
 /**
  * 地牢方块网格（小地图可点击邻居移动 / 展开大地图纯查看）：
  * - 小地图：7×7 窗口以玩家为中心，样式与村庄 HubMap 一致（房间方块 / 空位淡块 / 迷雾 "?"）
- * - 大地图：全图固定 48px 方块（配合世界地图拖动平移，含墙与边界）
+ * - 大地图：全图固定 TILE px 方块（配合世界地图拖动平移，含墙与边界）
  */
 function DungeonGrid({ dungeon, large = false, onStep }: DungeonGridProps) {
   const { rooms, playerPos, size } = dungeon;
@@ -30,7 +28,7 @@ function DungeonGrid({ dungeon, large = false, onStep }: DungeonGridProps) {
   const vMinY = large ? 0 : playerPos.y - MINI_RADIUS;
   const cols = large ? size.w : MINI_RADIUS * 2 + 1;
   const rows = large ? size.h : MINI_RADIUS * 2 + 1;
-  const tilePx = large ? 48 : undefined;
+  const tilePx = large ? TILE : undefined;
 
   return (
     <div
@@ -47,12 +45,7 @@ function DungeonGrid({ dungeon, large = false, onStep }: DungeonGridProps) {
           const ry = vMinY + y;
           // 窗口超出地牢边界的格子 / 墙（无房间）：淡色空块（与村庄小地图一致）
           if (rx < 0 || ry < 0 || rx >= size.w || ry >= size.h || !rooms[ry][rx]) {
-            return (
-              <div
-                key={`${rx},${ry}`}
-                className="aspect-square rounded-[3px] border border-game-border/70 bg-game-panel/60"
-              />
-            );
+            return <div key={`${rx},${ry}`} className={EMPTY_CELL_CLS} />;
           }
           const room = rooms[ry][rx];
           const isPlayer = rx === playerPos.x && ry === playerPos.y;
