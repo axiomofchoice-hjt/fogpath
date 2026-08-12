@@ -109,8 +109,7 @@ export function AppInner() {
         />
       </div>
       <ControlBar mapOpen={worldMapOpen} pending={intelPending} retreatOpen={retreatOpen} />
-      <WorldMap open={worldMapOpen} onClose={() => setWorldMapOpen(false)} />
-    </div>
+      <WorldMap open={worldMapOpen} onClose={() => setWorldMapOpen(false)} />    </div>
   );
 }
 

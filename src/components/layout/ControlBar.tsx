@@ -80,22 +80,26 @@ export function ControlBar({
   const canRetreat = !!state.dungeon && !state.battle && !mapOpen;
 
   return (
-    <>
-      {/* 左侧操作（仅可执行时出现）：主界面区域（左右 16rem 侧栏之间）的左边缘，calc(17rem) = 16rem 左栏 + 1rem 边距 */}
-      {(intelOpen || villageEnter || confirmOpen) && (
-        <div className="fixed bottom-3 left-[calc(17rem)] z-40 select-none flex gap-1.5">
-          {confirmOpen ? (
-            <ActionButton testId="control-confirm" label={t("control.confirm")} onClick={() => fire("Enter")} />
-          ) : (
-            <ActionButton testId="control-enter" label={t("control.enter")} onClick={() => fire("Enter")} />
-          )}
-          {(intelOpen || confirmOpen) && (
-            <ActionButton testId="control-back" label={t("control.back")} onClick={() => fire("Backspace")} />
+    // 文档流底栏（不悬浮）：占主界面区域（左右 16rem 侧栏之间）宽度的一行，主内容滚动区在其上方，无重叠。
+    // grid 三列 1fr/auto/1fr：WASD 严格居中，左右组贴主区域边缘。
+    <div className="flex-shrink-0 select-none border-t border-game-border bg-game-panel/50 pl-[calc(17rem+1rem)] pr-[calc(17rem+1rem)] py-3">
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+        {/* 左侧操作（仅可执行时出现） */}
+        <div className="flex gap-1.5 justify-self-start">
+          {(intelOpen || villageEnter || confirmOpen) && (
+            <>
+              {confirmOpen ? (
+                <ActionButton testId="control-confirm" label={t("control.confirm")} onClick={() => fire("Enter")} />
+              ) : (
+                <ActionButton testId="control-enter" label={t("control.enter")} onClick={() => fire("Enter")} />
+              )}
+              {(intelOpen || confirmOpen) && (
+                <ActionButton testId="control-back" label={t("control.back")} onClick={() => fire("Backspace")} />
+              )}
+            </>
           )}
         </div>
-      )}
-      {/* 中间 WASD：主界面区域水平中心 = 屏幕中心 */}
-      <div className="fixed bottom-3 left-1/2 -translate-x-1/2 z-40 select-none">
+        {/* 中间 WASD */}
         <div className="grid grid-cols-3 gap-1.5">
           {KEYS.map(({ key, col, row }) => {
             const dir = dirFromKey(key)!;
@@ -117,13 +121,13 @@ export function ControlBar({
             );
           })}
         </div>
-      </div>
-      {/* 右侧撤离（仅地牢非战斗时出现）：主界面区域右边缘，calc(17rem) = 16rem 右栏 + 1rem 边距 */}
-      {canRetreat && (
-        <div className="fixed bottom-3 right-[calc(17rem)] z-40 select-none">
-          <ActionButton testId="control-retreat" label={t("dungeon.retreat")} onClick={() => fire("q")} />
+        {/* 右侧撤离（仅地牢非战斗时出现） */}
+        <div className="justify-self-end">
+          {canRetreat && (
+            <ActionButton testId="control-retreat" label={t("dungeon.retreat")} onClick={() => fire("q")} />
+          )}
         </div>
-      )}
-    </>
+      </div>
+    </div>
   );
 }
