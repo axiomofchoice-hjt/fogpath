@@ -46,7 +46,7 @@ function ActionButton({
     <button
       data-testid={testId}
       onClick={onClick}
-      className="px-3 h-10 rounded-md border font-mono text-sm border-game-gold/40 bg-game-card text-game-text hover:bg-game-gold/20 hover:text-game-gold transition-colors"
+      className="w-10 h-10 rounded-md border font-mono text-sm border-game-gold/40 bg-game-card text-game-text hover:bg-game-gold/20 hover:text-game-gold transition-colors"
     >
       {label}
     </button>
