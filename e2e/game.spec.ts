@@ -158,13 +158,12 @@ test("存档：重新开始清档后按钮复位，可正常新游戏", async ({
   await expect(page.getByRole("button", { name: "继续冒险" })).toBeVisible();
 });
 
-test("存档：手动保存与导出导入", async ({ page }) => {
+test("存档：自动存档提示与导出导入", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "进入村庄" }).click();
   await expect(page.getByRole("heading", { name: "村庄广场" })).toBeVisible();
 
-  // 手动保存按钮 + 反馈
-  await page.getByRole("button", { name: "保存进度" }).click();
+  // 进入安全屋自动存档，显示存档时间提示
   await expect(page.getByText(/已存档/)).toBeVisible();
 
   // 导出存档文件

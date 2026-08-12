@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useGame } from "../../state/useGame";
 import { goldAmount } from "../../state/helpers";
-import { saveGame } from "../../state/save";
+import { loadSaveInfo } from "../../state/save";
 import { items as itemDefs, rooms as roomMap } from "../../data/config";
 import { useLang } from "../../i18n/useLang";
 import { loc } from "../../i18n/translations";
@@ -15,6 +15,12 @@ function RoomView({ mapOpen }: { mapOpen: boolean }) {
   const { player } = state;
   const room = roomMap[player.currentRoomId];
   const [savedAt, setSavedAt] = useState<number | null>(null);
+
+  // 自动存档时间：进入安全屋时读取（自动存档发生在 gameContext effect）
+  useEffect(() => {
+    if (!room?.isSafeRoom) return;
+    setSavedAt(loadSaveInfo()?.savedAt ?? null);
+  }, [room?.isSafeRoom]);
 
   // 村庄 WASD 移动：朝方向最近的出口移动（大地图打开时不接管）
   useEffect(() => {
@@ -79,15 +85,6 @@ function RoomView({ mapOpen }: { mapOpen: boolean }) {
                 })}
               </span>
             )}
-            <button
-              onClick={() => {
-                saveGame(state);
-                setSavedAt(Date.now());
-              }}
-              className="text-[10px] font-mono px-2 py-1 rounded border border-game-border text-game-dim hover:text-game-gold hover:border-game-gold/40 transition-colors"
-            >
-              {t("save.manual")}
-            </button>
           </div>
         )}
       </div>

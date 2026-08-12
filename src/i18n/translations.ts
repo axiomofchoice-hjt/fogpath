@@ -96,7 +96,6 @@ const zh = {
   "start.testBattles": "测试战斗",
   "start.placeholder": "规划中",
 
-  "save.manual": "保存进度",
   "save.savedAt": "已存档 {{time}}",
   "save.export": "导出存档",
   "save.import": "导入存档",
@@ -217,7 +216,6 @@ const en: Record<TKey, string> = {
   "start.testBattles": "Test Battles",
   "start.placeholder": "Planned",
 
-  "save.manual": "Save",
   "save.savedAt": "Saved {{time}}",
   "save.export": "Export Save",
   "save.import": "Import Save",
