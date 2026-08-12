@@ -59,7 +59,7 @@ export function battleReducer(state: GameState, action: GameAction): GameState {
         const { player, battle, dungeon } = state;
         const room = dungeon.rooms[dungeon.playerPos.y][dungeon.playerPos.x]!;
         if (battle.result === "victory") {
-          // 胜利：敌人清除 + 掉落入账（含金币），HP/MP 损耗保留在地牢中
+          // 胜利：敌人清除 + 掉落入账（含金币）；HP 损耗保留在地牢中，MP 回满（非战斗状态 MP 自动回满）
           const drop = rollLoot(room.enemyIds);
           const rooms = patchRoom(dungeon, dungeon.playerPos.x, dungeon.playerPos.y, {
             enemyIds: [],
@@ -74,7 +74,7 @@ export function battleReducer(state: GameState, action: GameAction): GameState {
             player: {
               ...player,
               hp: battle.playerStats.hp,
-              mp: battle.playerStats.mp,
+              mp: player.maxMp,
               inventory,
             },
             battle: null,

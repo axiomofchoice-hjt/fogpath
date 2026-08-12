@@ -242,7 +242,8 @@ describe("地牢：战斗结算", () => {
     const beforeGold = initialPlayer().inventory.find((e) => e.itemId === "gold")!.quantity;
     const afterGold = exited.player.inventory.find((e) => e.itemId === "gold")!.quantity;
     expect(afterGold).toBeGreaterThanOrEqual(beforeGold);
-    expect(exited.player.hp).toBe(77); // 损耗保留
+    expect(exited.player.hp).toBe(77); // HP 损耗保留
+    expect(exited.player.mp).toBe(exited.player.maxMp); // 非战斗状态 MP 自动回满
   });
 
   it("胜利：掉落金币按表入账（rng=0 → 各表最低金币）", () => {
