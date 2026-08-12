@@ -59,7 +59,7 @@ const zh = {
   "shop.price": "{{n}} 金币",
   "shop.insufficient": "金币不足",
 
-  "dungeon.retreat": "撤离（Q）",
+  "dungeon.retreat": "撤离 (Q)",
   "dungeon.pickup": "拾取",
   "dungeon.intel": "房间情报",
   "dungeon.room": "房间",
