@@ -2,12 +2,14 @@ import type {
   AttackPattern,
   BattleEnemy,
   BattleState,
+  LogKind,
   L,
   Player,
   PlayerBattleAction,
 } from "../types";
 import { enemyDefs, items as itemDefs, skills as skillDefs } from "../data/config";
 import { testBattleConfigs } from "../data/battleTestConfigs";
+import { isUsableConsumable, pickWeighted } from "./helpers";
 
 /** 休息动作的 MP 回复量 */
 export const REST_MP = 10;
@@ -18,6 +20,12 @@ export const GUARD_MP = 10;
 /** 举盾减伤比例（盾牌防御动作） */
 export const SHIELD_REDUCTION = 0.5;
 
+/** 举盾减伤百分比（UI 展示用） */
+export const SHIELD_PCT = Math.round(SHIELD_REDUCTION * 100);
+
+/** 地牢战斗场景 ID（战果结算按此区分地牢/测试战斗） */
+export const DUNGEON_SCENARIO_ID = "dungeon";
+
 /** 模式防重复：刚完成模式在下次选取时权重降低的比例（GDD 2.4.9） */
 export const PATTERN_REPEAT_PENALTY = 0.25;
 
@@ -26,8 +34,8 @@ function enemyName(e: BattleEnemy, lang: "zh" | "en"): string {
   return def ? def.name[lang] : e.defId;
 }
 
-function msg(zh: string, en: string): L {
-  return { zh, en };
+function msg(zh: string, en: string, kind: LogKind = "info"): L & { kind: LogKind } {
+  return { zh, en, kind };
 }
 
 /** 技能的实际伤害：由装备提供的动作决定（技能定义本身不携带数值） */
@@ -47,17 +55,11 @@ export function pickPattern(
   lastPatternId: string | null,
   rng: () => number = Math.random
 ): AttackPattern {
-  const pool = patterns.map((p) => ({
-    pattern: p,
-    weight: p.id === lastPatternId ? p.weight * PATTERN_REPEAT_PENALTY : p.weight,
-  }));
-  const total = pool.reduce((sum, x) => sum + x.weight, 0);
-  let roll = rng() * total;
-  for (const { pattern, weight } of pool) {
-    roll -= weight;
-    if (roll < 0) return pattern;
-  }
-  return patterns[patterns.length - 1];
+  return pickWeighted(
+    patterns,
+    (p) => (p.id === lastPatternId ? p.weight * PATTERN_REPEAT_PENALTY : p.weight),
+    rng
+  );
 }
 
 /** 按敌人当前模式步设置本回合属性与摘要（蓄力回合无攻击属性，等同休息方） */
@@ -227,7 +229,7 @@ export function initBattleFromEnemies(
   if (enemyIds.length === 0) {
     throw new Error("[battle] initBattleFromEnemies 需要至少一个敌人");
   }
-  return buildBattle("dungeon", enemyIds, player.equipment, player);
+  return buildBattle(DUNGEON_SCENARIO_ID, enemyIds, player.equipment, player);
 }
 
 /**
@@ -253,12 +255,9 @@ export function resolveTurn(
       ? GUARD_MP
       : 0;
   if (mpCost > 0 && state.playerStats.mp < mpCost) return state;
-  // 使用道具：必须为消耗品且有效果
-  if (action.kind === "useItem") {
-    const item = itemDefs[action.itemId];
-    if (!item || item.type !== "consumable" || !(item.hpRestore || item.mpRestore)) {
-      return state;
-    }
+  // 使用道具：必须为消耗品且有效果（与玩家域共用谓词；UI 已拦截，此处防绕过）
+  if (action.kind === "useItem" && !isUsableConsumable(itemDefs[action.itemId])) {
+    return state;
   }
 
   // 本回合攻击动作的属性：由装备提供的动作决定；防御/休息无攻击属性
@@ -281,7 +280,7 @@ export function resolveTurn(
     .map((e, i) => (e.hp > 0 ? i : -1))
     .filter((i) => i >= 0);
 
-  next.log.push(msg(`— 回合 ${next.turn} —`, `— Turn ${next.turn} —`));
+  next.log.push(msg(`— 回合 ${next.turn} —`, `— Turn ${next.turn} —`, "turn"));
 
   let clashWon = false;
   let maxEnemyDamage = 0;
@@ -411,10 +410,10 @@ export function resolveTurn(
   const remaining = next.enemies.filter((e) => e.hp > 0).length;
   if (remaining === 0) {
     next.result = "victory";
-    next.log.push(msg("战斗胜利！", "Victory!"));
+    next.log.push(msg("战斗胜利！", "Victory!", "victory"));
   } else if (next.playerStats.hp <= 0) {
     next.result = "defeat";
-    next.log.push(msg("你被击败了…", "You have been defeated..."));
+    next.log.push(msg("你被击败了…", "You have been defeated...", "defeat"));
   } else {
     // 模式推进：存活敌人执行下一步（模式完成则选取下一个模式）
     next.enemies = next.enemies.map((e) =>

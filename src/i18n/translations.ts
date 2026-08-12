@@ -15,6 +15,10 @@ const zh = {
   "tab.inventory": "背包",
 
   "header.repo": "仓库",
+  "header.title": "雾之径",
+  "header.backToStart": "← 开始面板",
+  "punct.comma": "，",
+  "punct.colon": "：",
 
   "stat.hp": "生命",
   "stat.mp": "法力",
@@ -135,6 +139,10 @@ const en: Record<TKey, string> = {
   "tab.inventory": "Inventory",
 
   "header.repo": "Repo",
+  "header.title": "FOG PATH",
+  "header.backToStart": "← Start",
+  "punct.comma": ", ",
+  "punct.colon": ": ",
 
   "stat.hp": "HP",
   "stat.mp": "MP",

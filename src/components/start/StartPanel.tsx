@@ -6,6 +6,7 @@ import { testScenarioGroups } from "../../data/testScenarios";
 import { testBattleConfigs } from "../../data/battleTestConfigs";
 import { rooms as roomMap } from "../../data/config";
 import {
+  clearSave,
   deserializeSave,
   loadSaveInfo,
   serializeSave,
@@ -71,7 +72,7 @@ function StartPanel() {
       <div className="w-full max-w-xl animate-fade-in">
         <div className="text-center mb-8 mt-4">
           <div className="text-[40px] font-bold font-mono tracking-widest text-game-gold">
-            雾之径
+            {t("header.title")}
           </div>
           <div className="text-game-dim text-xs font-mono tracking-[0.4em] mt-2">
             FOG PATH
@@ -99,6 +100,8 @@ function StartPanel() {
           <button
             onClick={() => {
               if (window.confirm(t("start.restartConfirm"))) {
+                // 清档副作用在 dispatch 前执行（reducer 保持纯函数）
+                clearSave();
                 dispatch({ type: "RESET_GAME" });
               }
             }}

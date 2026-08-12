@@ -1,11 +1,13 @@
 import type { GameAction, GameState } from "../types";
 import { items as itemDefs } from "../data/config";
 import { testBattleConfigs } from "../data/battleTestConfigs";
-import { initBattle, resolveTurn } from "./battleEngine";
+import { DUNGEON_SCENARIO_ID, initBattle, resolveTurn } from "./battleEngine";
 import {
   addToInventory,
   assertInvariant,
   canRemoveFromInventory,
+  GOLD_ID,
+  isUsableConsumable,
   patchRoom,
   removeFromInventory,
   rollLoot,
@@ -34,10 +36,11 @@ export function battleReducer(state: GameState, action: GameAction): GameState {
       if (!canRemoveFromInventory(state.player.inventory, action.itemId, 1)) {
         return state; // 资源守卫：背包数量不足
       }
-      const item = itemDefs[action.itemId];
-      if (!item || item.type !== "consumable" || !(item.hpRestore || item.mpRestore)) {
-        return state; // 数据守卫：非消耗品或无回复效果
-      }
+      // 数据守卫：非消耗品/无回复效果属调用方 bug（UI 已只对消耗品显示使用按钮）——与玩家域一致 fail-fast
+      assertInvariant(
+        isUsableConsumable(itemDefs[action.itemId]),
+        "USE_ITEM 只能使用有回复效果的消耗品"
+      );
       const battle = resolveTurn(state.battle, { kind: "useItem", itemId: action.itemId });
       if (battle === state.battle) return state;
       return {
@@ -55,7 +58,7 @@ export function battleReducer(state: GameState, action: GameAction): GameState {
       // 战斗未结束不可结算（UI 只在结束时显示按钮，此处防绕过）
       assertInvariant(state.battle.result !== "ongoing", "EXIT_BATTLE 战斗未结束不可结算");
       // 地牢战斗结算（按场景判定：测试战斗为调试通道，不触发地牢结算）
-      if (state.battle.scenarioId === "dungeon" && state.dungeon) {
+      if (state.battle.scenarioId === DUNGEON_SCENARIO_ID && state.dungeon) {
         const { player, battle, dungeon } = state;
         const room = dungeon.rooms[dungeon.playerPos.y][dungeon.playerPos.x]!;
         if (battle.result === "victory") {
@@ -65,7 +68,7 @@ export function battleReducer(state: GameState, action: GameAction): GameState {
             enemyIds: [],
           });
           let inventory = [...player.inventory];
-          inventory = addToInventory(inventory, "gold", drop.gold);
+          inventory = addToInventory(inventory, GOLD_ID, drop.gold);
           for (const itemId of drop.items) {
             inventory = addToInventory(inventory, itemId, 1);
           }

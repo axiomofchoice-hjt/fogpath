@@ -4,14 +4,40 @@ import { loot as lootDefs } from "../data/config";
 /** 背包精灵物品 ID（营地入口拾取；回村即消散） */
 export const PACK_SPIRIT_ID = "bag_spirit";
 
+/** 金币物品 ID（金币为货币物品，拾取自动入账） */
+export const GOLD_ID = "gold";
+
 /** 背包中的金币数量（金币为货币物品，拾取自动入账） */
 export function goldAmount(player: Player): number {
-  return player.inventory.find((e) => e.itemId === "gold")?.quantity ?? 0;
+  return player.inventory.find((e) => e.itemId === GOLD_ID)?.quantity ?? 0;
 }
 
 /** 不变量守卫：条件为假时断言失败（fail fast）。UI 已拦截、正常流程不可达的状态组合属调用方 bug，禁止静默掩盖 */
 export function assertInvariant(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
+}
+
+/** 加权随机选取：总权-递减-命中。池为空时断言失败（调用方应保证非空） */
+export function pickWeighted<T>(
+  pool: T[],
+  weight: (t: T) => number,
+  rng: () => number
+): T {
+  assertInvariant(pool.length > 0, "pickWeighted: 候选池为空");
+  const total = pool.reduce((sum, t) => sum + weight(t), 0);
+  let roll = rng() * total;
+  for (const t of pool) {
+    roll -= weight(t);
+    if (roll < 0) return t;
+  }
+  return pool[pool.length - 1];
+}
+
+/** 可使用消耗品：类型为消耗品且有 HP/MP 回复效果（战斗/非战斗共用谓词） */
+export function isUsableConsumable(
+  item: { type: string; hpRestore?: number; mpRestore?: number } | undefined
+): boolean {
+  return !!item && item.type === "consumable" && !!(item.hpRestore || item.mpRestore);
 }
 
 /** 掉落结算（GDD 6）：逐条滚概率，金币随机范围入账 */

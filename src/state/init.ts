@@ -1,4 +1,5 @@
 import type { GameState, Player } from "../types";
+import { GOLD_ID } from "./helpers";
 
 export function initialPlayer(): Player {
   return {
@@ -8,7 +9,7 @@ export function initialPlayer(): Player {
     maxMp: 100,
     currentRoomId: "village_square",
     inventory: [
-      { itemId: "gold", quantity: 20 },
+      { itemId: GOLD_ID, quantity: 20 },
       { itemId: "health_potion", quantity: 2 },
     ],
     equipment: ["rusty_sword", "rusty_shield", null, null, null, null],

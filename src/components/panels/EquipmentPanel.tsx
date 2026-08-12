@@ -4,9 +4,7 @@ import { items as itemDefs, skills as skillDefs } from "../../data/config";
 import { useLang } from "../../i18n/useLang";
 import { loc } from "../../i18n/translations";
 import { EQUIP_SLOT_COUNT } from "../../types";
-import { SHIELD_REDUCTION } from "../../state/battleEngine";
-
-const SHIELD_PCT = Math.round(SHIELD_REDUCTION * 100);
+import { SHIELD_PCT } from "../../state/battleEngine";
 
 function ItemTooltip({ itemId }: { itemId: string }) {
   const { t, lang } = useLang();
@@ -26,7 +24,7 @@ function ItemTooltip({ itemId }: { itemId: string }) {
         return (
           <div key={act.skillId} className="text-[10px] font-mono mt-0.5 leading-relaxed">
             <span className="text-game-text">{loc(skill.name, lang)}</span>
-            <span className="text-game-dim"> {t("battle.active")}，</span>
+            <span className="text-game-dim"> {t("battle.active")}{t("punct.comma")}</span>
             <span className="text-game-orange">
               {t("battle.damage", { n: act.damage })}
             </span>
@@ -36,7 +34,7 @@ function ItemTooltip({ itemId }: { itemId: string }) {
       {item.isShield && (
         <div className="text-[10px] font-mono mt-0.5 leading-relaxed">
           <span className="text-game-text">{t("battle.guard")}</span>
-          <span className="text-game-dim"> {t("battle.active")}，</span>
+          <span className="text-game-dim"> {t("battle.active")}{t("punct.comma")}</span>
           <span className="text-game-gold">{t("battle.guardEffect", { pct: SHIELD_PCT })}</span>
         </div>
       )}

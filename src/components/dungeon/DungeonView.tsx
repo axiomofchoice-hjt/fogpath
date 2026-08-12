@@ -7,12 +7,13 @@ import { loc, type Params, type TKey } from "../../i18n/translations";
 import { dirFromKey, dungeonStep } from "../map/nav";
 import Typewriter from "../room/Typewriter";
 
-/** 当前房间的文字描述：类型底文 + 敌人/物品补充 */
+/** 当前房间的文字描述：类型底文 + 敌人/物品补充（分隔符按语言：zh 顿号/句号，en 逗号/空格） */
 function roomDescription(
   room: Pick<DungeonRoom, "type" | "enemyIds" | "itemIds">,
   t: (key: TKey, params?: Params) => string,
   lang: "zh" | "en"
 ): string {
+  const listSep = lang === "zh" ? "、" : ", ";
   const parts: string[] = [];
   if (room.type === "entrance") parts.push(t("dungeon.desc.entrance"));
   else if (room.type === "boss") parts.push(t("dungeon.desc.boss"));
@@ -23,11 +24,11 @@ function roomDescription(
         const def = enemyDefs[id];
         return def ? `${def.icon} ${loc(def.name, lang)}` : id;
       })
-      .join("、");
+      .join(listSep);
     parts.push(t("dungeon.desc.enemies", { names }));
   }
   if (room.itemIds.length > 0) parts.push(t("dungeon.desc.items"));
-  return parts.join("");
+  return parts.join(lang === "zh" ? "" : " ");
 }
 
 /** 地牢视图：文字展示当前房间 + 地牢网格 + 情报/撤离确认卡片；WASD 移动、Q 撤离（GDD 4.1）

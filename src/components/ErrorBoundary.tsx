@@ -2,6 +2,7 @@ import { Component, type ReactNode } from "react";
 import { useGame } from "../state/useGame";
 import { useLang } from "../i18n/useLang";
 import { translations, type Language } from "../i18n/translations";
+import { clearSave } from "../state/save";
 
 type ErrorBoundaryInnerProps = {
   lang: Language;
@@ -26,9 +27,11 @@ class ErrorBoundaryInner extends Component<
     console.error("[ErrorBoundary]", error, info.componentStack ?? "");
   }
 
-  /** 重置进度：先清空错误状态重新渲染子树（若仍崩溃则错误面板会再次出现），再派发 RESET_GAME 清档 */
+  /** 重置进度：先清空错误状态重新渲染子树（若仍崩溃则错误面板会再次出现），再清档并派发 RESET_GAME */
   private handleReset = () => {
     this.setState({ error: null });
+    // 清档副作用在 dispatch 前执行（reducer 保持纯函数）
+    clearSave();
     this.props.onReset();
   };
 

@@ -46,8 +46,8 @@
       "name": { "zh": "老猎人", "en": "Old Hunter" },
       "roomHints": {
         "r1": {
-          "zh": "看来这群哥布林在村北扎了营。这个背包精灵会跟着你：就算死在地牢里，它也会把包里的东西驮回村庄；但穿在身上的装备救不回来。随时按 X 撤离。让我看一下地图……你可以按 D 继续探索。",
-          "en": "So these goblins have camped north of the village. This pack spirit will follow you: even if you die in the dungeon, it will carry your bag back to the village; but the equipment on your back is lost. You can retreat with X at any time. Let me look at the map... you can press D to continue exploring."
+          "zh": "看来这群哥布林在村北扎了营。这个背包精灵会跟着你：就算死在地牢里，它也会把包里的东西驮回村庄；但穿在身上的装备救不回来。随时按 Q 撤离。让我看一下地图……你可以按 D 继续探索。",
+          "en": "So these goblins have camped north of the village. This pack spirit will follow you: even if you die in the dungeon, it will carry your bag back to the village; but the equipment on your back is lost. You can retreat with Q at any time. Let me look at the map... you can press D to continue exploring."
         },
         "r2": {
           "zh": "进去前看清情报：里面有哥布林。比伤害，谁高谁打中——它蓄力后那一击，别硬接。",

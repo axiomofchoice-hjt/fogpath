@@ -4,6 +4,7 @@ import {
   addToInventory,
   assertInvariant,
   canRemoveFromInventory,
+  GOLD_ID,
   removeFromInventory,
 } from "./helpers";
 
@@ -29,7 +30,7 @@ export function playerReducer(state: GameState, action: GameAction): GameState {
       assertInvariant(!!entry, "BUY_ITEM 商店无此货物");
       const item = itemDefs[action.itemId];
       assertInvariant(!!item, "BUY_ITEM 物品定义不存在");
-      if (!canRemoveFromInventory(state.player.inventory, "gold", entry.price)) {
+      if (!canRemoveFromInventory(state.player.inventory, GOLD_ID, entry.price)) {
         return state; // 资源守卫：金币不足
       }
       return {
@@ -37,7 +38,7 @@ export function playerReducer(state: GameState, action: GameAction): GameState {
         player: {
           ...state.player,
           inventory: addToInventory(
-            removeFromInventory(state.player.inventory, "gold", entry.price),
+            removeFromInventory(state.player.inventory, GOLD_ID, entry.price),
             action.itemId,
             1
           ),

@@ -1,5 +1,5 @@
 import type { DungeonDef, DungeonRoom, DungeonState } from "../types";
-import { assertInvariant } from "./helpers";
+import { assertInvariant, pickWeighted } from "./helpers";
 
 /** 随机源（可注入便于测试） */
 export type Rng = () => number;
@@ -47,6 +47,29 @@ function emptyRoom(type: DungeonRoom["type"], explored: boolean): DungeonRoom {
   return { type, explored, depth: 0, enemyIds: [], itemIds: [] };
 }
 
+/** BFS 深度填充（从 start 的最短步数，原地写 rooms[][].depth） */
+function computeDepths(
+  rooms: (DungeonRoom | null)[][],
+  start: Pos,
+  w: number,
+  h: number
+): void {
+  const queue: Pos[] = [{ ...start }];
+  const seen = new Set([`${start.x},${start.y}`]);
+  for (let qi = 0; qi < queue.length; qi++) {
+    const cur = queue[qi];
+    for (const d of DIRS) {
+      const nx = cur.x + d.x;
+      const ny = cur.y + d.y;
+      if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+      if (!rooms[ny][nx] || seen.has(`${nx},${ny}`)) continue;
+      rooms[ny][nx]!.depth = rooms[cur.y][cur.x]!.depth + 1;
+      seen.add(`${nx},${ny}`);
+      queue.push({ x: nx, y: ny });
+    }
+  }
+}
+
 /**
  * 静态手编布局构建（GDD 3.3 教学关）：
  * - 解析 layout 网格：单元格为房间键或空串（墙）
@@ -87,20 +110,7 @@ function buildStaticDungeon(def: DungeonDef): DungeonState {
   rooms[entrancePos.y][entrancePos.x]!.explored = true;
 
   // BFS 深度（从入口的最短步数）
-  const queue = [{ ...entrancePos }];
-  const seen = new Set([`${entrancePos.x},${entrancePos.y}`]);
-  for (let qi = 0; qi < queue.length; qi++) {
-    const cur = queue[qi];
-    for (const d of DIRS) {
-      const nx = cur.x + d.x;
-      const ny = cur.y + d.y;
-      if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
-      if (!rooms[ny][nx] || seen.has(`${nx},${ny}`)) continue;
-      rooms[ny][nx]!.depth = rooms[cur.y][cur.x]!.depth + 1;
-      seen.add(`${nx},${ny}`);
-      queue.push({ x: nx, y: ny });
-    }
-  }
+  computeDepths(rooms, entrancePos, w, h);
 
   return {
     dungeonId: def.id,
@@ -251,20 +261,7 @@ export function generateDungeon(def: DungeonDef, rng: Rng = Math.random): Dungeo
   }
 
   // BFS 深度（从入口的最短步数）
-  const queue: { x: number; y: number }[] = [{ x: cx, y: cy }];
-  const seen = new Set([`${cx},${cy}`]);
-  for (let qi = 0; qi < queue.length; qi++) {
-    const cur = queue[qi];
-    for (const d of DIRS) {
-      const nx = cur.x + d.x;
-      const ny = cur.y + d.y;
-      if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
-      if (!rooms[ny][nx] || seen.has(`${nx},${ny}`)) continue;
-      rooms[ny][nx]!.depth = rooms[cur.y][cur.x]!.depth + 1;
-      seen.add(`${nx},${ny}`);
-      queue.push({ x: nx, y: ny });
-    }
-  }
+  computeDepths(rooms, { x: cx, y: cy }, w, h);
 
   // Boss 房：最深处中取邻居最少的（叶节点，以撒式），并列随机取一
   let bossDepth = 0;

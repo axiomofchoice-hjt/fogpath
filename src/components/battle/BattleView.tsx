@@ -1,14 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import type { CombatStats, L, StatusId } from "../../types";
+import type { CombatStats, LogEntry, StatusId } from "../../types";
 import { useGame } from "../../state/useGame";
 import { useLang } from "../../i18n/useLang";
 import { loc, type TKey, type Params } from "../../i18n/translations";
 import { dungeons as dungeonDefs, enemyDefs, items as itemDefs, skills as skillDefs } from "../../data/config";
-import { GUARD_MP, REST_MP, SHIELD_REDUCTION } from "../../state/battleEngine";
+import { DUNGEON_SCENARIO_ID, GUARD_MP, REST_MP, SHIELD_PCT } from "../../state/battleEngine";
 
 type Mode = "idle" | "target";
-
-const SHIELD_PCT = Math.round(SHIELD_REDUCTION * 100);
 
 /** 状态文字与效果描述（双语键） */
 const STATUS_INFO: Record<
@@ -260,7 +258,7 @@ function BattleView() {
             sub: `【${loc(shield.name, lang)}】`,
             meta: [
               { text: t("battle.mpCost", { n: GUARD_MP }), className: "text-game-blue" },
-              { text: `${t("battle.effect")}：${t("battle.guardEffect", { pct: SHIELD_PCT })}`, className: "text-game-gold" },
+              { text: `${t("battle.effect")}${t("battle.colon")}${t("battle.guardEffect", { pct: SHIELD_PCT })}`, className: "text-game-gold" },
             ],
             className: "border-game-blue/40 bg-game-blue/10 text-game-text hover:bg-game-blue/20",
             disabled: battle.playerStats.mp < GUARD_MP,
@@ -272,17 +270,17 @@ function BattleView() {
       icon: "\uD83D\uDECC",
       title: t("battle.rest"),
       meta: [
-        { text: `${t("battle.effect")}：${t("battle.restEffect", { n: REST_MP })}`, className: "text-game-gold" },
+        { text: `${t("battle.effect")}${t("battle.colon")}${t("battle.restEffect", { n: REST_MP })}`, className: "text-game-gold" },
       ],
       className: "border-game-green/40 bg-game-green/10 text-game-text hover:bg-game-green/20",
       onClick: doRest,
     },
   ];
 
-  const logClass = (entry: L) =>
-    entry.zh.startsWith("—")
+  const logClass = (entry: LogEntry) =>
+    entry.kind === "turn"
       ? "text-game-dim my-1"
-      : entry.zh.includes("胜利") || entry.zh.includes("击败")
+      : entry.kind === "victory" || entry.kind === "defeat"
         ? "text-game-red"
         : "text-game-text";
 
@@ -426,7 +424,7 @@ function BattleView() {
             onClick={() => dispatch({ type: "EXIT_BATTLE" })}
             className="px-4 py-2 rounded text-xs font-mono border border-game-border text-game-dim hover:text-game-gold hover:border-game-gold/40 transition-colors"
           >
-            {t(battle.scenarioId === "dungeon" ? "battle.exitDungeon" : "battle.exit")}
+            {t(battle.scenarioId === DUNGEON_SCENARIO_ID ? "battle.exitDungeon" : "battle.exit")}
           </button>
         </div>
       )}

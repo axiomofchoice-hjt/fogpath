@@ -9,6 +9,12 @@ export interface L {
   en: string;
 }
 
+/** 战斗日志条目分类（着色/排版用，不依赖文案内容） */
+export type LogKind = "turn" | "victory" | "defeat" | "info";
+
+/** 战斗日志条目：双语文本 + 分类 */
+export type LogEntry = L & { kind: LogKind };
+
 // --- Items ---
 
 export type ItemType = "equipment" | "consumable" | "currency" | "pet";
@@ -197,7 +203,7 @@ export interface BattleState {
   /** 盾牌减伤是否生效（防御后持续到下一次攻击前） */
   shieldActive: boolean;
   enemies: BattleEnemy[];
-  log: L[];
+  log: LogEntry[];
   result: BattleResult;
 }
 

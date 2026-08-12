@@ -61,14 +61,15 @@ describe("GameProvider 自动存档副作用", () => {
     await waitFor(() => expect(loadSave()?.screen).toBe("game"));
   });
 
-  it("RESET_GAME 清除存档", async () => {
+  it("RESET_GAME 回到初始状态且不动存档（清档副作用由调用方负责）", async () => {
     const user = userEvent.setup();
     saveGame(villageGameState());
     renderProvider(
       <Probe actions={[{ label: "reset", action: () => ({ type: "RESET_GAME" }) }]} />
     );
     await user.click(screen.getByRole("button", { name: "reset" }));
-    await waitFor(() => expect(localStorage.getItem(SAVE_KEY)).toBeNull());
+    await waitFor(() => expect(screen.getByTestId("screen").textContent).toBe("start"));
+    expect(localStorage.getItem(SAVE_KEY)).not.toBeNull();
   });
 
   it("测试战斗（非安全屋）不写入存档", async () => {
