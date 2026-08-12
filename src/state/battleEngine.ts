@@ -366,7 +366,7 @@ export function resolveTurn(
       `你使用了${item?.name.zh ?? "道具"}。`,
       `You use ${item?.name.en ?? "item"}.`
     );
-    next.log.push(next.playerSummary);
+    next.log.push({ ...next.playerSummary, kind: "info" });
     enemiesHitPlayer(
       next,
       aliveIndices,

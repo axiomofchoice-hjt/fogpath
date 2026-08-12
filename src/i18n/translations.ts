@@ -51,9 +51,7 @@ const zh = {
   "map.minimap": "小地图",
   "map.expand": "展开地图",
   "map.worldMap": "世界地图",
-  "map.close": "关闭",
   "map.back": "返回",
-  "map.empty": "暂无相邻房间",
 
   "room.safeRoom": "安全屋",
   "room.pickup": "拾取",
@@ -175,9 +173,7 @@ const en: Record<TKey, string> = {
   "map.minimap": "Minimap",
   "map.expand": "Expand Map",
   "map.worldMap": "World Map",
-  "map.close": "Close",
   "map.back": "Back",
-  "map.empty": "No adjacent rooms",
 
   "room.safeRoom": "Safe Room",
   "room.pickup": "Pick up",

@@ -258,7 +258,7 @@ function BattleView() {
             sub: `【${loc(shield.name, lang)}】`,
             meta: [
               { text: t("battle.mpCost", { n: GUARD_MP }), className: "text-game-blue" },
-              { text: `${t("battle.effect")}${t("battle.colon")}${t("battle.guardEffect", { pct: SHIELD_PCT })}`, className: "text-game-gold" },
+              { text: `${t("battle.effect")}${t("punct.colon")}${t("battle.guardEffect", { pct: SHIELD_PCT })}`, className: "text-game-gold" },
             ],
             className: "border-game-blue/40 bg-game-blue/10 text-game-text hover:bg-game-blue/20",
             disabled: battle.playerStats.mp < GUARD_MP,
@@ -270,7 +270,7 @@ function BattleView() {
       icon: "\uD83D\uDECC",
       title: t("battle.rest"),
       meta: [
-        { text: `${t("battle.effect")}${t("battle.colon")}${t("battle.restEffect", { n: REST_MP })}`, className: "text-game-gold" },
+        { text: `${t("battle.effect")}${t("punct.colon")}${t("battle.restEffect", { n: REST_MP })}`, className: "text-game-gold" },
       ],
       className: "border-game-green/40 bg-game-green/10 text-game-text hover:bg-game-green/20",
       onClick: doRest,

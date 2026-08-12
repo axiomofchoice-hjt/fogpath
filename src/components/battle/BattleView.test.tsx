@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderGame } from "../../test/harness";
 import { initBattle, initBattleFromEnemies } from "../../state/battleEngine";
@@ -39,8 +39,12 @@ describe("战斗视图", () => {
     renderGame(withBattle(initBattle("test_atk_vs_atk", initialPlayer())));
     await user.click(screen.getByRole("button", { name: /普通攻击/ }));
     expect(screen.getByText("回合 1")).toBeInTheDocument();
-    // 普通攻击消耗 10 MP（玩家卡片与侧栏均显示）
-    expect(screen.getAllByText("90/100").length).toBeGreaterThan(0);
+    // 普通攻击消耗 10 MP：限定玩家卡片内断言（侧栏 CharacterPanel 也显示 90/100）
+    const playerCard = screen
+      .getAllByText("冒险者")
+      .find((el) => el.closest(".bg-game-card"))!
+      .closest(".bg-game-card") as HTMLElement;
+    expect(within(playerCard).getAllByText("90/100")).toHaveLength(1);
   });
 
   it("Boss 卡片带 Boss 徽标", () => {

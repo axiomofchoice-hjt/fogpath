@@ -192,7 +192,7 @@ export interface CombatStats {
   hasAttack: boolean;
 }
 
-/** 战斗状态占位：战斗系统实现时填充（下一阶段） */
+/** 战斗状态（GDD 2.4 回合制）：进战斗时从玩家装备快照出招，回合结算由 battleEngine 驱动 */
 export interface BattleState {
   scenarioId: string;
   turn: number;
@@ -215,7 +215,7 @@ export interface BattleState {
 
 export type BattleResult = "ongoing" | "victory" | "defeat";
 
-// --- 状态（战斗中可叠加多个：举盾、中毒等） ---
+// --- 状态（当前仅举盾；由视图层从 shieldActive 派生，不存入 BattleState） ---
 
 export type StatusId = "guard";
 

@@ -29,16 +29,6 @@ const MAX_CORRIDOR_STEPS = 400;
 /** 侧枝填充尝试上限（目标房间数为软约束） */
 const MAX_BRANCH_TRIES = 10000;
 
-function pickWeighted<T>(pool: T[], weight: (t: T) => number, rng: Rng): T {
-  const total = pool.reduce((sum, t) => sum + weight(t), 0);
-  let roll = rng() * total;
-  for (const t of pool) {
-    roll -= weight(t);
-    if (roll < 0) return t;
-  }
-  return pool[pool.length - 1];
-}
-
 function pickOne<T>(list: T[], rng: Rng): T {
   return list[Math.floor(rng() * list.length)];
 }
