@@ -14,6 +14,8 @@ const zh = {
   "tab.map": "地图",
   "tab.inventory": "背包",
 
+  "header.repo": "仓库",
+
   "stat.hp": "生命",
   "stat.mp": "法力",
   "stat.damage": "伤害",
@@ -132,6 +134,8 @@ export type TKey = keyof typeof zh;
 const en: Record<TKey, string> = {
   "tab.map": "Map",
   "tab.inventory": "Inventory",
+
+  "header.repo": "Repo",
 
   "stat.hp": "HP",
   "stat.mp": "MP",
