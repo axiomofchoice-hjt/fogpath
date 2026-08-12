@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import type { PanelTab } from "./types";
 import { PANEL_TABS } from "./types";
 import { GameProvider } from "./state/gameContext";
@@ -16,6 +16,7 @@ import WorldMap from "./components/map/WorldMap";
 import { ControlBar } from "./components/layout/ControlBar";
 import { GameErrorBoundary } from "./components/ErrorBoundary";
 import { MiniOutlineButton, MiniOutlineLink } from "./components/ui/buttons";
+import { SIDEBAR_W } from "./components/map/layoutConstants";
 import type { IntelState } from "./components/control/controlActions";
 
 function Header() {
@@ -37,7 +38,7 @@ function Header() {
         target="_blank"
         rel="noreferrer"
         className="ml-auto flex items-center gap-1"
-        title={lang === "zh" ? "GitHub 仓库" : "GitHub Repository"}
+        title={t("header.repoTitle")}
       >
         <svg viewBox="0 0 16 16" className="w-3 h-3 fill-current" aria-hidden="true">
           <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
@@ -47,7 +48,7 @@ function Header() {
       <MiniOutlineButton
         className="ml-1"
         onClick={toggleLang}
-        title={lang === "zh" ? "Switch to English" : "切换到中文"}
+        title={t("header.langToggle")}
       >
         {lang === "zh" ? "中" : "EN"}
       </MiniOutlineButton>
@@ -61,13 +62,19 @@ export function AppInner() {
   const [worldMapOpen, setWorldMapOpen] = useState(false);
   const [intelPending, setIntelPending] = useState<{ x: number; y: number } | null>(null);
   const [retreatOpen, setRetreatOpen] = useState(false);
-  // 情报/撤离状态单对象：DungeonView/SidePanel/ControlBar 共用（setter 稳定，对象引用变化不影响逻辑）
-  const intel: IntelState = {
-    pending: intelPending,
-    retreatOpen,
-    onPendingChange: setIntelPending,
-    onRetreatOpenChange: setRetreatOpen,
-  };
+  // 情报/撤离状态单对象：DungeonView/SidePanel/ControlBar 共用。
+  // useMemo 稳定对象引用：DungeonView 的 keydown effect 不会因 App 每次渲染重挂 listener
+  const intel: IntelState = useMemo(
+    () => ({
+      pending: intelPending,
+      retreatOpen,
+      onPendingChange: setIntelPending,
+      onRetreatOpenChange: setRetreatOpen,
+    }),
+    [intelPending, retreatOpen]
+  );
+
+  const closeWorldMap = useCallback(() => setWorldMapOpen(false), []);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     // Tab 快捷键：遍历共享映射（与 TabBar 显示同源）
@@ -102,7 +109,7 @@ export function AppInner() {
     <div className="h-screen flex flex-col">
       <Header />
       <div className="flex-1 flex overflow-hidden">
-        <aside className="w-64 bg-game-panel/50 border-r border-game-border flex-shrink-0 overflow-y-auto p-3">
+        <aside className={`${SIDEBAR_W} bg-game-panel/50 border-r border-game-border flex-shrink-0 overflow-y-auto p-3`}>
           <CharacterPanel />
           <div className="mt-4">
             <EquipmentPanel />
@@ -117,7 +124,8 @@ export function AppInner() {
         />
       </div>
       <ControlBar mapOpen={worldMapOpen} intel={intel} />
-      <WorldMap open={worldMapOpen} onClose={() => setWorldMapOpen(false)} />    </div>
+      <WorldMap open={worldMapOpen} onClose={closeWorldMap} />
+    </div>
   );
 }
 

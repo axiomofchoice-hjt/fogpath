@@ -12,3 +12,9 @@ export const MINI_RADIUS = 3;
 /** 小地图空位淡块类（墙/窗口外，保持棋盘感；HubMap 与 DungeonGrid 共用） */
 export const EMPTY_CELL_CLS =
   "aspect-square rounded-[3px] border border-game-border/70 bg-game-panel/60";
+
+/** 侧栏宽度（Tailwind w-64 = 16rem；App/SidePanel 的 aside 与 ControlBar 内缩共用） */
+export const SIDEBAR_W = "w-64";
+
+/** 底部操控栏左右内缩（侧栏 16rem + 1rem 间距），与 SIDEBAR_W 配套，改动侧栏宽度须同步 */
+export const CONTROL_INSET = "calc(17rem + 1rem)";

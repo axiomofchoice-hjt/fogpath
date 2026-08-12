@@ -85,6 +85,7 @@ describe("错误边界", () => {
     const inBattle = gameReducer(initialGameState(), {
       type: "START_TEST_BATTLE",
       scenarioId: "test_atk_vs_atk",
+      seed: 1,
     });
     render(
       <LanguageProvider>

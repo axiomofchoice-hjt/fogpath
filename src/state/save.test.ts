@@ -147,6 +147,80 @@ describe("isGameState 守卫", () => {
     const p = villageState().player;
     expect(isGameState({ ...villageState(), player: { ...p, hp: "x" } })).toBe(false);
   });
+
+  it("嵌套结构损坏拒绝（深度校验）", () => {
+    const p = villageState().player;
+    // 背包条目缺 quantity
+    const badInventory = { ...villageState(), player: { ...p, inventory: [{ itemId: "gold" }] } };
+    expect(isGameState(badInventory)).toBe(false);
+    // 背包数量非正
+    const negQty = { ...villageState(), player: { ...p, inventory: [{ itemId: "gold", quantity: -1 }] } };
+    expect(isGameState(negQty)).toBe(false);
+    // 装备格数不符
+    const shortEquip = { ...villageState(), player: { ...p, equipment: ["rusty_sword"] } };
+    expect(isGameState(shortEquip)).toBe(false);
+    // 装备格含非字符串非 null
+    const badEquip = { ...villageState(), player: { ...p, equipment: [42, null, null, null, null, null] } };
+    expect(isGameState(badEquip)).toBe(false);
+    // pickedItemIds 非字符串数组
+    const badPicked = { ...villageState(), player: { ...p, pickedItemIds: [1] } };
+    expect(isGameState(badPicked)).toBe(false);
+  });
+
+  it("地牢嵌套损坏拒绝（深度校验）", () => {
+    const s = villageState();
+    const dungeon = {
+      dungeonId: "forest",
+      size: { w: 3, h: 3 },
+      rooms: [[{ type: "normal", explored: false, depth: 0, enemyIds: [] }]],
+      playerPos: { x: 0, y: 0 },
+    };
+    expect(isGameState({ ...s, dungeon })).toBe(false); // 行数不齐不是关键——房间缺 itemIds 才是
+    const badRoom = {
+      ...dungeon,
+      rooms: [[{ type: "normal", explored: false, depth: 0, enemyIds: [] }], [], []],
+    };
+    expect(isGameState({ ...s, dungeon: badRoom })).toBe(false);
+    const badPos = { ...dungeon, rooms: [], playerPos: { x: "a", y: 0 } };
+    expect(isGameState({ ...s, dungeon: badPos })).toBe(false);
+  });
+
+  it("战斗嵌套损坏拒绝（深度校验）", () => {
+    const s = villageState();
+    const battle = {
+      scenarioId: "dungeon",
+      turn: 1,
+      playerStats: { hp: 10, maxHp: 100, mp: 5, maxMp: 100, damage: 0, maxDamage: 0, hasAttack: false },
+      playerSummary: { zh: "a", en: "b" },
+      playerActions: [{ skillId: "basic_attack", damage: 10 }],
+      equipment: ["rusty_sword", null, null, null, null, null],
+      guardReduction: 0.5,
+      shieldActive: false,
+      enemies: [
+        {
+          defId: "goblin",
+          hp: 30,
+          maxHp: 30,
+          mp: 0,
+          maxMp: 0,
+          damage: 0,
+          maxDamage: 8,
+          hasAttack: false,
+          isBoss: false,
+          pattern: { patternId: "combo", stepIndex: 0 },
+          lastPatternId: null,
+          summary: { zh: "a", en: "b" },
+        },
+      ],
+      log: [{ zh: "a", en: "b", kind: "info" }],
+      result: "ongoing",
+    };
+    expect(isGameState({ ...s, battle })).toBe(true);
+    expect(isGameState({ ...s, battle: { ...battle, playerActions: [{ skillId: "x" }] } })).toBe(false);
+    expect(isGameState({ ...s, battle: { ...battle, enemies: [{ defId: "goblin" }] } })).toBe(false);
+    expect(isGameState({ ...s, battle: { ...battle, log: [{ zh: "a", en: "b", kind: "bogus" }] } })).toBe(false);
+    expect(isGameState({ ...s, battle: { ...battle, playerStats: { hp: 1 } } })).toBe(false);
+  });
 });
 
 describe("shouldAutoSave 自动存档条件", () => {

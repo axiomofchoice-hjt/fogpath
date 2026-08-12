@@ -272,6 +272,7 @@ export interface BattleEnemy {
   defId: string;
   hp: number;
   maxHp: number;
+  // mp/maxMp 目前为保留字段：战斗内敌人不使用法力（模式步自带伤害），仅随 EnemyDef 初始化
   mp: number;
   maxMp: number;
   damage: number;
@@ -325,12 +326,14 @@ export type GameAction =
   | { type: "BACK_TO_START" }
   | { type: "RESET_GAME" }
   | { type: "LOAD_SAVE"; save: GameState }
-  | { type: "START_TEST_BATTLE"; scenarioId: string }
-  | { type: "BATTLE_ACT"; action: PlayerBattleAction }
-  | { type: "EXIT_BATTLE" }
-  | { type: "ENTER_DUNGEON"; dungeonId: string }
+  // 以下含随机的动作都携带 seed：reducer 以 mulberry32(seed) 为随机源，
+  // 同 (state, action) 必得同结果（reducer 纯函数；StrictMode 双执行一致）
+  | { type: "START_TEST_BATTLE"; scenarioId: string; seed: number }
+  | { type: "BATTLE_ACT"; action: PlayerBattleAction; seed: number }
+  | { type: "EXIT_BATTLE"; seed: number }
+  | { type: "ENTER_DUNGEON"; dungeonId: string; seed: number }
   | { type: "DUNGEON_MOVE"; dx: number; dy: number }
-  | { type: "DUNGEON_ENTER_TILE"; x: number; y: number }
+  | { type: "DUNGEON_ENTER_TILE"; x: number; y: number; seed: number }
   | { type: "DUNGEON_PICKUP"; itemId: string }
   | { type: "DUNGEON_RETREAT" }
   | { type: "MOVE_ROOM"; roomId: string }
@@ -339,4 +342,4 @@ export type GameAction =
   | { type: "DISCARD_ITEM"; itemId: string }
   | { type: "EQUIP"; itemId: string }
   | { type: "UNEQUIP"; slotIndex: number }
-  | { type: "USE_ITEM"; itemId: string };
+  | { type: "USE_ITEM"; itemId: string; seed: number };

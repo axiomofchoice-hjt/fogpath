@@ -5,6 +5,8 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   timeout: 30000,
+  // html reporter：失败时生成 playwright-report/（CI artifact 依赖此目录）
+  reporter: [["list"], ["html", { open: "never" }]],
   use: {
     baseURL: "http://localhost:5173",
     ...devices["Desktop Chrome"],

@@ -1,5 +1,6 @@
 import type { DungeonState } from "../../types";
 import { enemyDefs, items as itemDefs } from "../../data/config";
+import { useLang } from "../../i18n/useLang";
 import { EMPTY_CELL_CLS, MINI_RADIUS, TILE } from "../map/layoutConstants";
 
 type DungeonGridProps = {
@@ -14,6 +15,7 @@ type DungeonGridProps = {
  * - 大地图：全图固定 TILE px 方块（配合世界地图拖动平移，含墙与边界）
  */
 function DungeonGrid({ dungeon, large = false, onStep }: DungeonGridProps) {
+  const { t } = useLang();
   const { rooms, playerPos, size } = dungeon;
   // 可点击：玩家正交邻居（界内、非墙，迷雾格也可点——等同 WASD 走近未探索格）
   const clickableCell = (rx: number, ry: number): boolean =>
@@ -64,6 +66,7 @@ function DungeonGrid({ dungeon, large = false, onStep }: DungeonGridProps) {
                   key={`${rx},${ry}`}
                   type="button"
                   data-testid={`dungeon-cell-${rx}-${ry}`}
+                  aria-label={t("dungeon.unexplored")}
                   onClick={() => onStep!({ x: rx - playerPos.x, y: ry - playerPos.y })}
                   className={`${cls} cursor-pointer transition-colors hover:border-game-gold/60 hover:text-game-gold`}
                 >
@@ -105,6 +108,7 @@ function DungeonGrid({ dungeon, large = false, onStep }: DungeonGridProps) {
                 key={`${rx},${ry}`}
                 type="button"
                 data-testid={`dungeon-cell-${rx}-${ry}`}
+                aria-label={t("dungeon.cell", { x: rx + 1, y: ry + 1 })}
                 onClick={() => onStep!({ x: rx - playerPos.x, y: ry - playerPos.y })}
                 className={`${cls} cursor-pointer transition-colors hover:bg-game-gold/10 hover:border-game-gold/60`}
               >

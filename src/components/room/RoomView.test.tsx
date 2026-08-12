@@ -21,7 +21,7 @@ describe("村庄房间视图", () => {
     expect(screen.getByRole("heading", { name: "哥布林营地入口" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "进入地牢 (↵)" })).toBeInTheDocument();
     // 操控栏「↵」同步出现（与地牢入口按钮并存）
-    expect(screen.getByRole("button", { name: "↵" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "确认" })).toBeInTheDocument();
   });
 
   it("村庄房间不再显示出口卡片列表", () => {
@@ -63,5 +63,15 @@ describe("村庄房间视图", () => {
     // 切到背包标签确认
     await user.click(screen.getByRole("button", { name: /背包/ }));
     expect(screen.getByText("草药捆")).toBeInTheDocument();
+  });
+
+  it("村庄拾取：InteractCard 可键盘操作（可聚焦 + Enter 触发拾取）", async () => {
+    const user = userEvent.setup();
+    renderGame(inVillage("village_square"));
+    const card = screen.getByRole("button", { name: /拾取/ });
+    card.focus();
+    expect(card).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(screen.queryByText("拾取")).not.toBeInTheDocument();
   });
 });

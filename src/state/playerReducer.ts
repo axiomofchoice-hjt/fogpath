@@ -7,12 +7,13 @@ import {
   GOLD_ID,
   removeFromInventory,
 } from "./helpers";
+import { EQUIP_SLOT_COUNT } from "../types";
 
 /** 玩家/村庄域：房间移动、商店、拾取/丢弃、装备、非战斗用道具 */
 export function playerReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case "MOVE_ROOM": {
-      assertInvariant(!state.battle, "MOVE_ROOM 不能在战斗中使用");
+      assertInvariant(!state.battle && !state.dungeon, "MOVE_ROOM 只能在村庄使用");
       const room = roomMap[state.player.currentRoomId];
       assertInvariant(!!room, "MOVE_ROOM 当前房间定义不存在");
       assertInvariant(room.exits.includes(action.roomId), "MOVE_ROOM 目标非出口");
@@ -24,7 +25,7 @@ export function playerReducer(state: GameState, action: GameAction): GameState {
     }
 
     case "BUY_ITEM": {
-      assertInvariant(!state.battle, "BUY_ITEM 不能在战斗中使用");
+      assertInvariant(!state.battle && !state.dungeon, "BUY_ITEM 只能在村庄使用");
       const room = roomMap[state.player.currentRoomId];
       const entry = room?.shopItems?.find((s) => s.itemId === action.itemId);
       assertInvariant(!!entry, "BUY_ITEM 商店无此货物");
@@ -47,7 +48,7 @@ export function playerReducer(state: GameState, action: GameAction): GameState {
     }
 
     case "PICKUP_ITEM": {
-      assertInvariant(!state.battle, "PICKUP_ITEM 不能在战斗中使用");
+      assertInvariant(!state.battle && !state.dungeon, "PICKUP_ITEM 只能在村庄使用");
       const item = itemDefs[action.itemId];
       assertInvariant(!!item, "PICKUP_ITEM 物品定义不存在");
       if (state.player.pickedItemIds.includes(action.itemId)) return state; // 幂等守卫：已拾取
@@ -102,6 +103,10 @@ export function playerReducer(state: GameState, action: GameAction): GameState {
 
     case "UNEQUIP": {
       assertInvariant(!state.battle, "UNEQUIP 不能在战斗中使用");
+      assertInvariant(
+        action.slotIndex >= 0 && action.slotIndex < EQUIP_SLOT_COUNT,
+        "UNEQUIP 槽位索引越界"
+      );
       const itemId = state.player.equipment[action.slotIndex];
       if (!itemId) return state; // 幂等守卫：空槽
       const equipment = [...state.player.equipment];

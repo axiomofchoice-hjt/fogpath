@@ -1,13 +1,15 @@
-import type { AnchorHTMLAttributes, ButtonHTMLAttributes } from "react";
+import type { AnchorHTMLAttributes, ButtonHTMLAttributes, Ref } from "react";
 
 /** 小号描边按钮（顶栏/侧栏/弹层共用样式，勿在各组件内重写类串） */
 export function MiniOutlineButton({
   className = "",
   children,
+  ref,
   ...rest
-}: ButtonHTMLAttributes<HTMLButtonElement>) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & { ref?: Ref<HTMLButtonElement> }) {
   return (
     <button
+      ref={ref}
       className={`text-[9px] font-mono px-2 py-0.5 rounded border border-game-border text-game-dim hover:text-game-gold hover:border-game-gold/40 transition-colors ${className}`}
       {...rest}
     >

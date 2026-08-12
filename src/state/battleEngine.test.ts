@@ -9,6 +9,7 @@ import {
   pickPattern,
   resolveTurn,
 } from "./battleEngine";
+import { mulberry32 } from "./rng";
 import { enemyDefs } from "../data/config";
 import { initialPlayer } from "./init";
 
@@ -257,12 +258,12 @@ describe("resolveTurn：防御与休息", () => {
     expect(next.playerSummary.zh).toContain("没有装备盾牌");
   });
 
-  it("MP 不足时防御/攻击被拒", () => {
+  it("MP 不足时防御/攻击断言失败（UI 已禁用，防绕过不得静默）", () => {
     const battle = initBattle("test_atk_vs_atk", testPlayer({ mp: 5 }));
-    expect(resolveTurn(battle, { kind: "guard" })).toBe(battle);
-    expect(
+    expect(() => resolveTurn(battle, { kind: "guard" })).toThrow(/MP 不足/);
+    expect(() =>
       resolveTurn(battle, { kind: "attack", skillId: "basic_attack", targetIndex: 0 })
-    ).toBe(battle);
+    ).toThrow(/MP 不足/);
   });
 
   it("休息：全额挨打、恢复 MP、属性槽归零", () => {
@@ -295,10 +296,14 @@ describe("resolveTurn：使用道具", () => {
     expect(next.playerStats.mp).toBe(50); // 30+20
   });
 
-  it("非消耗品 / 未知物品不可使用", () => {
+  it("非消耗品 / 未知物品不可使用（断言失败，不静默）", () => {
     const battle = initBattle("test_atk_vs_atk", testPlayer());
-    expect(resolveTurn(battle, { kind: "useItem", itemId: "rusty_sword" })).toBe(battle);
-    expect(resolveTurn(battle, { kind: "useItem", itemId: "nope" })).toBe(battle);
+    expect(() => resolveTurn(battle, { kind: "useItem", itemId: "rusty_sword" })).toThrow(
+      /只能使用有回复效果的消耗品/
+    );
+    expect(() => resolveTurn(battle, { kind: "useItem", itemId: "nope" })).toThrow(
+      /只能使用有回复效果的消耗品/
+    );
   });
 
   it("举盾后使用道具：不破盾，减伤仍生效", () => {
@@ -441,11 +446,11 @@ describe("resolveTurn：胜负与边界", () => {
     expect(next.enemies[1].hp).toBe(30);
   });
 
-  it("未装备的技能不可使用：不消耗回合与 MP", () => {
+  it("未装备的技能不可使用：断言失败（不消耗回合与 MP，但不静默）", () => {
     const battle = initBattle("test_atk_vs_atk", testPlayer());
-    expect(
+    expect(() =>
       resolveTurn(battle, { kind: "attack", skillId: "fireball", targetIndex: 0 })
-    ).toBe(battle);
+    ).toThrow(/未装备的技能/);
   });
 
   it("胜利：击杀全部敌人", () => {
@@ -465,6 +470,28 @@ describe("resolveTurn：胜负与边界", () => {
     const next = resolveTurn(battle, { kind: "rest" });
     expect(next.playerStats.hp).toBe(0);
     expect(next.result).toBe("defeat");
+  });
+
+  it("剩余敌人为 0 优先于玩家 HP 判定（同归于尽防御性判胜利）", () => {
+    // 构造防御性状态：敌人全灭 + 玩家 HP 0 而战斗未结算——判定顺序锁定 remaining===0 → victory
+    const battle = initBattle("test_atk_vs_atk", testPlayer());
+    const finished: BattleState = {
+      ...battle,
+      playerStats: { ...battle.playerStats, hp: 0 },
+      enemies: [{ ...battle.enemies[0], hp: 0 }],
+      result: "ongoing",
+    };
+    const next = resolveTurn(finished, { kind: "rest" });
+    expect(next.playerStats.hp).toBe(0);
+    expect(next.result).toBe("victory");
+  });
+
+  it("模式推进随机选取：同 seed 两次推进结果一致（引擎确定性）", () => {
+    const battle = setPattern(initBattle("test_atk_vs_atk", testPlayer()), 0, "combo", 1);
+    const a = resolveTurn(battle, { kind: "rest" }, mulberry32(9));
+    const b = resolveTurn(battle, { kind: "rest" }, mulberry32(9));
+    expect(a.enemies[0].pattern).toEqual(b.enemies[0].pattern);
+    expect(a.enemies[0].lastPatternId).toBe("combo");
   });
 
   it("战斗结束后动作无效", () => {

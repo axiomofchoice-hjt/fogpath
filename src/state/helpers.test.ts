@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
-import type { InventoryEntry } from "../types";
-import { addToInventory, canRemoveFromInventory, removeFromInventory } from "./helpers";
+import type { DungeonRoom, InventoryEntry } from "../types";
+import {
+  addToInventory,
+  canRemoveFromInventory,
+  patchRoom,
+  removeFromInventory,
+} from "./helpers";
 
 const inv = (): InventoryEntry[] => [
   { itemId: "gold", quantity: 20 },
@@ -63,5 +68,36 @@ describe("addToInventory（执行：qty 非正断言失败，不静默）", () =
 
   it("qty 非正：断言失败", () => {
     expect(() => addToInventory(inv(), "gold", 0)).toThrow(/addToInventory/);
+  });
+});
+
+describe("patchRoom（不可变更新单格）", () => {
+  const room = (): DungeonRoom => ({
+    type: "normal",
+    explored: false,
+    depth: 0,
+    enemyIds: [],
+    itemIds: [],
+  });
+  const dungeon = {
+    dungeonId: "forest",
+    size: { w: 3, h: 3 },
+    rooms: [
+      [room(), null, room()],
+      [null, room(), null],
+      [room(), room(), room()],
+    ],
+    playerPos: { x: 0, y: 0 },
+  };
+
+  it("更新目标格，其余格原样保留（引用不变）", () => {
+    const next = patchRoom(dungeon, 1, 1, { explored: true });
+    expect(next[1][1]!.explored).toBe(true);
+    expect(next[0][0]).toBe(dungeon.rooms[0][0]);
+    expect(next[0][1]).toBeNull();
+  });
+
+  it("目标格为墙（null）：断言失败（调用方 bug 不得静默）", () => {
+    expect(() => patchRoom(dungeon, 0, 1, { explored: true })).toThrow(/patchRoom/);
   });
 });

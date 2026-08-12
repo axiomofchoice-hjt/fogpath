@@ -62,7 +62,7 @@ describe("底部操控栏（WASD 按钮）", () => {
     expect(screen.getByText("房间情报")).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "战斗" })).not.toBeInTheDocument();
     // 点「↵」按钮才开战
-    await user.click(screen.getByRole("button", { name: "↵" }));
+    await user.click(screen.getByRole("button", { name: "确认" }));
     expect(screen.getByRole("heading", { name: "战斗" })).toBeInTheDocument();
   });
 
@@ -121,8 +121,8 @@ describe("底部操控栏（进入/返回/撤离按钮）", () => {
     const dungeon = generateDungeon(dungeons.goblin_camp);
     renderGame({ ...initialGameState(), screen: "game", dungeon });
     await user.click(dirButtons().d); // 弹情报
-    const enter = screen.getByRole("button", { name: "↵" });
-    const back = screen.getByRole("button", { name: "←" });
+    const enter = screen.getByRole("button", { name: "确认" });
+    const back = screen.getByRole("button", { name: "返回" });
     expect(enter).toBeInTheDocument();
     expect(back).toBeInTheDocument();
     await user.click(enter);
@@ -132,8 +132,8 @@ describe("底部操控栏（进入/返回/撤离按钮）", () => {
   it("情报未打开：无进入/返回按钮", () => {
     const dungeon = generateDungeon(dungeons.goblin_camp);
     renderGame({ ...initialGameState(), screen: "game", dungeon });
-    expect(screen.queryByRole("button", { name: "↵" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "←" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "确认" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "返回" })).not.toBeInTheDocument();
   });
 
   it("村庄地牢入口：仅出现「↵」，点击进入地牢", async () => {
@@ -143,17 +143,17 @@ describe("底部操控栏（进入/返回/撤离按钮）", () => {
       screen: "game",
       player: { ...initialPlayer(), currentRoomId: "goblin_camp_entrance" },
     });
-    expect(screen.queryByRole("button", { name: "←" })).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "↵" }));
+    expect(screen.queryByRole("button", { name: "返回" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "确认" }));
     expect(screen.getByRole("heading", { name: /哥布林营地 · 入口/ })).toBeInTheDocument();
   });
 
   it("村庄普通房间：无进入按钮", () => {
     renderGame({ ...initialGameState(), screen: "game" });
-    expect(screen.queryByRole("button", { name: "↵" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "确认" })).not.toBeInTheDocument();
   });
 
-  it("地牢非战斗：出现「撤离（X）」", () => {
+  it("地牢非战斗：出现「撤离 (Q)」", () => {
     const dungeon = generateDungeon(dungeons.goblin_camp);
     renderGame({ ...initialGameState(), screen: "game", dungeon });
     expect(screen.getByTestId("control-retreat")).toBeInTheDocument();
@@ -172,7 +172,7 @@ describe("底部操控栏（进入/返回/撤离按钮）", () => {
     expect(screen.getByRole("heading", { name: "哥布林营地入口" })).toBeInTheDocument();
   });
 
-  it("村庄：不出现「撤离（X）」", () => {
+  it("村庄：不出现「撤离 (Q)」", () => {
     renderGame({ ...initialGameState(), screen: "game" });
     expect(screen.queryByTestId("control-retreat")).not.toBeInTheDocument();
   });

@@ -3,6 +3,7 @@ import { useGame } from "../../state/useGame";
 import { items as itemDefs } from "../../data/config";
 import { useLang } from "../../i18n/useLang";
 import { loc } from "../../i18n/translations";
+import { randomSeed } from "../../state/rng";
 
 type SortMode = "type" | "time" | "rarity";
 
@@ -20,14 +21,14 @@ function InventoryPanel() {
     })
     .filter((x): x is NonNullable<typeof x> => x !== null);
 
-  const sorted = [...inventoryItems].sort((a, b) => {
-    if (sortMode === "type") return a.def.type.localeCompare(b.def.type);
-    if (sortMode === "rarity") return b.def.rarity - a.def.rarity;
-    // 时间：按背包数组顺序（获得顺序，新获得的追加在尾部）
-    const ia = player.inventory.findIndex((e) => e.itemId === a.itemId);
-    const ib = player.inventory.findIndex((e) => e.itemId === b.itemId);
-    return ia - ib;
-  });
+  // 时间排序 = 背包数组顺序（获得顺序，新获得追加在尾部）：无需排序
+  const sorted =
+    sortMode === "time"
+      ? inventoryItems
+      : [...inventoryItems].sort((a, b) => {
+          if (sortMode === "type") return a.def.type.localeCompare(b.def.type);
+          return b.def.rarity - a.def.rarity;
+        });
 
   const canEquip = (item: (typeof sorted)[0]) => {
     return item.def.type === "equipment";
@@ -65,6 +66,7 @@ function InventoryPanel() {
         return (
           <div
             key={item.id}
+            data-testid="inventory-row"
             className="bg-game-card border border-game-border rounded p-2 flex items-center gap-2 cursor-pointer hover:border-game-gold/40 transition-colors group animate-fade-in"
             style={{
               animationDelay: `${i * 50}ms`,
@@ -73,7 +75,7 @@ function InventoryPanel() {
           >
             <span className="text-lg">{item.icon}</span>
             <div className="min-w-0 flex-1">
-              <div className="text-game-text text-[11px] font-mono truncate">
+              <div data-testid="inventory-item-name" className="text-game-text text-[11px] font-mono truncate">
                 {loc(item.name, lang)}
               </div>
               <div className="text-game-dim text-[9px]">{loc(item.description, lang)}</div>
@@ -86,6 +88,7 @@ function InventoryPanel() {
               <button
                 onClick={() => dispatch({ type: "EQUIP", itemId: item.id })}
                 disabled={inBattle}
+                aria-label={t("inventory.equipAria", { name: loc(item.name, lang) })}
                 className="text-game-gold text-[9px] opacity-0 group-hover:opacity-100 transition-opacity ml-1 disabled:opacity-0 disabled:cursor-not-allowed"
                 title={inBattle ? undefined : t("inventory.equip")}
               >
@@ -94,7 +97,8 @@ function InventoryPanel() {
             )}
             {item.type === "consumable" && (
               <button
-                onClick={() => dispatch({ type: "USE_ITEM", itemId: item.id })}
+                onClick={() => dispatch({ type: "USE_ITEM", itemId: item.id, seed: randomSeed() })}
+                aria-label={t("inventory.useAria", { name: loc(item.name, lang) })}
                 className="text-game-green text-[9px] opacity-0 group-hover:opacity-100 transition-opacity ml-1"
                 title={t("inventory.use")}
               >
@@ -109,6 +113,7 @@ function InventoryPanel() {
               <button
                 onClick={() => dispatch({ type: "DISCARD_ITEM", itemId: item.id })}
                 disabled={inBattle}
+                aria-label={t("inventory.discardAria", { name: loc(item.name, lang) })}
                 className="text-game-red text-[9px] opacity-0 group-hover:opacity-100 transition-opacity ml-1 disabled:opacity-0 disabled:cursor-not-allowed"
                 title={inBattle ? undefined : t("inventory.discard")}
               >

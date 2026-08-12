@@ -76,7 +76,7 @@ describe("GameProvider 自动存档副作用", () => {
     const user = userEvent.setup();
     renderProvider(
       <Probe
-        actions={[{ label: "battle", action: () => ({ type: "START_TEST_BATTLE", scenarioId: "test_atk_vs_atk" }) }]}
+        actions={[{ label: "battle", action: () => ({ type: "START_TEST_BATTLE", scenarioId: "test_atk_vs_atk", seed: 1 }) }]}
       />
     );
     await user.click(screen.getByRole("button", { name: "battle" }));

@@ -2,6 +2,7 @@ import type { GameAction, GameState } from "../types";
 import { dungeons as dungeonDefs, items as itemDefs, rooms as roomMap } from "../data/config";
 import { initBattleFromEnemies } from "./battleEngine";
 import { generateDungeon } from "./dungeonGen";
+import { mulberry32 } from "./rng";
 import { addToInventory, assertInvariant, patchRoom, stripPackSpirit } from "./helpers";
 
 /** 该地牢的村庄入口房间（RoomDef.dungeonId 指向地牢） */
@@ -22,7 +23,7 @@ export function dungeonReducer(state: GameState, action: GameAction): GameState 
         roomMap[state.player.currentRoomId]?.dungeonId === action.dungeonId,
         "ENTER_DUNGEON 需在地牢入口房间"
       );
-      const dungeon = generateDungeon(def);
+      const dungeon = generateDungeon(def, mulberry32(action.seed));
       // 入口物品自动入包（教学关背包精灵：无需点击即跟随，置 hasPet）
       const { x, y } = dungeon.playerPos;
       const entrance = dungeon.rooms[y][x]!;
@@ -83,7 +84,11 @@ export function dungeonReducer(state: GameState, action: GameAction): GameState 
       return {
         ...state,
         dungeon: { ...dungeon, rooms, playerPos: { x: action.x, y: action.y } },
-        battle: initBattleFromEnemies(target.enemyIds, state.player),
+        battle: initBattleFromEnemies(
+          target.enemyIds,
+          state.player,
+          mulberry32(action.seed)
+        ),
       };
     }
 

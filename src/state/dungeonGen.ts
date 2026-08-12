@@ -1,8 +1,6 @@
 import type { DungeonDef, DungeonRoom, DungeonState } from "../types";
+import type { Rng } from "./rng";
 import { assertInvariant, pickWeighted } from "./helpers";
-
-/** 随机源（可注入便于测试） */
-export type Rng = () => number;
 
 /** 网格坐标 */
 type Pos = { x: number; y: number };
@@ -28,6 +26,21 @@ const MAX_CORRIDOR_STEPS = 400;
 
 /** 侧枝填充尝试上限（目标房间数为软约束） */
 const MAX_BRANCH_TRIES = 10000;
+
+/** 普通房敌人出现概率：按归一化深度（0-10）分档 */
+const ENEMY_CHANCE_BY_DEPTH: { maxDepth: number; chance: number }[] = [
+  { maxDepth: 0, chance: 0.15 },
+  { maxDepth: 2, chance: 0.4 },
+  { maxDepth: 5, chance: 0.55 },
+  { maxDepth: Infinity, chance: 0.7 },
+];
+
+/** 深层双怪：深度 ≥ 2 时出现第二只敌人的概率 */
+const DOUBLE_ENEMY_MIN_DEPTH = 2;
+const DOUBLE_ENEMY_CHANCE = 0.15;
+
+/** 普通房出现物品的概率 */
+const ITEM_CHANCE = 0.3;
 
 function pickOne<T>(list: T[], rng: Rng): T {
   return list[Math.floor(rng() * list.length)];
@@ -284,9 +297,8 @@ export function generateDungeon(def: DungeonDef, rng: Rng = Math.random): Dungeo
     if (room.x === cx && room.y === cy) continue;
     if (room.x === bossPos.x && room.y === bossPos.y) continue;
     const depth = normDepth(room.x, room.y);
-    const enemyChance =
-      depth === 0 ? 0.15 : depth <= 2 ? 0.4 : depth <= 5 ? 0.55 : 0.7;
-    if (rng() < enemyChance) {
+    const tier = ENEMY_CHANCE_BY_DEPTH.find((t) => depth <= t.maxDepth) ?? ENEMY_CHANCE_BY_DEPTH.at(-1)!;
+    if (rng() < tier.chance) {
       const candidates = enemyPool.filter(
         (e) => depth >= e.minDepth && depth <= e.maxDepth
       );
@@ -297,13 +309,13 @@ export function generateDungeon(def: DungeonDef, rng: Rng = Math.random): Dungeo
       if (picked) {
         rooms[room.y][room.x]!.enemyIds.push(picked.enemyId);
         // 深层有概率双怪
-        if (depth >= 2 && rng() < 0.15) {
+        if (depth >= DOUBLE_ENEMY_MIN_DEPTH && rng() < DOUBLE_ENEMY_CHANCE) {
           const second = pickWeighted(candidates, (e) => e.weight, rng);
           if (second) rooms[room.y][room.x]!.enemyIds.push(second.enemyId);
         }
       }
     }
-    if (rng() < 0.3 && itemPool.length > 0) {
+    if (rng() < ITEM_CHANCE && itemPool.length > 0) {
       rooms[room.y][room.x]!.itemIds.push(pickOne(itemPool, rng));
     }
   }

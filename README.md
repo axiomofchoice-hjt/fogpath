@@ -33,3 +33,16 @@
 ## 4. 总结
 
 《雾之径》是一款将“搜打撤”化为智识博弈的游戏：在“打”中解读怪物模式、以伤害拼刀周旋；在“搜”中权衡魔法爆发的快感与永久收获的实在；在“撤”中时刻与自己的贪婪对赌。它的核心乐趣，正在于每一个回合的智识交锋，以及每一次穿越迷雾时，那股“再多走一步”的紧张与诱惑。
+
+## 5. 开发
+
+```sh
+npm run dev          # 本地开发（Vite dev server）
+npm test             # 单元测试（vitest）
+npm run test:coverage # 覆盖率报告
+npm run test:e2e     # 端到端测试（Playwright，自动启动 dev server）
+npm run lint         # 静态检查（oxlint）
+npm run build        # 类型检查 + 构建
+```
+
+设计文档见 [GDD.md](GDD.md)，实现进度见 [PROGRESS.md](PROGRESS.md)。

@@ -1,9 +1,9 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import type { DungeonRoom, GameState } from "../types";
 import { gameReducer } from "./gameReducer";
 import { initialGameState, initialPlayer } from "./init";
 import { rollLoot } from "./helpers";
-import { loot } from "../data/config";
+import { mulberry32 } from "./rng";
 
 describe("rollLoot（掉落结算）", () => {
   it("rng=0：所有条目掉落 + 最低金币", () => {
@@ -33,7 +33,11 @@ function startAtEntrance(): GameState {
 }
 
 function entered(): GameState {
-  return gameReducer(startAtEntrance(), { type: "ENTER_DUNGEON", dungeonId: "goblin_camp" });
+  return gameReducer(startAtEntrance(), {
+    type: "ENTER_DUNGEON",
+    dungeonId: "goblin_camp",
+    seed: 1,
+  });
 }
 
 const NEIGHBORS = [[1, 0], [0, 1], [-1, 0], [0, -1]] as const;
@@ -101,18 +105,19 @@ describe("地牢：进入", () => {
 
   it("ENTER_DUNGEON 非入口房间/战斗中/已有地牢断言失败", () => {
     const square = { ...initialGameState(), screen: "game" as const };
-    expect(() => gameReducer(square, { type: "ENTER_DUNGEON", dungeonId: "goblin_camp" })).toThrow(
+    expect(() => gameReducer(square, { type: "ENTER_DUNGEON", dungeonId: "goblin_camp", seed: 1 })).toThrow(
       /ENTER_DUNGEON/
     );
     const s = entered();
-    expect(() => gameReducer(s, { type: "ENTER_DUNGEON", dungeonId: "goblin_camp" })).toThrow(
+    expect(() => gameReducer(s, { type: "ENTER_DUNGEON", dungeonId: "goblin_camp", seed: 1 })).toThrow(
       /ENTER_DUNGEON/
     );
     const inBattle = gameReducer(s, {
       type: "START_TEST_BATTLE",
       scenarioId: "test_atk_vs_atk",
+      seed: 1,
     });
-    expect(() => gameReducer(inBattle, { type: "ENTER_DUNGEON", dungeonId: "goblin_camp" })).toThrow(
+    expect(() => gameReducer(inBattle, { type: "ENTER_DUNGEON", dungeonId: "goblin_camp", seed: 1 })).toThrow(
       /ENTER_DUNGEON/
     );
   });
@@ -166,7 +171,12 @@ describe("地牢：移动与情报", () => {
         }
       }
     }
-    if (!from || !dir) return; // 稀疏地图必有墙邻，理论不可能走到这里
+    if (!from || !dir) {
+      // 前置条件：静态营地为稀疏地图必有墙邻，理论不可达；失败即测试环境变化，不得静默跳过
+      expect(from).not.toBeNull();
+      expect(dir).not.toBeNull();
+      return;
+    }
     const at: GameState = { ...s, dungeon: { ...d, playerPos: from } };
     expect(() => gameReducer(at, { type: "DUNGEON_MOVE", dx: dir.dx, dy: dir.dy })).toThrow(
       /DUNGEON_MOVE/
@@ -176,8 +186,8 @@ describe("地牢：移动与情报", () => {
   it("DUNGEON_ENTER_TILE：未探索有敌人 → 移动 + 开战", () => {
     const s = entered();
     const target = firstEnemyNeighbor(s);
-    if (!target) return; // 生成随机：入口邻格可能无敌人，跳过
-    const next = gameReducer(s, { type: "DUNGEON_ENTER_TILE", x: target.x, y: target.y });
+    if (!target) { expect(target, "静态营地入口必有未探索敌人邻格").not.toBeNull(); return; }
+    const next = gameReducer(s, { type: "DUNGEON_ENTER_TILE", x: target.x, y: target.y, seed: 1 });
     expect(next.battle).not.toBeNull();
     expect(next.dungeon!.playerPos).toEqual(target);
     expect(next.dungeon!.rooms[target.y][target.x]!.explored).toBe(true);
@@ -188,23 +198,36 @@ describe("地牢：移动与情报", () => {
 
   it("DUNGEON_ENTER_TILE：非相邻/墙断言失败", () => {
     const s = entered();
-    expect(() => gameReducer(s, { type: "DUNGEON_ENTER_TILE", x: 3, y: 3 })).toThrow(
+    expect(() => gameReducer(s, { type: "DUNGEON_ENTER_TILE", x: 3, y: 3, seed: 1 })).toThrow(
       /DUNGEON_ENTER_TILE/
     );
-    expect(() => gameReducer(s, { type: "DUNGEON_ENTER_TILE", x: 1, y: 1 })).toThrow(
+    expect(() => gameReducer(s, { type: "DUNGEON_ENTER_TILE", x: 1, y: 1, seed: 1 })).toThrow(
       /DUNGEON_ENTER_TILE/
     );
     const m = miniDungeon();
-    expect(() => gameReducer(m, { type: "DUNGEON_ENTER_TILE", x: 0, y: 1 })).toThrow(
+    expect(() => gameReducer(m, { type: "DUNGEON_ENTER_TILE", x: 0, y: 1, seed: 1 })).toThrow(
       /DUNGEON_ENTER_TILE/
     );
+  });
+
+  it("同一 seed 两次进入同一房间：敌人模式一致（reducer 确定性）", () => {
+    const s = entered();
+    const a = gameReducer(s, { type: "DUNGEON_ENTER_TILE", x: 1, y: 2, seed: 42 });
+    const b = gameReducer(s, { type: "DUNGEON_ENTER_TILE", x: 1, y: 2, seed: 42 });
+    expect(a.battle).not.toBeNull();
+    expect(a.battle!.enemies).toEqual(b.battle!.enemies);
   });
 
   it("地牢战斗中无法移动/拾取/撤离（断言失败）", () => {
     const s = entered();
     const target = firstEnemyNeighbor(s);
-    if (!target) return;
-    const inBattle = gameReducer(s, { type: "DUNGEON_ENTER_TILE", x: target.x, y: target.y });
+    if (!target) { expect(target, "静态营地入口必有未探索敌人邻格").not.toBeNull(); return; }
+    const inBattle = gameReducer(s, {
+      type: "DUNGEON_ENTER_TILE",
+      x: target.x,
+      y: target.y,
+      seed: 1,
+    });
     expect(inBattle.battle).not.toBeNull();
     expect(() => gameReducer(inBattle, { type: "DUNGEON_MOVE", dx: 1, dy: 0 })).toThrow(
       /DUNGEON_MOVE/
@@ -220,8 +243,13 @@ describe("地牢：战斗结算", () => {
   it("胜利：敌人清除、掉落入账、损耗保留", () => {
     const s = entered();
     const target = firstEnemyNeighbor(s);
-    if (!target) return;
-    const inBattle = gameReducer(s, { type: "DUNGEON_ENTER_TILE", x: target.x, y: target.y });
+    if (!target) { expect(target, "静态营地入口必有未探索敌人邻格").not.toBeNull(); return; }
+    const inBattle = gameReducer(s, {
+      type: "DUNGEON_ENTER_TILE",
+      x: target.x,
+      y: target.y,
+      seed: 1,
+    });
     // 强制胜利：清空敌人 HP
     const won: GameState = {
       ...inBattle,
@@ -231,26 +259,38 @@ describe("地牢：战斗结算", () => {
         playerStats: { ...inBattle.battle!.playerStats, hp: 77 },
       },
     };
-    vi.spyOn(Math, "random").mockReturnValue(0);
-    const exited = gameReducer(won, { type: "EXIT_BATTLE" });
-    vi.restoreAllMocks();
+    const seed = 42;
+    const exited = gameReducer(won, { type: "EXIT_BATTLE", seed });
     expect(exited.battle).toBeNull();
     expect(exited.dungeon).not.toBeNull();
     const room = exited.dungeon!.rooms[target.y][target.x]!;
     expect(room.enemyIds).toEqual([]);
-    // 全掉 + 最大金币（rng=0 → 全部掉落，金币 min）
+    // 掉落入账：金币增量 = 掉落结算（同 seed）+ 金币条目；其余物品逐个入包
+    const enemyIds = s.dungeon!.rooms[target.y][target.x]!.enemyIds;
+    const drop = rollLoot(enemyIds, mulberry32(seed));
     const beforeGold = initialPlayer().inventory.find((e) => e.itemId === "gold")!.quantity;
     const afterGold = exited.player.inventory.find((e) => e.itemId === "gold")!.quantity;
-    expect(afterGold).toBeGreaterThanOrEqual(beforeGold);
+    const goldDelta = drop.gold + drop.items.filter((id) => id === "gold").length;
+    expect(afterGold).toBe(beforeGold + goldDelta);
+    for (const id of drop.items) {
+      if (id !== "gold") {
+        expect(exited.player.inventory).toContainEqual({ itemId: id, quantity: 1 });
+      }
+    }
     expect(exited.player.hp).toBe(77); // HP 损耗保留
     expect(exited.player.mp).toBe(exited.player.maxMp); // 非战斗状态 MP 自动回满
   });
 
-  it("胜利：掉落金币按表入账（rng=0 → 各表最低金币）", () => {
+  it("胜利：同一 seed 两次结算掉落入账一致（reducer 确定性）", () => {
     const s = entered();
     const target = firstEnemyNeighbor(s);
-    if (!target) return;
-    const inBattle = gameReducer(s, { type: "DUNGEON_ENTER_TILE", x: target.x, y: target.y });
+    if (!target) { expect(target, "静态营地入口必有未探索敌人邻格").not.toBeNull(); return; }
+    const inBattle = gameReducer(s, {
+      type: "DUNGEON_ENTER_TILE",
+      x: target.x,
+      y: target.y,
+      seed: 1,
+    });
     const won: GameState = {
       ...inBattle,
       battle: {
@@ -259,20 +299,9 @@ describe("地牢：战斗结算", () => {
         playerStats: { ...inBattle.battle!.playerStats, hp: 100 },
       },
     };
-    const enemyIds = s.dungeon!.rooms[target.y][target.x]!.enemyIds;
-    const beforeGold = inBattle.player.inventory.find((e) => e.itemId === "gold")!.quantity;
-    vi.spyOn(Math, "random").mockReturnValue(0);
-    const exited = gameReducer(won, { type: "EXIT_BATTLE" });
-    vi.restoreAllMocks();
-    // rng=0：金币范围取各表最低值；金币物品条目（如哥布林 30%）全部掉落，按 1 枚入账
-    const expected = enemyIds.reduce((sum, id) => sum + loot[id].gold[0], 0);
-    const goldItems = enemyIds.reduce(
-      (sum, id) => sum + loot[id].items.filter((e) => e.itemId === "gold").length,
-      0
-    );
-    const afterGold = exited.player.inventory.find((e) => e.itemId === "gold")!.quantity;
-    expect(expected + goldItems).toBeGreaterThan(0);
-    expect(afterGold).toBe(beforeGold + expected + goldItems);
+    const a = gameReducer(won, { type: "EXIT_BATTLE", seed: 7 });
+    const b = gameReducer(won, { type: "EXIT_BATTLE", seed: 7 });
+    expect(a.player.inventory).toEqual(b.player.inventory);
   });
 
   it("地牢存在时开测试战斗：败北按测试通道结算，不触发地牢惩罚", () => {
@@ -283,13 +312,14 @@ describe("地牢：战斗结算", () => {
     const inTest = gameReducer(back, {
       type: "START_TEST_BATTLE",
       scenarioId: "test_atk_vs_atk",
+      seed: 1,
     });
     expect(inTest.battle?.scenarioId).toBe("test_atk_vs_atk");
     const defeated: GameState = {
       ...inTest,
       battle: { ...inTest.battle!, result: "defeat" },
     };
-    const exited = gameReducer(defeated, { type: "EXIT_BATTLE" });
+    const exited = gameReducer(defeated, { type: "EXIT_BATTLE", seed: 1 });
     expect(exited.dungeon).not.toBeNull(); // 地牢不废弃
     expect(exited.player.equipment[0]).toBe("rusty_sword"); // 装备不丢
     expect(exited.player.hp).toBe(exited.player.maxHp);
@@ -298,8 +328,13 @@ describe("地牢：战斗结算", () => {
   it("败北：装备全丢、背包保留、地牢废弃回村回满", () => {
     const s = entered();
     const target = firstEnemyNeighbor(s);
-    if (!target) return;
-    const inBattle = gameReducer(s, { type: "DUNGEON_ENTER_TILE", x: target.x, y: target.y });
+    if (!target) { expect(target, "静态营地入口必有未探索敌人邻格").not.toBeNull(); return; }
+    const inBattle = gameReducer(s, {
+      type: "DUNGEON_ENTER_TILE",
+      x: target.x,
+      y: target.y,
+      seed: 1,
+    });
     const lost: GameState = {
       ...inBattle,
       battle: {
@@ -308,7 +343,7 @@ describe("地牢：战斗结算", () => {
         playerStats: { ...inBattle.battle!.playerStats, hp: 0 },
       },
     };
-    const exited = gameReducer(lost, { type: "EXIT_BATTLE" });
+    const exited = gameReducer(lost, { type: "EXIT_BATTLE", seed: 1 });
     expect(exited.battle).toBeNull();
     expect(exited.dungeon).toBeNull();
     expect(exited.player.equipment).toEqual([null, null, null, null, null, null]);
@@ -371,7 +406,12 @@ describe("地牢：拾取", () => {
   it("死亡回村：背包精灵消失（背包移除 + hasPet 复位）", () => {
     const s = entered();
     const target = firstEnemyNeighbor(s)!;
-    const inBattle = gameReducer(s, { type: "DUNGEON_ENTER_TILE", x: target.x, y: target.y });
+    const inBattle = gameReducer(s, {
+      type: "DUNGEON_ENTER_TILE",
+      x: target.x,
+      y: target.y,
+      seed: 1,
+    });
     const lost: GameState = {
       ...inBattle,
       battle: {
@@ -380,7 +420,7 @@ describe("地牢：拾取", () => {
         playerStats: { ...inBattle.battle!.playerStats, hp: 0 },
       },
     };
-    const exited = gameReducer(lost, { type: "EXIT_BATTLE" });
+    const exited = gameReducer(lost, { type: "EXIT_BATTLE", seed: 1 });
     expect(exited.dungeon).toBeNull();
     expect(exited.player.hasPet).toBe(false);
     expect(exited.player.inventory.some((e) => e.itemId === "bag_spirit")).toBe(false);

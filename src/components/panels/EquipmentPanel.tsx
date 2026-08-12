@@ -67,7 +67,8 @@ function EquipmentPanel() {
             <div
               key={i}
               className="bg-game-card border border-game-border rounded p-3 flex items-center gap-3 group"
-              onMouseMove={(e) => {
+              // 仅进入/离开槽位时 setState（mousemove 逐帧更新会导致整面板高频重渲染）
+              onMouseEnter={(e) => {
                 if (item) setTooltip({ x: e.clientX, y: e.clientY, itemId: item.id });
               }}
               onMouseLeave={() => setTooltip(null)}

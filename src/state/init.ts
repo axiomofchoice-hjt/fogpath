@@ -1,5 +1,12 @@
 import type { GameState, Player } from "../types";
+import { EQUIP_SLOT_COUNT } from "../types";
 import { GOLD_ID } from "./helpers";
+
+const START_EQUIPMENT: (string | null)[] = [
+  "rusty_sword",
+  "rusty_shield",
+  ...Array.from({ length: EQUIP_SLOT_COUNT - 2 }, () => null),
+];
 
 export function initialPlayer(): Player {
   return {
@@ -12,7 +19,7 @@ export function initialPlayer(): Player {
       { itemId: GOLD_ID, quantity: 20 },
       { itemId: "health_potion", quantity: 2 },
     ],
-    equipment: ["rusty_sword", "rusty_shield", null, null, null, null],
+    equipment: START_EQUIPMENT,
     pickedItemIds: ["rusty_sword"],
     hasPet: false,
   };

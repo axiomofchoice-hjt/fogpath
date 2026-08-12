@@ -22,15 +22,17 @@ async function openInventory(user: ReturnType<typeof userEvent.setup>) {
 
 /** 条目行：按物品名定位（背包条目第一行名字，限定在条目容器内） */
 function itemRow(name: string): HTMLElement {
-  const el = screen.getByText(name);
-  return el.closest(".bg-game-card")!;
+  const rows = screen.getAllByTestId("inventory-row");
+  const row = rows.find((r) => r.textContent?.includes(name));
+  if (!row) throw new Error(`背包条目行未找到：${name}`);
+  return row;
 }
 
-/** 侧栏内物品名按 DOM 序（排除描述文本/装备面板内容） */
+/** 侧栏内物品名按 DOM 序（仅取背包条目行，排除描述文本/装备面板内容） */
 function itemNamesInOrder(): string[] {
-  return Array.from(document.querySelectorAll("aside [class]"))
-    .filter((el) => ["金币", "铁剑", "治疗药水", "幸运戒指"].includes(el.textContent ?? ""))
-    .map((el) => el.textContent ?? "");
+  return screen
+    .getAllByTestId("inventory-row")
+    .map((row) => row.querySelector("[data-testid='inventory-item-name']")?.textContent ?? "");
 }
 
 describe("背包面板", () => {

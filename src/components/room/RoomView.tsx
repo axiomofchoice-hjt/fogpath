@@ -9,6 +9,7 @@ import Typewriter from "./Typewriter";
 import InteractCard from "./InteractCard";
 import { dirFromKey } from "../map/nav";
 import { controlEnter, controlMoveDir } from "../control/controlActions";
+import { randomSeed } from "../../state/rng";
 import { GoldWideButton } from "../ui/buttons";
 
 function RoomView({ mapOpen }: { mapOpen: boolean }) {
@@ -45,6 +46,8 @@ function RoomView({ mapOpen }: { mapOpen: boolean }) {
   }, [state.battle, mapOpen, room, state, dispatch]);
 
   if (!room) {
+    // 兜底例外（与 fail-fast 不冲突的显式分类）：坏存档/未知房间引用给出可见错误文案而非崩溃
+    // （数据进入前已被 isGameState 深度校验拦截，此处仅防极端的运行时引用变化）
     return (
       <main className="flex-1 overflow-y-auto p-6">
         <p className="text-game-red text-sm font-mono">
@@ -168,7 +171,9 @@ function RoomView({ mapOpen }: { mapOpen: boolean }) {
       {room.dungeonId && (
         <div className="mt-3">
           <GoldWideButton
-            onClick={() => dispatch({ type: "ENTER_DUNGEON", dungeonId: room.dungeonId! })}
+            onClick={() =>
+              dispatch({ type: "ENTER_DUNGEON", dungeonId: room.dungeonId!, seed: randomSeed() })
+            }
           >
             {t("room.enterDungeon")}
           </GoldWideButton>

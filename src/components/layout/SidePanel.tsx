@@ -2,6 +2,7 @@ import type { PanelTab } from "../../types";
 import TabBar from "./TabBar";
 import MapPanel from "../panels/MapPanel";
 import InventoryPanel from "../panels/InventoryPanel";
+import { SIDEBAR_W } from "../map/layoutConstants";
 import type { IntelState } from "../control/controlActions";
 
 type SidePanelProps = {
@@ -13,7 +14,7 @@ type SidePanelProps = {
 
 function SidePanel({ activeTab, onTabChange, onExpandMap, intel }: SidePanelProps) {
   return (
-    <aside className="w-64 bg-game-panel/50 border-l border-game-border flex-shrink-0 overflow-hidden flex flex-col">
+    <aside className={`${SIDEBAR_W} bg-game-panel/50 border-l border-game-border flex-shrink-0 overflow-hidden flex flex-col`}>
       <div className="flex-1 overflow-y-auto p-3">
         <TabBar activeTab={activeTab} onTabChange={onTabChange} />
         {activeTab === "map" && (

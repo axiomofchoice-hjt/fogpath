@@ -7,6 +7,7 @@ import { loc, type Params, type TKey } from "../../i18n/translations";
 import { dirFromKey } from "../map/nav";
 import Typewriter from "../room/Typewriter";
 import { controlBack, controlEnter, controlMoveDir, controlRetreat, type IntelState } from "../control/controlActions";
+import { randomSeed } from "../../state/rng";
 import { GoldWideButton } from "../ui/buttons";
 
 /** 当前房间的文字描述：类型底文 + 敌人/物品补充（分隔符按语言：zh 顿号/句号，en 逗号/空格） */
@@ -187,7 +188,12 @@ function DungeonView({ mapOpen, intel }: { mapOpen: boolean; intel: IntelState }
           <div className="flex gap-3">
             <button
               onClick={() => {
-                dispatch({ type: "DUNGEON_ENTER_TILE", x: pending.x, y: pending.y });
+                dispatch({
+                  type: "DUNGEON_ENTER_TILE",
+                  x: pending.x,
+                  y: pending.y,
+                  seed: randomSeed(),
+                });
               }}
               className="px-4 py-1.5 rounded text-xs font-mono border border-game-gold/50 bg-game-gold/20 text-game-gold hover:bg-game-gold/30 transition-colors"
             >

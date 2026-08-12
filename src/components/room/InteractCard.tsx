@@ -8,9 +8,10 @@ type InteractCardProps = {
 
 function InteractCard({ icon, name, sub, actionLabel, onClick }: InteractCardProps) {
   return (
-    <div
+    <button
+      type="button"
       onClick={onClick}
-      className="bg-game-card border border-game-border rounded p-3 flex items-center gap-3
+      className="w-full text-left bg-game-card border border-game-border rounded p-3 flex items-center gap-3
         transition-colors cursor-pointer animate-fade-in
         hover:border-game-gold/40 group"
       style={{ animationFillMode: "backwards" }}
@@ -23,7 +24,7 @@ function InteractCard({ icon, name, sub, actionLabel, onClick }: InteractCardPro
       <span className="text-game-dim text-[10px] font-mono opacity-60 group-hover:opacity-100 transition-opacity">
         {actionLabel}
       </span>
-    </div>
+    </button>
   );
 }
 

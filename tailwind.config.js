@@ -31,7 +31,6 @@ export default {
       animation: {
         "fade-in": "fadeIn 0.3s ease-out",
         "slide-up": "slideUp 0.3s ease-out",
-        "typewriter": "typewriter 0.05s steps(1)",
       },
       keyframes: {
         fadeIn: {

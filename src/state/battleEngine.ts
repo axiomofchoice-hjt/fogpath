@@ -9,7 +9,8 @@ import type {
 } from "../types";
 import { enemyDefs, items as itemDefs, skills as skillDefs } from "../data/config";
 import { testBattleConfigs } from "../data/battleTestConfigs";
-import { isUsableConsumable, pickWeighted } from "./helpers";
+import type { Rng } from "./rng";
+import { assertInvariant, isUsableConsumable, pickWeighted } from "./helpers";
 
 /** 休息动作的 MP 回复量 */
 export const REST_MP = 10;
@@ -95,7 +96,7 @@ function applyEnemyStep(e: BattleEnemy): BattleEnemy {
 }
 
 /** 模式推进：执行完当前步后进入下一步；模式完成则选取下一个模式（防重复权重惩罚） */
-function advanceEnemyPattern(e: BattleEnemy): BattleEnemy {
+function advanceEnemyPattern(e: BattleEnemy, rng: Rng): BattleEnemy {
   const def = enemyDefs[e.defId];
   if (!def) {
     throw new Error(`[battle] 未知敌人定义 "${e.defId}"`);
@@ -108,7 +109,7 @@ function advanceEnemyPattern(e: BattleEnemy): BattleEnemy {
   if (nextStep < pattern.steps.length) {
     return { ...e, pattern: { patternId: pattern.id, stepIndex: nextStep } };
   }
-  const picked = pickPattern(def.patterns, pattern.id);
+  const picked = pickPattern(def.patterns, pattern.id, rng);
   return {
     ...e,
     pattern: { patternId: picked.id, stepIndex: 0 },
@@ -138,13 +139,13 @@ function enemiesHitPlayer(
 }
 
 /** 按敌人 ID 列表初始化战斗敌人（Boss 也走此路径） */
-function initEnemies(enemyIds: string[]): BattleEnemy[] {
+function initEnemies(enemyIds: string[], rng: Rng): BattleEnemy[] {
   return enemyIds.map((id) => {
     const def = enemyDefs[id];
     if (!def) {
       throw new Error(`[battle] 引用了不存在的敌人 "${id}"`);
     }
-    const first = pickPattern(def.patterns, null);
+    const first = pickPattern(def.patterns, null, rng);
     return {
       defId: id,
       hp: def.maxHp,
@@ -168,7 +169,8 @@ function buildBattle(
   scenarioId: string,
   enemyIds: string[],
   equipment: (string | null)[],
-  player: Player
+  player: Player,
+  rng: Rng
 ): BattleState {
   const playerActions = equipment.flatMap((id) => {
     if (id && !itemDefs[id]) {
@@ -177,7 +179,7 @@ function buildBattle(
     const def = id ? itemDefs[id] : undefined;
     return def?.actions ?? [];
   });
-  const enemies = initEnemies(enemyIds);
+  const enemies = initEnemies(enemyIds, rng);
   return {
     scenarioId,
     turn: 0,
@@ -210,7 +212,8 @@ function buildBattle(
 
 export function initBattle(
   scenarioId: string,
-  player: Player
+  player: Player,
+  rng: Rng = Math.random
 ): BattleState {
   const config = testBattleConfigs[scenarioId];
   if (!config) {
@@ -218,18 +221,19 @@ export function initBattle(
   }
   // 玩家本身无属性：攻击动作全部来自装备（测试场景可直接覆盖装备）
   const equipment = config.equipment ?? player.equipment;
-  return buildBattle(scenarioId, config.enemies, equipment, player);
+  return buildBattle(scenarioId, config.enemies, equipment, player, rng);
 }
 
 /** 地牢战斗入口：按敌人 ID 列表 + 玩家当前装备开战（GDD 3.3 进房即战） */
 export function initBattleFromEnemies(
   enemyIds: string[],
-  player: Player
+  player: Player,
+  rng: Rng = Math.random
 ): BattleState {
   if (enemyIds.length === 0) {
     throw new Error("[battle] initBattleFromEnemies 需要至少一个敌人");
   }
-  return buildBattle(DUNGEON_SCENARIO_ID, enemyIds, player.equipment, player);
+  return buildBattle(DUNGEON_SCENARIO_ID, enemyIds, player.equipment, player, rng);
 }
 
 /**
@@ -241,23 +245,29 @@ export function initBattleFromEnemies(
  */
 export function resolveTurn(
   state: BattleState,
-  action: PlayerBattleAction
+  action: PlayerBattleAction,
+  rng: Rng = Math.random
 ): BattleState {
   if (state.result !== "ongoing") return state;
-  // 动作必须由装备提供：未装备的技能不可使用（返回原状态，不消耗回合与 MP）
-  if (action.kind === "attack" && !state.playerActions.some((a) => a.skillId === action.skillId)) {
-    return state;
-  }
-  // 引擎兜底校验 MP：不足时动作无效（不消耗回合；UI 按钮已禁用，此处防绕过）
+  // 动作必须由装备提供：未装备的技能不可使用（UI 只显示可用动作，此处防调用方 bug 静默）
+  assertInvariant(
+    action.kind !== "attack" ||
+      state.playerActions.some((a) => a.skillId === action.skillId),
+    "未装备的技能不可使用"
+  );
+  // 引擎兜底校验 MP：不足时动作无效（UI 按钮已禁用，此处防绕过，不得静默）
   const mpCost = action.kind === "attack"
     ? (skillDefs[action.skillId]?.mpCost ?? 0)
     : action.kind === "guard"
       ? GUARD_MP
       : 0;
-  if (mpCost > 0 && state.playerStats.mp < mpCost) return state;
-  // 使用道具：必须为消耗品且有效果（与玩家域共用谓词；UI 已拦截，此处防绕过）
-  if (action.kind === "useItem" && !isUsableConsumable(itemDefs[action.itemId])) {
-    return state;
+  assertInvariant(mpCost === 0 || state.playerStats.mp >= mpCost, "MP 不足，动作无效");
+  // 使用道具：必须为消耗品且有效果（与玩家域共用谓词；UI 已拦截，此处防绕过，不得静默）
+  if (action.kind === "useItem") {
+    assertInvariant(
+      isUsableConsumable(itemDefs[action.itemId]),
+      "只能使用有回复效果的消耗品"
+    );
   }
 
   // 本回合攻击动作的属性：由装备提供的动作决定；防御/休息无攻击属性
@@ -339,13 +349,12 @@ export function resolveTurn(
     next.shieldActive = true;
     next.playerStats.mp = Math.max(0, next.playerStats.mp - GUARD_MP);
     const reduction = next.guardReduction;
-    const pct = Math.round(SHIELD_REDUCTION * 100);
     const guardMsg = msg(
       reduction > 0
-        ? `你举起了盾，减伤 ${pct}% 直到下一次攻击前。`
+        ? `你举起了盾，减伤 ${SHIELD_PCT}% 直到下一次攻击前。`
         : "你选择了防御，但没有装备盾牌。",
       reduction > 0
-        ? `You raise your shield, reducing damage by ${pct}% until your next attack.`
+        ? `You raise your shield, reducing damage by ${SHIELD_PCT}% until your next attack.`
         : "You guard, but have no shield."
     );
     next.playerSummary = guardMsg;
@@ -377,7 +386,7 @@ export function resolveTurn(
       `你选择了休息，恢复了 ${REST_MP} 点 MP。`,
       `You rest, recovering ${REST_MP} MP.`
     );
-    next.playerStats.mp = Math.min(state.playerStats.maxMp, state.playerStats.mp + REST_MP);
+    next.playerStats.mp = Math.min(next.playerStats.maxMp, next.playerStats.mp + REST_MP);
     next.log.push(
       msg(
         `你休息了片刻，恢复了 ${REST_MP} 点 MP。`,
@@ -417,7 +426,7 @@ export function resolveTurn(
   } else {
     // 模式推进：存活敌人执行下一步（模式完成则选取下一个模式）
     next.enemies = next.enemies.map((e) =>
-      e.hp > 0 ? advanceEnemyPattern(e) : e
+      e.hp > 0 ? advanceEnemyPattern(e, rng) : e
     );
   }
 

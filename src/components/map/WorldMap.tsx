@@ -23,6 +23,15 @@ function WorldMap({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ startX: number; startY: number; ox: number; oy: number } | null>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  // 打开时焦点移入返回按钮，关闭/卸载时还原到打开前的焦点元素（键盘玩家可立即 Tab 到弹层）
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.activeElement as HTMLElement | null;
+    closeRef.current?.focus();
+    return () => prev?.focus?.();
+  }, [open]);
 
   // 打开瞬间定位：当前房间居中（绘制前计算，避免闪现上次拖动结果）
   useLayoutEffect(() => {
@@ -99,10 +108,10 @@ function WorldMap({ open, onClose }: { open: boolean; onClose: () => void }) {
   const title = dungeonDef ? `${dungeonDef.icon} ${loc(dungeonDef.name, lang)}` : t("map.worldMap");
 
   return (
-    <div className="fixed inset-0 z-50 bg-game-bg/95 flex flex-col">
+    <div data-testid="world-map-overlay" className="fixed inset-0 z-50 bg-game-bg/95 flex flex-col">
       <div className="flex items-center justify-center py-4 relative flex-shrink-0">
         <h2 className="text-game-gold text-lg font-mono font-bold">{title}</h2>
-        <MiniOutlineButton className="absolute right-4" onClick={onClose}>
+        <MiniOutlineButton ref={closeRef} className="absolute right-4" onClick={onClose}>
           {"\u2190"} {t("map.back")}
         </MiniOutlineButton>
       </div>

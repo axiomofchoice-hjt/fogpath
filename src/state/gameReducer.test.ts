@@ -41,6 +41,7 @@ describe("屏幕切换与重置", () => {
     const s = gameReducer(initialGameState(), {
       type: "START_TEST_BATTLE",
       scenarioId: "test_atk_vs_atk",
+      seed: 1,
     });
     expect(() => gameReducer(s, { type: "BACK_TO_START" })).toThrow(/BACK_TO_START/);
   });
@@ -59,6 +60,7 @@ describe("屏幕切换与重置", () => {
     const s = gameReducer(initialGameState(), {
       type: "START_TEST_BATTLE",
       scenarioId: "test_atk_vs_atk",
+      seed: 1,
     });
     expect(() => gameReducer(s, { type: "RESET_GAME" })).toThrow(/RESET_GAME/);
   });
@@ -69,6 +71,7 @@ describe("测试战斗流程", () => {
     const s = gameReducer(initialGameState(), {
       type: "START_TEST_BATTLE",
       scenarioId: "test_atk_vs_atk",
+      seed: 1,
     });
     expect(s.battle).not.toBeNull();
     expect(s.battle?.scenarioId).toBe("test_atk_vs_atk");
@@ -78,38 +81,41 @@ describe("测试战斗流程", () => {
 
   it("未知场景与战斗中的重复开启断言失败", () => {
     expect(() =>
-      gameReducer(initialGameState(), { type: "START_TEST_BATTLE", scenarioId: "nope" })
+      gameReducer(initialGameState(), { type: "START_TEST_BATTLE", scenarioId: "nope", seed: 1 })
     ).toThrow(/START_TEST_BATTLE/);
     const s = gameReducer(initialGameState(), {
       type: "START_TEST_BATTLE",
       scenarioId: "test_atk_vs_atk",
+      seed: 1,
     });
     expect(() =>
-      gameReducer(s, { type: "START_TEST_BATTLE", scenarioId: "test_atk_vs_atk" })
+      gameReducer(s, { type: "START_TEST_BATTLE", scenarioId: "test_atk_vs_atk", seed: 1 })
     ).toThrow(/START_TEST_BATTLE/);
   });
 
   it("无战斗时 BATTLE_ACT / EXIT_BATTLE 断言失败", () => {
     const init = initialGameState();
-    expect(() => gameReducer(init, { type: "BATTLE_ACT", action: { kind: "rest" } })).toThrow(
+    expect(() => gameReducer(init, { type: "BATTLE_ACT", action: { kind: "rest" }, seed: 1 })).toThrow(
       /BATTLE_ACT/
     );
-    expect(() => gameReducer(init, { type: "EXIT_BATTLE" })).toThrow(/EXIT_BATTLE/);
+    expect(() => gameReducer(init, { type: "EXIT_BATTLE", seed: 1 })).toThrow(/EXIT_BATTLE/);
   });
 
   it("EXIT_BATTLE 战斗未结束时断言失败（防绕过）", () => {
     const s = gameReducer(initialGameState(), {
       type: "START_TEST_BATTLE",
       scenarioId: "test_atk_vs_atk",
+      seed: 1,
     });
     expect(s.battle?.result).toBe("ongoing");
-    expect(() => gameReducer(s, { type: "EXIT_BATTLE" })).toThrow(/EXIT_BATTLE/);
+    expect(() => gameReducer(s, { type: "EXIT_BATTLE", seed: 1 })).toThrow(/EXIT_BATTLE/);
   });
 
   it("EXIT_BATTLE 后 HP/MP 自动回满", () => {
     const s = gameReducer(initialGameState(), {
       type: "START_TEST_BATTLE",
       scenarioId: "test_atk_vs_atk",
+      seed: 1,
     });
     const hurt: GameState = {
       ...s,
@@ -117,7 +123,7 @@ describe("测试战斗流程", () => {
         ? { ...s.battle, result: "victory", playerStats: { ...s.battle.playerStats, hp: 60, mp: 70 } }
         : null,
     };
-    const exited = gameReducer(hurt, { type: "EXIT_BATTLE" });
+    const exited = gameReducer(hurt, { type: "EXIT_BATTLE", seed: 1 });
     expect(exited.battle).toBeNull();
     expect(exited.player.hp).toBe(exited.player.maxHp);
     expect(exited.player.mp).toBe(exited.player.maxMp);
@@ -140,6 +146,7 @@ describe("拾取与丢弃", () => {
     const s = gameReducer(init, {
       type: "START_TEST_BATTLE",
       scenarioId: "test_atk_vs_atk",
+      seed: 1,
     });
     expect(() => gameReducer(s, { type: "PICKUP_ITEM", itemId: "herb_bundle" })).toThrow(
       /PICKUP_ITEM/
@@ -164,6 +171,7 @@ describe("拾取与丢弃", () => {
     const s = gameReducer(initialGameState(), {
       type: "START_TEST_BATTLE",
       scenarioId: "test_atk_vs_atk",
+      seed: 1,
     });
     expect(() => gameReducer(s, { type: "DISCARD_ITEM", itemId: "health_potion" })).toThrow(
       /DISCARD_ITEM/
@@ -229,6 +237,7 @@ describe("装备与卸下", () => {
     const s = gameReducer(initialGameState(), {
       type: "START_TEST_BATTLE",
       scenarioId: "test_atk_vs_atk",
+      seed: 1,
     });
     expect(() => gameReducer(s, { type: "EQUIP", itemId: "leather_cap" })).toThrow(/EQUIP/);
   });
@@ -241,10 +250,17 @@ describe("装备与卸下", () => {
     expect(gameReducer(init, { type: "UNEQUIP", slotIndex: 2 })).toBe(init);
   });
 
+  it("UNEQUIP 槽位索引越界断言失败", () => {
+    const init = initialGameState();
+    expect(() => gameReducer(init, { type: "UNEQUIP", slotIndex: 6 })).toThrow(/UNEQUIP/);
+    expect(() => gameReducer(init, { type: "UNEQUIP", slotIndex: -1 })).toThrow(/UNEQUIP/);
+  });
+
   it("战斗中卸下断言失败", () => {
     const s = gameReducer(initialGameState(), {
       type: "START_TEST_BATTLE",
       scenarioId: "test_atk_vs_atk",
+      seed: 1,
     });
     expect(() => gameReducer(s, { type: "UNEQUIP", slotIndex: 0 })).toThrow(/UNEQUIP/);
   });
@@ -253,34 +269,35 @@ describe("装备与卸下", () => {
 describe("消耗品与休息", () => {
   it("USE_ITEM 恢复 HP 并扣除数量", () => {
     const hurt = { ...initialGameState(), player: { ...initialPlayer(), hp: 50, mp: 30 } };
-    const s = gameReducer(hurt, { type: "USE_ITEM", itemId: "health_potion" });
+    const s = gameReducer(hurt, { type: "USE_ITEM", itemId: "health_potion", seed: 1 });
     expect(s.player.hp).toBe(80);
     expect(s.player.inventory).toContainEqual({ itemId: "health_potion", quantity: 1 });
   });
 
   it("回复不超过上限", () => {
-    const s = gameReducer(initialGameState(), { type: "USE_ITEM", itemId: "health_potion" });
+    const s = gameReducer(initialGameState(), { type: "USE_ITEM", itemId: "health_potion", seed: 1 });
     expect(s.player.hp).toBe(100);
     expect(s.player.mp).toBe(100);
   });
 
   it("装备类型 / 未知物品使用断言失败", () => {
     const init = initialGameState();
-    expect(() => gameReducer(init, { type: "USE_ITEM", itemId: "rusty_sword" })).toThrow(
+    expect(() => gameReducer(init, { type: "USE_ITEM", itemId: "rusty_sword", seed: 1 })).toThrow(
       /USE_ITEM/
     );
-    expect(() => gameReducer(init, { type: "USE_ITEM", itemId: "nope" })).toThrow(/USE_ITEM/);
+    expect(() => gameReducer(init, { type: "USE_ITEM", itemId: "nope", seed: 1 })).toThrow(/USE_ITEM/);
   });
 
   it("USE_ITEM：背包中无此物品静默", () => {
     const init = initialGameState();
-    expect(gameReducer(init, { type: "USE_ITEM", itemId: "herb_bundle" })).toBe(init);
+    expect(gameReducer(init, { type: "USE_ITEM", itemId: "herb_bundle", seed: 1 })).toBe(init);
   });
 
   it("战斗中使用药水：作用于战斗内属性并扣除背包数量", () => {
     const s = gameReducer(initialGameState(), {
       type: "START_TEST_BATTLE",
       scenarioId: "test_atk_vs_atk",
+      seed: 1,
     });
     const hurt: GameState = {
       ...s,
@@ -288,7 +305,7 @@ describe("消耗品与休息", () => {
         ? { ...s.battle, playerStats: { ...s.battle.playerStats, hp: 40 } }
         : null,
     };
-    const used = gameReducer(hurt, { type: "USE_ITEM", itemId: "health_potion" });
+    const used = gameReducer(hurt, { type: "USE_ITEM", itemId: "health_potion", seed: 1 });
     expect(used.battle?.playerStats.hp).toBe(70); // 40+30，哥布林首回合蓄力不攻击
     expect(used.battle?.turn).toBe(1);
     expect(used.player.inventory).toContainEqual({ itemId: "health_potion", quantity: 1 });
@@ -298,6 +315,7 @@ describe("消耗品与休息", () => {
     const s = gameReducer(initialGameState(), {
       type: "START_TEST_BATTLE",
       scenarioId: "test_atk_vs_atk",
+      seed: 1,
     });
     const noPotion: GameState = {
       ...s,
@@ -306,7 +324,47 @@ describe("消耗品与休息", () => {
         inventory: s.player.inventory.filter((e) => e.itemId !== "health_potion"),
       },
     };
-    expect(gameReducer(noPotion, { type: "USE_ITEM", itemId: "health_potion" })).toBe(noPotion);
+    expect(gameReducer(noPotion, { type: "USE_ITEM", itemId: "health_potion", seed: 1 })).toBe(noPotion);
+  });
+
+  it("战斗中使用装备类型道具：背包中无此物品也断言失败（调用方 bug 与库存无关）", () => {
+    const s = gameReducer(initialGameState(), {
+      type: "START_TEST_BATTLE",
+      scenarioId: "test_atk_vs_atk",
+      seed: 1,
+    });
+    const noSword: GameState = {
+      ...s,
+      player: {
+        ...s.player,
+        inventory: s.player.inventory.filter((e) => e.itemId !== "rusty_sword"),
+      },
+    };
+    expect(() => gameReducer(noSword, { type: "USE_ITEM", itemId: "rusty_sword", seed: 1 })).toThrow(
+      /USE_ITEM/
+    );
+  });
+
+  it("BATTLE_ACT：同一 seed 两次出招敌人模式推进一致（reducer 确定性）", () => {
+    const s = gameReducer(initialGameState(), {
+      type: "START_TEST_BATTLE",
+      scenarioId: "test_atk_vs_atk",
+      seed: 1,
+    });
+    // 推进到模式完成点（combo 第 2 步）后休息触发下一模式选取
+    const battle = s.battle!;
+    const forced = {
+      ...battle,
+      enemies: battle.enemies.map((e) => ({
+        ...e,
+        pattern: { patternId: "combo", stepIndex: 1 },
+        lastPatternId: null,
+      })),
+    };
+    const s2: GameState = { ...s, battle: forced };
+    const a = gameReducer(s2, { type: "BATTLE_ACT", action: { kind: "rest" }, seed: 5 });
+    const b = gameReducer(s2, { type: "BATTLE_ACT", action: { kind: "rest" }, seed: 5 });
+    expect(a.battle!.enemies[0].pattern).toEqual(b.battle!.enemies[0].pattern);
   });
 });
 
@@ -331,6 +389,7 @@ describe("村庄：房间切换", () => {
     const s = gameReducer(game, {
       type: "START_TEST_BATTLE",
       scenarioId: "test_atk_vs_atk",
+      seed: 1,
     });
     expect(s.battle).not.toBeNull();
     expect(() => gameReducer(s, { type: "MOVE_ROOM", roomId: "village_shop" })).toThrow(
@@ -391,5 +450,31 @@ describe("村庄：商店购买", () => {
     expect(goldAmount(shop.player)).toBe(20);
     const after = gameReducer(shop, { type: "BUY_ITEM", itemId: "mana_potion" });
     expect(goldAmount(after.player)).toBe(12);
+  });
+});
+
+describe("村庄动作：地牢中不可用（断言失败）", () => {
+  function inDungeon(): GameState {
+    return {
+      ...initialGameState(),
+      screen: "game",
+      dungeon: {
+        dungeonId: "forest",
+        size: { w: 3, h: 3 },
+        rooms: Array.from({ length: 3 }, () => Array.from({ length: 3 }, () => null)),
+        playerPos: { x: 1, y: 1 },
+      },
+    };
+  }
+
+  it("MOVE_ROOM / BUY_ITEM / PICKUP_ITEM 在地牢中断言失败", () => {
+    const s = inDungeon();
+    expect(() => gameReducer(s, { type: "MOVE_ROOM", roomId: "village_shop" })).toThrow(
+      /MOVE_ROOM/
+    );
+    expect(() => gameReducer(s, { type: "BUY_ITEM", itemId: "herb_bundle" })).toThrow(/BUY_ITEM/);
+    expect(() => gameReducer(s, { type: "PICKUP_ITEM", itemId: "herb_bundle" })).toThrow(
+      /PICKUP_ITEM/
+    );
   });
 });

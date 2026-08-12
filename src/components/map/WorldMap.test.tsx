@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, screen } from "@testing-library/react";
 import { renderGame } from "../../test/harness";
 import { initialGameState } from "../../state/init";
@@ -17,6 +17,10 @@ describe("展开大地图：当前房间居中", () => {
     // jsdom 无布局：mock 容器尺寸（与 jsdom 视口 1024×768 一致）
     vi.spyOn(window.HTMLElement.prototype, "clientWidth", "get").mockReturnValue(1024);
     vi.spyOn(window.HTMLElement.prototype, "clientHeight", "get").mockReturnValue(768);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it("地牢：偏移按玩家格中心计算（视口中心 512/384）", () => {

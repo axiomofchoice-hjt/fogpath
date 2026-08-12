@@ -2,6 +2,7 @@ import { useGame } from "../../state/useGame";
 import { rooms as roomMap } from "../../data/config";
 import { useLang } from "../../i18n/useLang";
 import { dirFromKey, nearestInDir } from "../map/nav";
+import { CONTROL_INSET } from "../map/layoutConstants";
 import type { GameState } from "../../types";
 import { controlBack, controlEnter, controlMoveDir, controlRetreat, type IntelState } from "../control/controlActions";
 
@@ -36,16 +37,19 @@ function isDirAvailable(
 /** 操控栏小按钮（进入/返回/撤离）：与键盘同一处理逻辑（派发等效 keydown） */
 function ActionButton({
   label,
+  ariaLabel,
   testId,
   onClick,
 }: {
   label: string;
+  ariaLabel: string;
   testId: string;
   onClick: () => void;
 }) {
   return (
     <button
       data-testid={testId}
+      aria-label={ariaLabel}
       onClick={onClick}
       className="w-10 h-10 rounded-md border font-mono text-sm border-game-gold/40 bg-game-card text-game-text hover:bg-game-gold/20 hover:text-game-gold transition-colors"
     >
@@ -79,19 +83,22 @@ export function ControlBar({
   return (
     // 文档流底栏（不悬浮）：占主界面区域（左右 16rem 侧栏之间）宽度的一行，主内容滚动区在其上方，无重叠。
     // grid 三列 1fr/auto/1fr：WASD 严格居中，左右组贴主区域边缘。
-    <div className="flex-shrink-0 select-none border-t border-game-border bg-game-panel/50 pl-[calc(17rem+1rem)] pr-[calc(17rem+1rem)] py-3">
+    <div
+      className="flex-shrink-0 select-none border-t border-game-border bg-game-panel/50 py-3"
+      style={{ paddingLeft: CONTROL_INSET, paddingRight: CONTROL_INSET }}
+    >
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
         {/* 左侧操作（仅可执行时出现） */}
         <div className="flex gap-1.5 justify-self-start">
           {(intelOpen || villageEnter || confirmOpen) && (
             <>
               {confirmOpen ? (
-                <ActionButton testId="control-confirm" label={t("control.confirm")} onClick={() => controlEnter(state, intel, dispatch)} />
+                <ActionButton testId="control-confirm" label={t("control.confirm")} ariaLabel={t("control.enterLabel")} onClick={() => controlEnter(state, intel, dispatch)} />
               ) : (
-                <ActionButton testId="control-enter" label={t("control.enter")} onClick={() => controlEnter(state, intel, dispatch)} />
+                <ActionButton testId="control-enter" label={t("control.enter")} ariaLabel={t("control.enterLabel")} onClick={() => controlEnter(state, intel, dispatch)} />
               )}
               {(intelOpen || confirmOpen) && (
-                <ActionButton testId="control-back" label={t("control.back")} onClick={() => controlBack(intel)} />
+                <ActionButton testId="control-back" label={t("control.back")} ariaLabel={t("control.backLabel")} onClick={() => controlBack(intel)} />
               )}
             </>
           )}
@@ -121,7 +128,7 @@ export function ControlBar({
         {/* 右侧撤离（仅地牢非战斗时出现） */}
         <div className="justify-self-end">
           {canRetreat && (
-            <ActionButton testId="control-retreat" label={t("control.retreat")} onClick={() => controlRetreat(intel)} />
+            <ActionButton testId="control-retreat" label={t("control.retreat")} ariaLabel={t("control.retreatLabel")} onClick={() => controlRetreat(intel)} />
           )}
         </div>
       </div>

@@ -2,6 +2,7 @@ import type { Dispatch } from "react";
 import type { GameAction, GameState } from "../../types";
 import { rooms as roomMap } from "../../data/config";
 import { nearestInDir, dungeonStep } from "../map/nav";
+import { randomSeed } from "../../state/rng";
 
 /** 情报/撤离确认的 UI 状态（App 持有，地牢视图/侧栏/操控栏共享；键盘与按钮行为同源） */
 export interface IntelState {
@@ -26,12 +27,18 @@ export function controlEnter(
     if (intel.retreatOpen) {
       dispatch({ type: "DUNGEON_RETREAT" });
     } else if (intel.pending) {
-      dispatch({ type: "DUNGEON_ENTER_TILE", x: intel.pending.x, y: intel.pending.y });
+      dispatch({
+        type: "DUNGEON_ENTER_TILE",
+        x: intel.pending.x,
+        y: intel.pending.y,
+        seed: randomSeed(),
+      });
     }
     return;
   }
   const room = roomMap[state.player.currentRoomId];
-  if (room?.dungeonId) dispatch({ type: "ENTER_DUNGEON", dungeonId: room.dungeonId });
+  if (room?.dungeonId)
+    dispatch({ type: "ENTER_DUNGEON", dungeonId: room.dungeonId, seed: randomSeed() });
 }
 
 /** BACKSPACE 行为：撤离确认/房间情报 → 关闭（无状态时无操作） */

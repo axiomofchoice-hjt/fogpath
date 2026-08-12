@@ -2,6 +2,7 @@ import type { GameAction, GameState } from "../types";
 import { items as itemDefs } from "../data/config";
 import { testBattleConfigs } from "../data/battleTestConfigs";
 import { DUNGEON_SCENARIO_ID, initBattle, resolveTurn } from "./battleEngine";
+import { mulberry32 } from "./rng";
 import {
   addToInventory,
   assertInvariant,
@@ -21,27 +22,38 @@ export function battleReducer(state: GameState, action: GameAction): GameState {
       assertInvariant(!state.battle, "START_TEST_BATTLE 不能重复开启战斗");
       const config = testBattleConfigs[action.scenarioId];
       assertInvariant(!!config, "START_TEST_BATTLE 场景不存在");
-      return { ...state, battle: initBattle(action.scenarioId, state.player) };
+      return {
+        ...state,
+        battle: initBattle(action.scenarioId, state.player, mulberry32(action.seed)),
+      };
     }
 
     case "BATTLE_ACT": {
       assertInvariant(!!state.battle, "BATTLE_ACT 无战斗进行");
-      return { ...state, battle: resolveTurn(state.battle, action.action) };
+      return {
+        ...state,
+        battle: resolveTurn(state.battle, action.action, mulberry32(action.seed)),
+      };
     }
 
     case "USE_ITEM": {
       // 非战斗时的使用道具由 playerReducer 处理：此处必须静默路由，不能断言
       if (!state.battle) return state;
-      // 战斗中使用道具：作为战斗动作生效于战斗内属性（引擎校验并结算敌方回合）
-      if (!canRemoveFromInventory(state.player.inventory, action.itemId, 1)) {
-        return state; // 资源守卫：背包数量不足
-      }
-      // 数据守卫：非消耗品/无回复效果属调用方 bug（UI 已只对消耗品显示使用按钮）——与玩家域一致 fail-fast
+      // 数据守卫先行：非消耗品/无回复效果属调用方 bug（UI 已只对消耗品显示使用按钮），
+      // 与玩家域一致 fail-fast——不得因背包中恰好无此物品而静默（与库存无关的 bug）
       assertInvariant(
         isUsableConsumable(itemDefs[action.itemId]),
         "USE_ITEM 只能使用有回复效果的消耗品"
       );
-      const battle = resolveTurn(state.battle, { kind: "useItem", itemId: action.itemId });
+      // 资源守卫：背包数量不足为合法拒绝，静默
+      if (!canRemoveFromInventory(state.player.inventory, action.itemId, 1)) {
+        return state;
+      }
+      const battle = resolveTurn(
+        state.battle,
+        { kind: "useItem", itemId: action.itemId },
+        mulberry32(action.seed)
+      );
       if (battle === state.battle) return state;
       return {
         ...state,
@@ -63,7 +75,7 @@ export function battleReducer(state: GameState, action: GameAction): GameState {
         const room = dungeon.rooms[dungeon.playerPos.y][dungeon.playerPos.x]!;
         if (battle.result === "victory") {
           // 胜利：敌人清除 + 掉落入账（含金币）；HP 损耗保留在地牢中，MP 回满（非战斗状态 MP 自动回满）
-          const drop = rollLoot(room.enemyIds);
+          const drop = rollLoot(room.enemyIds, mulberry32(action.seed));
           const rooms = patchRoom(dungeon, dungeon.playerPos.x, dungeon.playerPos.y, {
             enemyIds: [],
           });

@@ -108,7 +108,7 @@ export function removeFromInventory(
   return updated;
 }
 
-/** 不可变更新单个房间（其余格原样保留） */
+/** 不可变更新单个房间（其余格原样保留）；目标格无房间（墙/越界）属调用方 bug，断言失败 */
 export function patchRoom(
   dungeon: DungeonState,
   x: number,
@@ -116,7 +116,11 @@ export function patchRoom(
   patch: Partial<DungeonRoom>
 ): DungeonState["rooms"] {
   return dungeon.rooms.map((row, yy) =>
-    row.map((r, xx) => (xx === x && yy === y ? { ...r!, ...patch } : r))
+    row.map((r, xx) => {
+      if (xx !== x || yy !== y) return r;
+      assertInvariant(!!r, `patchRoom: (${x},${y}) 无房间`);
+      return { ...r, ...patch };
+    })
   );
 }
 

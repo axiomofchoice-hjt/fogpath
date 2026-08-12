@@ -5,6 +5,8 @@ import { useLang } from "../../i18n/useLang";
 import { loc, type TKey, type Params } from "../../i18n/translations";
 import { dungeons as dungeonDefs, enemyDefs, items as itemDefs, skills as skillDefs } from "../../data/config";
 import { DUNGEON_SCENARIO_ID, GUARD_MP, REST_MP, SHIELD_PCT } from "../../state/battleEngine";
+import { randomSeed } from "../../state/rng";
+import { StatBar } from "../ui/StatBar";
 
 type Mode = "idle" | "target";
 
@@ -29,26 +31,8 @@ type StatRowProps = {
   gray?: boolean;
 };
 
-function StatRow({ label, value, max, fillClass, labelClass, gray = false }: StatRowProps) {
-  const pct = Math.max(0, (value / Math.max(1, max)) * 100);
-  return (
-    <div className="flex items-center gap-1.5">
-      <span className={`text-[11px] font-mono ${gray ? "text-game-dim" : labelClass}`}>
-        {label}
-      </span>
-      <div className="h-1.5 flex-1 bg-black rounded-full overflow-hidden border border-game-border">
-        <div
-          className={`h-full rounded-full transition-all duration-300 ${
-            gray ? "bg-game-dim" : fillClass
-          }`}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-      <span className={`text-[11px] font-mono ${gray ? "text-game-dim" : "text-game-text"}`}>
-        {value}/{max}
-      </span>
-    </div>
-  );
+function StatRow(props: StatRowProps) {
+  return <StatBar {...props} trackClass="bg-black" />;
 }
 
 type CombatantCardProps = {
@@ -80,7 +64,10 @@ function CombatantCard({
   const { t } = useLang();
   const attackGray = !hasAttack;
   return (
-    <div className={`bg-game-card border ${dimmed ? "opacity-50" : ""} rounded p-3 ${borderClass}`}>
+    <div
+      data-testid="combatant-card"
+      className={`bg-game-card border ${dimmed ? "opacity-50" : ""} rounded p-3 ${borderClass}`}
+    >
       <div className="flex items-center gap-4">
         <div className="flex flex-col items-center gap-1 w-14 flex-shrink-0">
           <span className="text-2xl">{icon}</span>
@@ -208,6 +195,7 @@ function BattleView() {
       dispatch({
         type: "BATTLE_ACT",
         action: { kind: "attack", skillId, targetIndex: aliveEnemies[0].i },
+        seed: randomSeed(),
       });
       setMode("idle");
     } else {
@@ -217,12 +205,12 @@ function BattleView() {
   };
 
   const doGuard = () => {
-    dispatch({ type: "BATTLE_ACT", action: { kind: "guard" } });
+    dispatch({ type: "BATTLE_ACT", action: { kind: "guard" }, seed: randomSeed() });
     setMode("idle");
   };
 
   const doRest = () => {
-    dispatch({ type: "BATTLE_ACT", action: { kind: "rest" } });
+    dispatch({ type: "BATTLE_ACT", action: { kind: "rest" }, seed: randomSeed() });
     setMode("idle");
   };
 
@@ -372,6 +360,7 @@ function BattleView() {
                         dispatch({
                           type: "BATTLE_ACT",
                           action: { kind: "attack", skillId: selectedSkill, targetIndex: i },
+                          seed: randomSeed(),
                         });
                       }
                       setMode("idle");
@@ -421,7 +410,7 @@ function BattleView() {
             {battle.result === "victory" ? t("battle.victory") : t("battle.defeat")}
           </div>
           <button
-            onClick={() => dispatch({ type: "EXIT_BATTLE" })}
+            onClick={() => dispatch({ type: "EXIT_BATTLE", seed: randomSeed() })}
             className="px-4 py-2 rounded text-xs font-mono border border-game-border text-game-dim hover:text-game-gold hover:border-game-gold/40 transition-colors"
           >
             {t(battle.scenarioId === DUNGEON_SCENARIO_ID ? "battle.exitDungeon" : "battle.exit")}

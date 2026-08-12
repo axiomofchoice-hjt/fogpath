@@ -41,9 +41,8 @@ describe("战斗视图", () => {
     expect(screen.getByText("回合 1")).toBeInTheDocument();
     // 普通攻击消耗 10 MP：限定玩家卡片内断言（侧栏 CharacterPanel 也显示 90/100）
     const playerCard = screen
-      .getAllByText("冒险者")
-      .find((el) => el.closest(".bg-game-card"))!
-      .closest(".bg-game-card") as HTMLElement;
+      .getAllByTestId("combatant-card")
+      .find((el) => within(el).getByText("冒险者"))!;
     expect(within(playerCard).getAllByText("90/100")).toHaveLength(1);
   });
 

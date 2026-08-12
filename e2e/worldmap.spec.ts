@@ -1,16 +1,10 @@
 import { test, expect } from "@playwright/test";
+import { enterCampDungeon } from "./helpers";
 
 /**
  * 展开大地图：当前房间居中（玩家所在格位于视口中心），
  * 格子尺寸保持 48×48（展开地图不得改变地图大小）。
  */
-
-async function enterCampDungeon(page: import("@playwright/test").Page) {
-  await page.goto("/");
-  await page.getByRole("button", { name: "进入村庄" }).click();
-  await page.keyboard.press("w");
-  await page.getByRole("button", { name: "进入地牢 (↵)" }).click();
-}
 
 test("展开地图：当前房间格位于视口中心，格子 48×48", async ({ page }) => {
   await enterCampDungeon(page);
@@ -31,8 +25,8 @@ test("村庄展开地图：当前房间居中，方块与地牢一致 48×48", a
   await page.goto("/");
   await page.getByRole("button", { name: "进入村庄" }).click();
   await page.getByRole("button", { name: "展开地图" }).click();
-  const overlay = page.locator("div.fixed.inset-0");
-  await expect(overlay.first()).toBeVisible();
+  const overlay = page.getByTestId("world-map-overlay");
+  await expect(overlay).toBeVisible();
   const viewport = page.viewportSize()!;
   const current = overlay.locator("div[title='村庄广场']");
   await expect(current).toBeVisible();
