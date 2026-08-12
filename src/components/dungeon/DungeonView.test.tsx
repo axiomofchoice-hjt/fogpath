@@ -39,7 +39,7 @@ describe("地牢视图", () => {
     expect(screen.getByText("房间情报")).toBeInTheDocument();
     expect(screen.getByText("哥布林")).toBeInTheDocument();
     expect(screen.getByText("x1")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "进入" }));
+    await user.click(screen.getByRole("button", { name: "进入 (↵)" }));
     expect(screen.getByRole("heading", { name: "战斗" })).toBeInTheDocument();
     expect(screen.getByText("回合 0")).toBeInTheDocument();
   });
@@ -77,7 +77,7 @@ describe("地牢视图", () => {
     const user = userEvent.setup();
     renderGame(miniDungeon());
     await user.keyboard("{d}");
-    await user.click(screen.getByRole("button", { name: "返回" }));
+    await user.click(screen.getByRole("button", { name: "返回 (←)" }));
     expect(screen.queryByText("房间情报")).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /哥布林营地 · 入口/ })).toBeInTheDocument();
   });
