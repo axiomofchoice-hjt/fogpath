@@ -30,10 +30,6 @@ function ItemTooltip({ itemId }: { itemId: string }) {
             <span className="text-game-orange">
               {t("battle.damage", { n: act.damage })}
             </span>
-            <span className="text-game-dim">，</span>
-            <span className="text-game-lightgreen">
-              {t("battle.momentum", { n: act.momentum })}
-            </span>
           </div>
         );
       })}

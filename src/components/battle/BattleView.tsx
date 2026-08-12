@@ -75,12 +75,12 @@ function CombatantCard({
   dimmed = false,
   boss = false,
   moves,
-  stats: { hp, maxHp, mp, maxMp, damage, maxDamage, momentum, maxMomentum, hasAttack },
+  stats: { hp, maxHp, mp, maxMp, damage, maxDamage, hasAttack },
   statuses,
   summary,
 }: CombatantCardProps) {
   const { t } = useLang();
-  const attackGray = !hasAttack || momentum <= 0;
+  const attackGray = !hasAttack;
   return (
     <div className={`bg-game-card border ${dimmed ? "opacity-50" : ""} rounded p-3 ${borderClass}`}>
       <div className="flex items-center gap-4">
@@ -119,14 +119,6 @@ function CombatantCard({
             max={hasAttack ? maxDamage : 0}
             fillClass="bg-game-orange"
             labelClass="text-game-orange"
-            gray={attackGray}
-          />
-          <StatRow
-            label={t("stat.momentum")}
-            value={momentum}
-            max={hasAttack ? maxMomentum : 0}
-            fillClass="bg-game-lightgreen"
-            labelClass="text-game-lightgreen"
             gray={attackGray}
           />
         </div>
@@ -253,7 +245,6 @@ function BattleView() {
           meta: [
             { text: t("battle.mpCost", { n: skill.mpCost }), className: "text-game-blue" },
             { text: t("battle.damage", { n: act.damage }), className: "text-game-orange" },
-            { text: t("battle.momentum", { n: act.momentum }), className: "text-game-lightgreen" },
           ],
           className: "border-game-red/40 bg-game-red/10 text-game-text hover:bg-game-red/20",
           disabled: battle.playerStats.mp < skill.mpCost,

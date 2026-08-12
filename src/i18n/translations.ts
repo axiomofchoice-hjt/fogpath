@@ -17,7 +17,6 @@ const zh = {
   "stat.hp": "生命",
   "stat.mp": "法力",
   "stat.damage": "伤害",
-  "stat.momentum": "动量",
   "stat.adventurer": "冒险者",
 
   "itemtype.equipment": "装备",
@@ -106,7 +105,6 @@ const zh = {
   "battle.rest": "休息",
   "battle.mpCost": "法力 {{n}}",
   "battle.damage": "伤害 {{n}}",
-  "battle.momentum": "动量 {{n}}",
   "battle.active": "主动",
   "battle.guardEffect": "减伤 {{pct}}% 直到下一次攻击前",
   "battle.effect": "效果",
@@ -137,7 +135,6 @@ const en: Record<TKey, string> = {
   "stat.hp": "HP",
   "stat.mp": "MP",
   "stat.damage": "DMG",
-  "stat.momentum": "MOM",
   "stat.adventurer": "Adventurer",
 
   "itemtype.equipment": "Equipment",
@@ -226,7 +223,6 @@ const en: Record<TKey, string> = {
   "battle.rest": "Rest",
   "battle.mpCost": "MP {{n}}",
   "battle.damage": "Damage {{n}}",
-  "battle.momentum": "Momentum {{n}}",
   "battle.active": "Active",
   "battle.guardEffect": "Reduce damage by {{pct}}% until your next attack",
   "battle.effect": "Effect",
