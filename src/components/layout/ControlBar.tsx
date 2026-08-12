@@ -124,7 +124,7 @@ export function ControlBar({
         {/* 右侧撤离（仅地牢非战斗时出现） */}
         <div className="justify-self-end">
           {canRetreat && (
-            <ActionButton testId="control-retreat" label={t("dungeon.retreat")} onClick={() => fire("q")} />
+            <ActionButton testId="control-retreat" label={t("control.retreat")} onClick={() => fire("q")} />
           )}
         </div>
       </div>

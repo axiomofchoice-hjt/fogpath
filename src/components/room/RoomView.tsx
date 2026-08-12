@@ -21,7 +21,7 @@ function RoomView({ mapOpen }: { mapOpen: boolean }) {
     if (state.battle || mapOpen || !room) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.repeat) return;
-      // ENTER：房间有地牢入口时进入地牢（操控栏「进入 (ENTER)」同源）
+      // ENTER：房间有地牢入口时进入地牢（操控栏「↵」同源）
       if (e.key === "Enter" && room.dungeonId) {
         e.preventDefault();
         dispatch({ type: "ENTER_DUNGEON", dungeonId: room.dungeonId });

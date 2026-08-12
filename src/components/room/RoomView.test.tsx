@@ -20,8 +20,8 @@ describe("村庄房间视图", () => {
     await user.keyboard("{w}");
     expect(screen.getByRole("heading", { name: "哥布林营地入口" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "进入地牢" })).toBeInTheDocument();
-    // 操控栏「进入 (ENTER)」同步出现（与地牢入口按钮并存）
-    expect(screen.getByRole("button", { name: "进入 (ENTER)" })).toBeInTheDocument();
+    // 操控栏「↵」同步出现（与地牢入口按钮并存）
+    expect(screen.getByRole("button", { name: "↵" })).toBeInTheDocument();
   });
 
   it("村庄房间不再显示出口卡片列表", () => {
