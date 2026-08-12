@@ -87,4 +87,11 @@ describe("战斗视图", () => {
     renderGame(withBattle({ ...battle, result: "victory" }));
     expect(screen.getByRole("button", { name: "返回地牢" })).toBeInTheDocument();
   });
+
+  it("地牢败北结算按钮：返回村庄（地牢已废弃，回村而非回地牢）", () => {
+    const battle = initBattleFromEnemies(["goblin"], initialPlayer());
+    renderGame(withBattle({ ...battle, result: "defeat" }));
+    expect(screen.getByRole("button", { name: "返回村庄" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "返回地牢" })).not.toBeInTheDocument();
+  });
 });

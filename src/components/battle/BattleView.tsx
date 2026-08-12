@@ -413,7 +413,13 @@ function BattleView() {
             onClick={() => dispatch({ type: "EXIT_BATTLE", seed: randomSeed() })}
             className="px-4 py-2 rounded text-xs font-mono border border-game-border text-game-dim hover:text-game-gold hover:border-game-gold/40 transition-colors"
           >
-            {t(battle.scenarioId === DUNGEON_SCENARIO_ID ? "battle.exitDungeon" : "battle.exit")}
+            {t(
+              battle.scenarioId === DUNGEON_SCENARIO_ID
+                ? battle.result === "defeat"
+                  ? "battle.exitVillage" // 败北：地牢废弃回村庄
+                  : "battle.exitDungeon"
+                : "battle.exit"
+            )}
           </button>
         </div>
       )}
